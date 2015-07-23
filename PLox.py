@@ -19,7 +19,7 @@ class PLox:
     def __init__(self):
         pass
 
-    def gen_ox_smiles(self, pl_abbr):
+    def gen_ox_smiles(self, pl_abbr, isotopelabel=None):
 
         # Use re groups to match PL expressions
         # e.g. PC(18:2(9-Z;12-Z)/18:1(9-Z))
@@ -43,7 +43,10 @@ class PLox:
                 s_hg_txt = 'OP(O)(OC[C@]([H])('
 
             elif hg_abbr == 'PC':
-                s_hg_txt = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])('
+                if isotopelabel.lower() == 'd9':
+                    s_hg_txt = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])('
+                else:
+                    s_hg_txt = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])('
 
             elif hg_abbr == 'PE':
                 s_hg_txt = 'OP(OCC[N])(OC[C@]([H])('
@@ -104,23 +107,24 @@ class PLox:
 #     a = a.strip('\n')
 #     lst.append(a)
 
-lst = ['PC(18:1(9-Z)/20:1(11-Z))']
+lst = ['PC(16:0/18:2(9-Z;12-Z))']
 print lst
 
-hg = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
+# hg = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
+hg = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
 hg_mol = Chem.MolFromSmiles(hg)
 AllChem.Compute2DCoords(hg_mol)
 
 for x in lst:
     # try:
     print x
-    i = 'PC(18-1(9-Z)_20-1(11-Z))'
+    i = '[d9]PC(16-0_18-2(9-Z;12-Z))'
     img_name = str(i) + '.png'
     sdf_name = str(i) + '.sdf'
     csv_name = str(i) + '.csv'
     p = PLox()
 
-    (s_z_lst, d_z_lst) = p.gen_ox_smiles(x)
+    (s_z_lst, d_z_lst) = p.gen_ox_smiles(x,isotopelabel='d9')
     # print s_z_lst
 
     z_mol_lst = []
