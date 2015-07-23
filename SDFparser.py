@@ -5,7 +5,8 @@
 # For more info please contact: zhixu.ni@uni-leipzig.de
 
 from rdkit import Chem
-from ExactMassCalc import Elem2Mass
+
+from lpplibs.ExactMassCalc import Elem2Mass
 
 w = Chem.SDWriter('merged_info3.sdf')
 suppl = Chem.SDMolSupplier('merged_test.sdf')

@@ -4,10 +4,11 @@
 # A suitable license will be chosen before the official release of oxLPPdb.
 # For more info please contact: zhixu.ni@uni-leipzig.de
 
-import pandas as pd
 from rdkit import Chem
-from ExactMassCalc import Elem2Mass
 
+import pandas as pd
+
+from lpplibs.ExactMassCalc import Elem2Mass
 
 mzcalc = Elem2Mass()
 

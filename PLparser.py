@@ -4,11 +4,10 @@
 # A suitable license will be chosen before the official release of LipidSDFcreator.     #
 # For more info please contact: zhixu.ni@uni-leipzig.de                                 #
 
-from ExactMassCalc import Elem2Mass
-import pandas as pd
 import re
-import csv
 import math
+
+from lpplibs.ExactMassCalc import Elem2Mass
 
 
 class FAabbr():

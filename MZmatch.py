@@ -5,7 +5,8 @@
 # For more info please contact: zhixu.ni@uni-leipzig.de
 
 import pandas as pd
-from ExactMassCalc import Elem2Mass
+
+from lpplibs.ExactMassCalc import Elem2Mass
 
 
 class MZmatcher(object):

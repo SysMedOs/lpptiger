@@ -5,13 +5,15 @@
 # For more info please contact: zhixu.ni@uni-leipzig.de
 
 import re
+from rdkit import Chem
+from rdkit.Chem import AllChem
+
 import natsort
 import pandas as pd
-from rdkit import Chem
-from rdkit.Chem import AllChem, Draw
-from PLparser import FAabbr, GPabbr
+
+from PLparser import FAabbr
 from FAox import FAox
-from ExactMassCalc import Elem2Mass
+from lpplibs.ExactMassCalc import Elem2Mass
 
 
 class PLox:
