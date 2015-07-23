@@ -148,11 +148,24 @@ class TheoFrag(object):
 
             result_dct[_chg] = _chg_info_dct
 
-        print result_dct
+            theo_ion_mz_dct = {}
 
+            for _ion in theo_ion_formula_dct.keys():
+
+                _ion_formula = formula_obj.merge_dct(theo_ion_formula_dct[_ion], self.charge_dct[_chg])
+                _ion_name_lst = ['[', _ion, _chg[2:]]
+                _ion_name = ''.join(_ion_name_lst)
+                theo_ion_mz_dct[_ion_name] = mzcalc.get_mass(_ion_formula)
+
+            # print 'theo_ion_mz_dct', _chg, theo_ion_mz_dct
+            _chg_info_dct['frag_info'] = theo_ion_mz_dct
+
+            result_dct[_chg] = _chg_info_dct
+
+        print result_dct
 
 s = r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(CCCCCCC=O)=O)COC(CCCCCCCCCCCCCCC)=O)=O'
 
 frag_obj = TheoFrag()
 
-frag_obj.smiles2frag(s, 'POPC', chargelist=['[M+H]+', '[M+Na]+', '[M+K]+'], plclass='PC')
+frag_obj.smiles2frag(s, 'POPC', chargelist=['[M+H]+', '[M+Na]+', '[M-H2O+H]+', '[M-H2O+Na]+'], plclass='PC')
