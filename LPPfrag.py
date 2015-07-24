@@ -6,6 +6,7 @@
 
 import copy
 import re
+import pandas as pd
 
 from lpplibs.ExactMassCalc import Elem2Mass
 from lpplibs.SMILESparser import SMILESparser
@@ -41,6 +42,11 @@ class TheoFrag(object):
 
         self.pl_hg_elem_dct = {}
         self.pl_hg_elem_dct['PC'] = {'hg': 'C5H14NO4P', 'hg_part': 'C3H9N'}
+
+        scores_df = pd.read_csv('ion_scores.csv', index_col=0)
+        # print scores_df.head()
+        self.scores_dct = scores_df.to_dict()['ion_i']
+        # print self.scores_dct
 
     def smiles2frag(self, usr_smiles, description, plclass=None, chargelist=None):
 
@@ -155,17 +161,62 @@ class TheoFrag(object):
                 _ion_formula = formula_obj.merge_dct(theo_ion_formula_dct[_ion], self.charge_dct[_chg])
                 _ion_name_lst = ['[', _ion, _chg[2:]]
                 _ion_name = ''.join(_ion_name_lst)
-                theo_ion_mz_dct[_ion_name] = mzcalc.get_mass(_ion_formula)
+                theo_ion_mz_dct[_ion_name] = (mzcalc.get_mass(_ion_formula), self.scores_dct[_ion_name])
 
-            # print 'theo_ion_mz_dct', _chg, theo_ion_mz_dct
+            print theo_ion_mz_dct.keys()
             _chg_info_dct['frag_info'] = theo_ion_mz_dct
 
             result_dct[_chg] = _chg_info_dct
 
         print result_dct
 
-s = r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(CCCCCCC=O)=O)COC(CCCCCCCCCCCCCCC)=O)=O'
+        sum_info_dct = {_name: result_dct}
 
-frag_obj = TheoFrag()
+        return sum_info_dct
 
-frag_obj.smiles2frag(s, 'POPC', chargelist=['[M+H]+', '[M+Na]+', '[M-H2O+H]+', '[M-H2O+Na]+'], plclass='PC')
+    def frag2msp(self, sum_info_dct, outputname):
+
+        output = open(outputname, mode='w')
+        for _name in sum_info_dct.keys():
+            info_dct = sum_info_dct[_name]
+            for _chg in info_dct.keys():
+                _chg_dct = info_dct[_chg]
+                _frags_dct = _chg_dct['frag_info']
+                _name_info = 'Name: ' + _name + ' ' + _name
+                _id_info = 'LM_ID: ' + _name
+                _pr_type = 'Precursor_type: ' + _chg
+                _comment = 'Comment:' + str(_chg_dct['pr_mz'])
+                _formula = _chg_dct['pr_formula']
+                elem_count_checker = re.compile(r'([A-Z][a-z]|[A-Z])')
+                elem_lst = elem_count_checker.split(_formula)
+                # e.g. ['', 'C', '5', 'H', '14', 'N', '', 'O', '4', 'P', '', 'Na', '']
+                for _i in range(len(elem_lst)):
+                    if elem_lst[_i] == '1':
+                        elem_lst[_i] = ''
+                _p_formula = ''.join(elem_lst)
+                _formula = 'Formula: ' + _p_formula
+                _num_peak = 'Num Peaks: ' + str(len(_frags_dct.keys()))
+
+                ion_lst = [_name_info, _id_info, _pr_type, _comment, _formula, _num_peak]
+                for _ion in _frags_dct.keys():
+                    _ion_name = '"'+ _ion + '"'
+                    # _ion_info_lst = [str(_frags_dct[_ion][0]), str(_frags_dct[_ion][1]), _ion_name]
+                    _ion_info_lst = [str(_frags_dct[_ion][0]), str(_frags_dct[_ion][1])]
+                    _ion_info_txt = ' '.join(_ion_info_lst)
+                    ion_lst.append(_ion_info_txt)
+                ion_lst.append('\n')
+                output.writelines('\n'.join(ion_lst))
+
+        output.close()
+        print 'msp Generated'
+
+
+# s = r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(CCCCCCC=O)=O)COC(CCCCCCCCCCCCCCC)=O)=O'
+#
+# frag_obj = TheoFrag()
+#
+# dct = frag_obj.smiles2frag(s, 'test_LPP', chargelist=['[M+H]+', '[M+Na]+', '[M-H2O+H]+', '[M-H2O+Na]+'], plclass='PC')
+#
+# output = 'test.msp'
+#
+# frag_obj.frag2msp(dct, output)
