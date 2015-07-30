@@ -6,6 +6,7 @@
 
 import re
 from rdkit import Chem
+
 from rdkit.Chem import AllChem
 
 import natsort
@@ -112,6 +113,9 @@ class PLox:
 lst = ['PC(16:0/18:2(9-Z;12-Z))']
 print lst
 
+d9_plpc = ('[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])'
+           '(OC(CCCCCCC/C=C\C/C=C\CCCCC)=O)COC(CCCCCCCCCCCCCCC)=O)=O')
+
 # hg = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
 hg = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
 hg_mol = Chem.MolFromSmiles(hg)
@@ -126,13 +130,21 @@ for x in lst:
     csv_name = str(i) + '.csv'
     p = PLox()
 
-    (s_z_lst, d_z_lst) = p.gen_ox_smiles(x,isotopelabel='d9')
+    (s_z_lst, d_z_lst) = p.gen_ox_smiles(x, isotopelabel='d9')
     # print s_z_lst
 
-    z_mol_lst = []
+    mol_plpc = Chem.MolFromSmiles(d9_plpc)
+    AllChem.Compute2DCoords(mol_plpc)
+    mol_plpc.SetProp("_Name", '[d9]PC(16-0_18-2(9-Z;12-Z))')
+    mol_plpc.SetProp("LM_ID", '[d9]PC(16-0_18-2(9-Z;12-Z))')
+    mol_plpc.SetProp("COMMON_NAME", '[d9]PC(16-0_18-2(9-Z;12-Z))')
+    mol_plpc.SetProp("SMILES", d9_plpc)
+
+    z_mol_lst = [(mol_plpc, d9_plpc, '[d9]PC(16-0_18-2(9-Z;12-Z))')]
     z_info_lst = zip(s_z_lst, d_z_lst)
     for tmp_z in z_info_lst:
-        tmp_d_z = tmp_z[1]
+        tmp_d_z = 'd9-' + tmp_z[1]
+        tmp_s_z = tmp_z[0]
         # print tmp_z[0], tmp_d_z
         tmp_z_mol = Chem.MolFromSmiles(tmp_z[0])
         AllChem.Compute2DCoords(tmp_z_mol)
@@ -140,7 +152,8 @@ for x in lst:
         tmp_z_mol.SetProp("_Name", tmp_d_z)
         tmp_z_mol.SetProp("LM_ID", tmp_d_z)
         tmp_z_mol.SetProp("COMMON_NAME", tmp_d_z)
-        z_mol_lst.append(tmp_z_mol)
+        tmp_z_mol.SetProp("SMILES", tmp_s_z)
+        z_mol_lst.append((tmp_z_mol, tmp_s_z, tmp_d_z))
     #
     # row_num = len(z_mol_lst)//2
     # if 1 <= row_num <= 9:
@@ -153,17 +166,17 @@ for x in lst:
     # img.save(img_name)
     # img.show()
 
-    w = Chem.SDWriter(sdf_name)
-    for m in z_mol_lst:
-        w.write(m)
-    w.close()
-
     mzcalc = Elem2Mass()
     exact_mass_lst = []
     elem_lst = []
     mz_H_lst = []
     mz_Na_lst = []
-    for _smiles in s_z_lst:
+
+    w = Chem.SDWriter(sdf_name)
+    for m in z_mol_lst:
+        _mol = m[0]
+
+        _smiles = m[1]
         elem_db = {}
         smiles_lst = list(_smiles)
         elem_db['C'] = smiles_lst.count('C')
@@ -171,10 +184,11 @@ for x in lst:
         elem_db['P'] = smiles_lst.count('P')
         elem_db['N'] = smiles_lst.count('N')
         elem_db['dbe'] = smiles_lst.count('=')
-        elem_db['H'] = smiles_lst.count('C') * 2 + 2 + 4 - 2 * smiles_lst.count('=')
+        elem_db['D'] = 9
+        elem_db['H'] = smiles_lst.count('C') * 2 + 2 + 4 - 2 * smiles_lst.count('=') - 9  # 9D
 
         GP_elem_str = ''
-        GP_elem_idx_lst = ['C', 'H', 'O', 'P', 'N']
+        GP_elem_idx_lst = ['C', 'H', 'D', 'O', 'P', 'N']
 
         for tmp_elem in GP_elem_idx_lst:
             if tmp_elem in elem_db.keys():
@@ -196,13 +210,19 @@ for x in lst:
         mz_Na_lst.append(mz_Na)
         elem_lst.append(GP_elem_str)
 
-    info_dct = {'PL_Abbr': d_z_lst, 'Elem': elem_lst, 'SMILES': s_z_lst, 'ExactMass': exact_mass_lst,
-                '[M+H]+': mz_H_lst, '[M+Na]+': mz_Na_lst}
+        _mol.SetProp('Formula', GP_elem_str)
+        _mol.SetProp('Exact_Mass', str(exact_mass))
+        w.write(_mol)
 
-    df = pd.DataFrame(data=info_dct, columns=['PL_Abbr', 'Elem', 'ExactMass', '[M+H]+', '[M+Na]+', 'SMILES'])
-    print df.head()
+    w.close()
 
-    df.to_csv(csv_name)
+    # info_dct = {'PL_Abbr': d_z_lst, 'Elem': elem_lst, 'SMILES': s_z_lst, 'ExactMass': exact_mass_lst,
+    #             '[M+H]+': mz_H_lst, '[M+Na]+': mz_Na_lst}
+    #
+    # df = pd.DataFrame(data=info_dct, columns=['PL_Abbr', 'Elem', 'ExactMass', '[M+H]+', '[M+Na]+', 'SMILES'])
+    # print df.head()
+    #
+    # df.to_csv(csv_name)
 
     print 'SDF created!'
     #

@@ -6,7 +6,7 @@
 
 import pandas as pd
 
-from LPPfrag import  TheoFrag
+from LPPfrag import TheoFrag
 
 csv = r'PC(16-0_18-2(9-Z;12-Z)).csv'
 

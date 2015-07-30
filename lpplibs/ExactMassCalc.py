@@ -148,17 +148,17 @@ class Elem2MZ(Elem2Mass):
 
         return mz_lst
 
-# molecule='C7H14O'
-# CHG_lst = '1pos;1neg;2POS'
-# #
-# check1 = Elem2Mass()
-# f = check1.get_elem(molecule)
-# print f
+molecule='C42H72D9O8P1N1'
+CHG_lst = '1pos;1neg;2POS'
+#
+check1 = Elem2Mass()
+f = check1.get_elem(molecule)
+print f
 # DBE= check1.get_DBE(f)
 #
 # print DBE
-# m1 = check1.get_mass(f)
-# print 'm1',m1
+m1 = check1.get_mass(f)
+print 'm1',m1
 #
 # check = Elem2MZ()
 # m = check.get_MZ_lst(molecule,CHG_lst)
