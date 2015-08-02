@@ -211,6 +211,8 @@ class FAox(FAabbr):
             #     full_count_c = '_' + full_count_c
             tmp_hydro_counter = 0
             tmp_keto_counter = 0
+            tmp_epoxy_counter = 0
+            tmp_peroxy_counter = 0
 
             if 'C/C=C\\' in tmp_seg_lst:
                 if tmp_hydro_counter <= 3:
