@@ -109,13 +109,13 @@ class DBEox(object):
         ox_dbe_lst = []
 
         if exact is False and self.dbe is True:
-            _dbe_hydro = ('C1C(O1)C', {'dbe': 1, '-O-': 1}, 'OAP')
+            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, '-O-': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         elif exact is True and self.dbe is True:
-            _dbe_hydro = ('C1C(O1)C', {'dbe': 1, '-O-': 1}, 'OAP')
+            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, '-O-': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CC1C(O1)', {'dbe': 1, '-O-': 1}, 'OAP')
+            _dbe_hydro = ('CC1C(O1)', {'dbe': 0, '-O-': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         return ox_dbe_lst
@@ -130,20 +130,23 @@ class DBEox(object):
         ox_dbe_lst = []
 
         if exact is False and self.dbe is True:
-            _dbe_hydro = ('C(=O)CC', {'dbe': 1, '=O': 1}, 'OAP')
+            _dbe_hydro = ('C(=O)CC', {'dbe': 0, '=O': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         elif exact is True and self.dbe is True:
-            _dbe_hydro = ('C(=O)CC', {'dbe': 1, '=O': 1}, 'OAP')
+            _dbe_hydro = ('C(=O)CC', {'dbe': 0, '=O': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CCC(=O)', {'dbe': 1, '=O': 1}, 'OAP')
+            _dbe_hydro = ('CCC(=O)', {'dbe': 0, '=O': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         return ox_dbe_lst
 
     def get_clevage(self):
 
-        return [('C=O', {}, 'OCP'), ('C(O)=O', {}, 'OCP'), ('CC=O', {}, 'OCP'), ('CC(O)=O', {}, 'OCP')]
+        return [('C=O', {'CHO': 1}, 'OCP'),
+                ('C(O)=O', {'COOH': 1}, 'OCP'),
+                ('CC=O', {'CHO': 1}, 'OCP'),
+                ('CC(O)=O', {'COOH': 1}, 'OCP')]
 
     def get_all_ox(self, exact=False):
 
