@@ -4,7 +4,7 @@
 # A suitable license will be chosen before the official release of oxLPPdb.
 # For more info please contact: zhixu.ni@uni-leipzig.de
 
-# import re
+import re
 # import pandas as pd
 # from rdkit import Chem
 # from rdkit.Chem import AllChem, Draw
@@ -109,13 +109,13 @@ class DBEox(object):
         ox_dbe_lst = []
 
         if exact is False and self.dbe is True:
-            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, '-O-': 1}, 'OAP')
+            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, 'epoxy': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         elif exact is True and self.dbe is True:
-            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, '-O-': 1}, 'OAP')
+            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, 'epoxy': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CC1C(O1)', {'dbe': 0, '-O-': 1}, 'OAP')
+            _dbe_hydro = ('CC1C(O1)', {'dbe': 0, 'epoxy': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         return ox_dbe_lst
@@ -130,13 +130,17 @@ class DBEox(object):
         ox_dbe_lst = []
 
         if exact is False and self.dbe is True:
-            _dbe_hydro = ('C(=O)CC', {'dbe': 0, '=O': 1}, 'OAP')
+            _dbe_hydro = ('C(=O)/C=C/', {'dbe': 1, 'keto': 1}, 'OAP')
+            ox_dbe_lst.append(_dbe_hydro)
+            _dbe_hydro = ('C(=O)CC', {'dbe': 0, 'keto': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         elif exact is True and self.dbe is True:
-            _dbe_hydro = ('C(=O)CC', {'dbe': 0, '=O': 1}, 'OAP')
+            _dbe_hydro = ('C(=O)/C=C/', {'dbe': 1, 'keto': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CCC(=O)', {'dbe': 0, '=O': 1}, 'OAP')
+            _dbe_hydro = ('C(=O)CC', {'dbe': 0, 'keto': 1}, 'OAP')
+            ox_dbe_lst.append(_dbe_hydro)
+            _dbe_hydro = ('CCC(=O)', {'dbe': 0, 'keto': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
 
         return ox_dbe_lst
@@ -165,3 +169,62 @@ class DBEox(object):
             ox_dbe_lst.extend(self.get_shift())
 
         return ox_dbe_lst
+
+class LastFAseg(object):
+
+    def __init__(self, usr_smiles):
+
+        # self.usr_smiles = usr_smiles
+
+        fa_std_code = re.compile(r'(C)([C]+\)=O)')
+        fa_smiles_checker = fa_std_code.match(usr_smiles)
+
+        if fa_smiles_checker:
+            self.usr_smiles = usr_smiles
+            fa_db_retxt = re.compile(r'(C)')
+
+            self.fa_seg_lst = fa_db_retxt.split(self.usr_smiles)
+            # self.fa_seg_lst[0] = ''
+            # e.g. ['', 'C', '', 'C', '', 'C', '', 'C', '', 'C', ')=O']
+            # self.fa_seg_lst.remove('')
+        else:
+            self.usr_smiles = ''
+            self.fa_seg_lst = []
+
+        # print 0, self.fa_seg_lst
+
+    def get_keto(self):
+
+        self.fa_seg_lst[1] = 'C(=O)'
+        _ox_seg_str = ''.join(self.fa_seg_lst)
+        _ox_seg_lst = [(_ox_seg_str, {'dbe': 0, 'keto': 1}, 'OAP')]
+
+        return _ox_seg_lst
+
+    def get_hydroxy(self):
+
+        self.fa_seg_lst[1] = 'C(O)'
+        _ox_seg_str = ''.join(self.fa_seg_lst)
+        _ox_seg_lst = [(_ox_seg_str, {'dbe': 0, 'OH': 1}, 'OAP')]
+
+        return _ox_seg_lst
+
+    def get_hydroperoxy(self):
+
+        self.fa_seg_lst[1] = 'C(OO)'
+        _ox_seg_str = ''.join(self.fa_seg_lst)
+        _ox_seg_lst = [(_ox_seg_str, {'dbe': 0, 'OOH': 1}, 'OAP')]
+
+        return _ox_seg_lst
+
+    def get_all_ox(self):
+
+        _ox_seg_lst = []
+        _ox_seg_lst.extend(self.get_hydroxy())
+        _ox_seg_lst.extend(self.get_hydroperoxy())
+        _ox_seg_lst.extend(self.get_keto())
+
+        # print self.fa_seg_lst
+        # print _ox_seg_lst
+
+        return _ox_seg_lst

@@ -9,7 +9,7 @@ import re
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 import natsort
-from DBEtoLPP import DBEox
+from DBEtoLPP import DBEox, LastFAseg
 
 
 class FAtoLPP(object):
@@ -23,7 +23,7 @@ class FAtoLPP(object):
             fa_db_retxt = re.compile(r'(C/C=C\\)')
 
             self.fa_seg_lst = fa_db_retxt.split(self.usr_smiles)
-            self.fa_seg_lst.remove('')
+            # self.fa_seg_lst.remove('')
         else:
             self.usr_smiles = ''
             self.fa_seg_lst = []
@@ -38,6 +38,7 @@ class FAtoLPP(object):
         s_mid_lst = []
 
         mol_lst = []
+        smiles_lst = []
         d_lst = []
 
         # Define FA acid pattern
@@ -49,9 +50,9 @@ class FAtoLPP(object):
 
             for _s in fa_seg_lst:
                 # define a dct to sum up all modifications
-                mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, '-O-': 0, '=O': 0, 'CHO': 0, 'COOH': 0}
+                mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                 if _s != 'C/C=C\\' and fa_seg_lst.index(_s) == 0:
-                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, '-O-': 0, '=O': 0, 'CHO': 0, 'COOH': 0}
+                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                     s_temp_str += _s
                     s_mid_lst.append((s_temp_str, _tmp_mod_dct))
 
@@ -59,12 +60,13 @@ class FAtoLPP(object):
                     db_obj = DBEox(_s)
                     y = db_obj.get_all_ox(exact=False)
                     n_s_mid_lst = []
-                    # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, '-O-': 0, '=O': 0}
+                    # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0}
                     for _ox_dbe in y:
 
                         if _ox_dbe[2] == 'OCP':
                             if len(s_mid_lst) == 0:
-                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, '-O-': 0, '=O': 0, 'CHO': 0, 'COOH': 0}
+                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
+                                                'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                                 _ox_s_temp_str = s_temp_str + _ox_dbe[0]
                                 for _key in _ox_dbe[1].keys():
                                     if _key in _tmp_mod_dct.keys():
@@ -76,7 +78,8 @@ class FAtoLPP(object):
                             elif len(s_mid_lst) > 0:
                                 for _tmp_oap in s_mid_lst:
                                     # _ox_s_temp_str = s_temp_str + _ox_dbe[0]
-                                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, '-O-': 0, '=O': 0, 'CHO': 0, 'COOH': 0}
+                                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
+                                                    'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                                     for _key in _tmp_mod_dct.keys():
                                         if _key in _ox_dbe[1].keys():
                                             _tmp_mod_dct[_key] += _ox_dbe[1][_key]
@@ -91,7 +94,8 @@ class FAtoLPP(object):
                         elif _ox_dbe[2] == 'OAP':
 
                             for _tmp_oap in s_mid_lst:
-                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, '-O-': 0, '=O': 0, 'CHO': 0, 'COOH': 0}
+                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
+                                                'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                                 for _key in _tmp_mod_dct.keys():
                                     if _key in _ox_dbe[1].keys():
                                         _tmp_mod_dct[_key] += _ox_dbe[1][_key]
@@ -109,6 +113,21 @@ class FAtoLPP(object):
                     for _tmp_oap in s_mid_lst:
                         _s_oap = _tmp_oap[0] + _s
                         s_pre_oap_lst.append((_s_oap, _tmp_oap[1]))
+
+                        last_seg_obj = LastFAseg(_s)
+                        ox_seg_lst = last_seg_obj.get_all_ox()
+                        print _s, 'ox_seg_lst', ox_seg_lst
+                        for _seg in ox_seg_lst:
+                            _s_oap = _tmp_oap[0] + _seg[0]
+                            _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                            for _key in _tmp_mod_dct.keys():
+                                if _key in _seg[1].keys():
+                                    _tmp_mod_dct[_key] += _seg[1][_key]
+                                if _key in _tmp_oap[1].keys():
+                                    _tmp_mod_dct[_key] += _tmp_oap[1][_key]
+                                else:
+                                    pass
+                            s_pre_oap_lst.append((_s_oap, _tmp_mod_dct))
 
             s_fin_ocp_lst = []
             for _s in s_pre_ocp_lst:
@@ -135,7 +154,7 @@ class FAtoLPP(object):
                     _oxfa_str = _c_counter + ':' + str(_s[1]['dbe'])
                     _mod_d_lst = []
                     end_type = ''
-                    for _k in ['OH', 'OOH', '-O-', '=O']:
+                    for _k in ['OH', 'OOH', 'epoxy', 'keto']:
                         if _s[1][_k] > 0:
                             _mod_d_lst.append(str(_s[1][_k]) + 'x' + _k)
                         else:
@@ -143,7 +162,7 @@ class FAtoLPP(object):
 
                     for _e in ['CHO', 'COOH']:
                         if _s[1][_e] > 0:
-                            end_type += '(' + _e + '@C' + str(list(_s[0]).count('C') - 1) + ')'
+                            end_type += '(' + _e + '@C' + str(list(_s[0]).count('C')) + ')'
                         else:
                             pass
                     if len(_mod_d_lst) > 0:
@@ -167,6 +186,7 @@ class FAtoLPP(object):
                         AllChem.Compute2DCoords(_mol)
                         AllChem.GenerateDepictionMatching2DStructure(_mol, hg_mol)
                         mol_lst.append(_mol)
+                        smiles_lst.append(_s[0])
 
                 except SyntaxError:
                     pass
@@ -177,25 +197,28 @@ class FAtoLPP(object):
             AllChem.Compute2DCoords(_mol)
             AllChem.GenerateDepictionMatching2DStructure(_mol, hg_mol)
             mol_lst.append(_mol)
+            smiles_lst.append(fa_seg_lst[0])
 
-        sum_lst = zip(d_lst, mol_lst)
+        sum_lst = zip(d_lst, mol_lst, smiles_lst)
         natsort.natsorted(sum_lst, key=lambda t: t[0])
 
-        n_mol_lst = []
-        n_d_lst = []
-        for _t in sum_lst:
-            n_d_lst.append(_t[0])
-            n_mol_lst.append(_t[1])
+        # n_mol_lst = []
+        # n_d_lst = []
+        # for _t in sum_lst:
+        #     n_d_lst.append(_t[0])
+        #     n_mol_lst.append(_t[1])
 
-        img = Draw.MolsToGridImage(n_mol_lst, molsPerRow=6, legends=n_d_lst, subImgSize=(300, 300))
-        img.save('New_fa5.png')
+        # img = Draw.MolsToGridImage(n_mol_lst, molsPerRow=6, legends=n_d_lst, subImgSize=(300, 300))
+        # img.save('New_fa5.png')
 
         print len(mol_lst), 'image saved!'
 
-s = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
-# s = r'OC(CCCCCCCCCCCCCCC)=O'
+        return sum_lst
 
-f_obj = FAtoLPP(s)
-
-f_obj.get_lpp_all()
+# s = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+# # s = r'OC(CCCCCCCCCCCCCCC)=O'
+#
+# f_obj = FAtoLPP(s)
+#
+# f_obj.get_lpp_all()
 

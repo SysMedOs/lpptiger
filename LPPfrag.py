@@ -31,17 +31,21 @@ class TheoFrag(object):
                            '[M-H]-', '[M+FA-H]-', '[M+HCOO]-', '[M-H2O-H]-', '[M-H2O+FA-H]-', '[M-H2O+HCOO]-']
 
         self.pl_hg_dct = {'PA': r'OP(O)(OC[C@]([H])(',
-                          'PC_d9': r'[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(',
+                          'PC_d9':
+                              r'[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(',
+                          'd9-oxPC':
+                              r'[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(',
                           'PC': r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(',
                           'PE': r'OP(OCC[N])(OC[C@]([H])(',
                           'PG': r'OP(OCC(O)CO)(OC[C@]([H])(',
                           'PS': r'OP(OCC(C(O)=O)N)(OC[C@]([H])('}
-        self.pl_hg_lst = ['PA', 'PC', 'PE', 'PG', 'PS', 'PC_d9']
+        self.pl_hg_lst = ['PA', 'PC', 'PE', 'PG', 'PS', 'PC_d9', 'd9-oxPC']
 
         self.pl_end_smiles = r')=O'
 
         self.pl_hg_elem_dct = {}
         self.pl_hg_elem_dct['PC'] = {'hg': 'C5H14NO4P', 'hg_part': 'C3H9N'}
+        self.pl_hg_elem_dct['d9-oxPC'] = {'hg': 'C5H5D9NO4P', 'hg_part': 'C3D9N'}
 
         scores_df = pd.read_csv('ion_scores.csv', index_col=0)
         # print scores_df.head()
@@ -200,8 +204,8 @@ class TheoFrag(object):
                 ion_lst = [_name_info, _id_info, _pr_type, _comment, _formula, _num_peak]
                 for _ion in _frags_dct.keys():
                     _ion_name = '"'+ _ion + '"'
-                    # _ion_info_lst = [str(_frags_dct[_ion][0]), str(_frags_dct[_ion][1]), _ion_name]
-                    _ion_info_lst = [str(_frags_dct[_ion][0]), str(_frags_dct[_ion][1])]
+                    _ion_info_lst = [str(_frags_dct[_ion][0]), str(_frags_dct[_ion][1]), _ion_name]
+                    # _ion_info_lst = [str(_frags_dct[_ion][0]), str(_frags_dct[_ion][1])]
                     _ion_info_txt = ' '.join(_ion_info_lst)
                     ion_lst.append(_ion_info_txt)
                 ion_lst.append('\n')
