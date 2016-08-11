@@ -174,6 +174,8 @@ class FormulaCalc(object):
             else:
                 pass
 
+        print 'formula_reduced_str', formula_reduced_str
+
         return formula_reduced_str
 
     def substract_dct(self, formula_main, formula_part_dct):

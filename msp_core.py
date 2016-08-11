@@ -8,7 +8,8 @@ import pandas as pd
 
 from LPPfrag import TheoFrag
 
-csv = r'd9_oxPAPC.csv'
+# csv = r'd9_oxPLPC.csv'
+csv = r'd9_oxPLPC.csv'
 
 df = pd.read_csv(csv, index_col=0)
 
@@ -19,12 +20,15 @@ sum_dct = {}
 for _idx in idx_lst:
     s = df.loc[_idx, 'SMILES']
     d = df.loc[_idx, 'PL_Abbr']
-    _dct = frag_obj.smiles2frag(s, d, chargelist=['[M+H]+', '[M+Na]+', '[M-H2O+H]+', '[M-H2O+Na]+'], plclass='d9-oxPC')
+    _dct = frag_obj.smiles2frag(s, d,
+                                chargelist=['[M+H]+', '[M+Na]+', '[M-H2O+H]+', '[M-H2O+Na]+'],
+                                plclass='d9-oxPC')
+    # _dct = frag_obj.smiles2frag(s, d, chargelist=['[M-H]-', '[M+FA-H]-'], plclass='d9-oxPC')
 
     for _key in _dct.keys():
         sum_dct[_key] = _dct[_key]
 
-print sum_dct
-output = 'd9_oxPAPC_frag.msp'
+# print sum_dct
+output = 'd9_oxPLPC_frag_pos.msp'
 frag_obj.frag2msp(sum_dct, output)
 

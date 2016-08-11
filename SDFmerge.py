@@ -14,7 +14,7 @@ print os.listdir(f)
 sdf_lst = [x for x in os.listdir(f) if os.path.isfile(x) and os.path.splitext(x)[1] == '.sdf']
 # sdf_lst = ['PC(18-0_18-1(9-Z)).sdf', 'PC(18-0_18-2(9-Z;12-Z)).sdf']
 print 'sdf_lst', sdf_lst
-w = Chem.SDWriter('merged_test.sdf')
+w = Chem.SDWriter('TheoFrag_210416.sdf')
 
 #
 # merged_sdf = Chem.SDMolSupplier('merge_test.sdf')

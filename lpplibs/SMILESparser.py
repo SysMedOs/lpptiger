@@ -62,12 +62,15 @@ class SMILESparser(object):
         elem_dct = {}
         elem_dct['C'] = smiles_lst.count('C')
         elem_dct['O'] = smiles_lst.count('O')
+        elem_dct['dbe'] = smiles_lst.count('=')
         if smiles_lst.count('P') > 0:
             elem_dct['P'] = smiles_lst.count('P')
         if smiles_lst.count('N') > 0:
             elem_dct['N'] = smiles_lst.count('N')
-        elem_dct['dbe'] = smiles_lst.count('=')
-        elem_dct['H'] = smiles_lst.count('C') * 2 + 2 + 4 - 2 * smiles_lst.count('=')
+            elem_dct['H'] = smiles_lst.count('C') * 2 + 2 + 4 - 2 * smiles_lst.count('=') - 9
+            elem_dct['D'] = 9
+        elif smiles_lst.count('N') == 0:
+            elem_dct['H'] = smiles_lst.count('C') * 2 + 2 - 2 * smiles_lst.count('=')
 
         if charge in self.charge_lst:
             tmp_chg_dct = self.charge_dct[charge]
@@ -81,7 +84,7 @@ class SMILESparser(object):
             pass
 
         _charged_str = ''
-        _charged_idx_lst = ['C', 'H', 'O']
+        _charged_idx_lst = ['C', 'H', 'D', 'O']
         # Add Na and K to the sort list
         if 'P' in elem_dct.keys():
             _charged_idx_lst.append('P')

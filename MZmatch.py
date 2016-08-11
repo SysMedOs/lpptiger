@@ -121,7 +121,7 @@ class MZmatcher(object):
                 print info_K
                 usrcsv_df.loc[idx, 'K_info'] = info_K
 
-        usrcsv_df.to_csv('user_marked_list.csv')
+        usrcsv_df.to_csv('Unterschied MP19_alt und neu_15ppm.csv')
 
         found_dct = {'User_mz': found_usr_mz_lst, 'Found_mz': found_lib_mz_lst, 'Found_charge': found_lib_CHG_lst,
                      'Found_formula': found_lib_formula_lst, 'info': found_lib_name_lst}
@@ -131,7 +131,7 @@ class MZmatcher(object):
         found_sum_df.to_csv('Found_mz_table.csv')
 
 
-matcher = MZmatcher('PotenzielleMarkerliste_MP19.csv')
-matcher.match2lib('SDF_summary_table_lite.csv', ppm=2)
+matcher = MZmatcher('Unterschied MP19_alt und neu.csv')
+matcher.match2lib('SDF_summary_table_lite.csv', ppm=15)
 
 print 'Finished'

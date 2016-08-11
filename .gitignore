@@ -94,6 +94,9 @@ pyvenv.cfg
 *.sdf
 *.csv
 SDFs
+/Theo_spec.msp
+/Theo_Spec.msp
 temp
 *.msp
+*.xlsx
 *.mgf

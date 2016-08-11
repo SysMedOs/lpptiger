@@ -50,9 +50,11 @@ class FAtoLPP(object):
 
             for _s in fa_seg_lst:
                 # define a dct to sum up all modifications
-                mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                # mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                mod_dct = {'dbe': 0, 'OH': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                 if _s != 'C/C=C\\' and fa_seg_lst.index(_s) == 0:
-                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                    # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                     s_temp_str += _s
                     s_mid_lst.append((s_temp_str, _tmp_mod_dct))
 
@@ -65,8 +67,9 @@ class FAtoLPP(object):
 
                         if _ox_dbe[2] == 'OCP':
                             if len(s_mid_lst) == 0:
-                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
-                                                'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                                # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
+                                #                 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                                 _ox_s_temp_str = s_temp_str + _ox_dbe[0]
                                 for _key in _ox_dbe[1].keys():
                                     if _key in _tmp_mod_dct.keys():
@@ -78,8 +81,9 @@ class FAtoLPP(object):
                             elif len(s_mid_lst) > 0:
                                 for _tmp_oap in s_mid_lst:
                                     # _ox_s_temp_str = s_temp_str + _ox_dbe[0]
-                                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
-                                                    'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                                    # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
+                                    #                 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                                    _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                                     for _key in _tmp_mod_dct.keys():
                                         if _key in _ox_dbe[1].keys():
                                             _tmp_mod_dct[_key] += _ox_dbe[1][_key]
@@ -94,8 +98,9 @@ class FAtoLPP(object):
                         elif _ox_dbe[2] == 'OAP':
 
                             for _tmp_oap in s_mid_lst:
-                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
-                                                'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                                # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0,
+                                #                 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                                _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                                 for _key in _tmp_mod_dct.keys():
                                     if _key in _ox_dbe[1].keys():
                                         _tmp_mod_dct[_key] += _ox_dbe[1][_key]
@@ -119,7 +124,8 @@ class FAtoLPP(object):
                         print _s, 'ox_seg_lst', ox_seg_lst
                         for _seg in ox_seg_lst:
                             _s_oap = _tmp_oap[0] + _seg[0]
-                            _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                            # _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'OOH': 0, 'epoxy': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
+                            _tmp_mod_dct = {'dbe': 0, 'OH': 0, 'keto': 0, 'CHO': 0, 'COOH': 0}
                             for _key in _tmp_mod_dct.keys():
                                 if _key in _seg[1].keys():
                                     _tmp_mod_dct[_key] += _seg[1][_key]
@@ -154,7 +160,8 @@ class FAtoLPP(object):
                     _oxfa_str = _c_counter + ':' + str(_s[1]['dbe'])
                     _mod_d_lst = []
                     end_type = ''
-                    for _k in ['OH', 'OOH', 'epoxy', 'keto']:
+                    # for _k in ['OH', 'OOH', 'epoxy', 'keto']:
+                    for _k in ['OH', 'keto']:
                         if _s[1][_k] > 0:
                             _mod_d_lst.append(str(_s[1][_k]) + 'x' + _k)
                         else:

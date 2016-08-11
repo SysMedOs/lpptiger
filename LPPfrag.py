@@ -122,12 +122,12 @@ class TheoFrag(object):
                 fa_lst = fa_checker.split(_smiles_sn1_sn2)
                 if len(fa_lst) == 2:
                     fa_lst[1] = 'OC(' + fa_lst[1]
-                    sn1_formula = s_obj.smiles2formula(fa_lst[0])
-                    sn2_formula = s_obj.smiles2formula(fa_lst[1])
+                    sn1_formula = s_obj.smiles2formula(fa_lst[1])
+                    sn2_formula = s_obj.smiles2formula(fa_lst[0])
                     nl_formula_dct['sn1'] = sn1_formula
                     nl_formula_dct['sn2'] = sn2_formula
-                    # print sn1_formula, sn2_formula
-                    # print 'Get FA list', fa_lst
+                    print sn1_formula, sn2_formula
+                    print 'Get FA list', fa_lst
                 else:
                     result_dct['error'] = 'Can NOT process SMILES: ' + _smiles
             else:
@@ -215,12 +215,13 @@ class TheoFrag(object):
         print 'msp Generated'
 
 
-# s = r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(CCCCCCC=O)=O)COC(CCCCCCCCCCCCCCC)=O)=O'
-#
-# frag_obj = TheoFrag()
-#
+s = r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(CCCCCCC=O)=O)COC(CCCCCCCCCCCCCCC)=O)=O'
+
+frag_obj = TheoFrag()
+
 # dct = frag_obj.smiles2frag(s, 'test_LPP', chargelist=['[M+H]+', '[M+Na]+', '[M-H2O+H]+', '[M-H2O+Na]+'], plclass='PC')
-#
-# output = 'test.msp'
-#
-# frag_obj.frag2msp(dct, output)
+dct = frag_obj.smiles2frag(s, 'test_LPP', chargelist=['[M-H]-', '[M+FA-H]-'], plclass='PC')
+
+output = 'test.msp'
+
+frag_obj.frag2msp(dct, output)

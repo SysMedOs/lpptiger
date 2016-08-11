@@ -11,20 +11,42 @@ from rdkit.Chem import AllChem, Draw
 import natsort
 from FAtoLPP import FAtoLPP
 from lpplibs.ExactMassCalc import Elem2Mass
+from PLclassDict import PL_Class_dct
 
-s_hg_txt = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])('
-hg_a_s = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
+# s_hg_txt = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])('
+# hg_a_s = '[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
+# hg_mol = Chem.MolFromSmiles(hg_a_s)
+# AllChem.Compute2DCoords(hg_mol)
+#
+# s1 = r'OC(CCCCCCCCCCCCCCC)=O'
+# s2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+# # s2 = r'OC(CCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
+
+# PC hg
+s_hg_txt = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])('
+hg_a_s = '[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
+
+# PE hg
+# s_hg_txt = 'OP(OCCN)(OC[C@]([H])('
+# hg_a_s = 'OP(OCCN)(OC[C@]([H])(OC(C)=O)COC(C)=O)=O'
+
 hg_mol = Chem.MolFromSmiles(hg_a_s)
 AllChem.Compute2DCoords(hg_mol)
 
 s1 = r'OC(CCCCCCCCCCCCCCC)=O'
-s2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
-# s2 = r'OC(CCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
+# s2 = r'OC(CCCCCCC/C=C\CCCCCCCC)=O'
+# s2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+# s2 = r'OC(CCCCCCC/C=C\C/C=C\C/C=C\CC)=O'
+s2 = r'OC(CCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
+# s2 = r'OC(CCC/C=C\C/C=C\C/C=C\C/C=C\C/C=C\CC)=O'
+# s2 = r'OC(CC/C=C\C/C=C\C/C=C\C/C=C\C/C=C\C/C=C\CC)=O'
 
-pl_name = 'd9_oxPLPC'
+pl_name = 'oxPAPC_OH_KETO_sameDB2'
 pl_name_sdf = pl_name + '.sdf'
 pl_name_csv = pl_name + '.csv'
 pl_name_png = pl_name + '.png'
+
+sdf2img = 0
 
 s1_obj = FAtoLPP(s1)
 s1_lst = s1_obj.get_lpp_all()
@@ -43,7 +65,7 @@ for _s1 in s1_lst:
         _s_s2 = _s2[2]
         tmp_s_pl_lst = [s_hg_txt, _s_s2, ')C', _s_s1, ')=O']
         _s_pl = ''.join(tmp_s_pl_lst)
-        tmp_d_pl_lst = ['d9-oxPC(', _s1[0], '/', _s2[0], ')']
+        tmp_d_pl_lst = ['oxPC(', _s1[0], '/', _s2[0], ')']
         _d_pl = ''.join(tmp_d_pl_lst)
 
         pl_smiles_lst.append(_s_pl)
@@ -62,8 +84,11 @@ for _f in sum_lst:
     tmp_z_mol.SetProp("SMILES", _f[1])
     pl_mol_lst.append(tmp_z_mol)
 
-img = Draw.MolsToGridImage(pl_mol_lst, molsPerRow=6, legends=pl_d_lst, subImgSize=(300, 300))
-img.save(pl_name_png)
+if sdf2img == 1:
+    img = Draw.MolsToGridImage(pl_mol_lst, molsPerRow=8, legends=pl_d_lst, subImgSize=(400, 400))
+    img.save(pl_name_png)
+else:
+    pass
 
 
 w = Chem.SDWriter(pl_name_sdf)
@@ -82,11 +107,11 @@ for _mol in pl_mol_lst:
     elem_db['P'] = smiles_lst.count('P')
     elem_db['N'] = smiles_lst.count('N')
     elem_db['dbe'] = smiles_lst.count('=')
-    elem_db['D'] = 9
-    elem_db['H'] = smiles_lst.count('C') * 2 + 2 + 4 - 2 * smiles_lst.count('=') - 9  # 9D
+    # elem_db['D'] = 9
+    elem_db['H'] = smiles_lst.count('C') * 2 + 2 + 4 - 2 * smiles_lst.count('=')  # 9D
 
     GP_elem_str = ''
-    GP_elem_idx_lst = ['C', 'H', 'D', 'O', 'P', 'N']
+    GP_elem_idx_lst = ['C', 'H', 'O', 'P', 'N']  # , 'D'
 
     for tmp_elem in GP_elem_idx_lst:
         if tmp_elem in elem_db.keys():
@@ -108,8 +133,8 @@ for _mol in pl_mol_lst:
     mz_Na_lst.append(mz_Na)
     elem_lst.append(GP_elem_str)
 
-    _mol.SetProp('Formula', GP_elem_str)
-    _mol.SetProp('Exact_Mass', str(exact_mass))
+    # _mol.SetProp('Formula', GP_elem_str)
+    # _mol.SetProp('Exact_Mass', str(exact_mass))
     w.write(_mol)
 w.close()
 

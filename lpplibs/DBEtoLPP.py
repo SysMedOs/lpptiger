@@ -64,61 +64,61 @@ class DBEox(object):
             _dbe_hydro = ('C(O)/C=C/', {'dbe': 1, 'OH': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
             _dbe_hydro = ('/C=C/C(O)', {'dbe': 1, 'OH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('C(O)CC', {'dbe': 0, 'OH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CC(O)C', {'dbe': 0, 'OH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CCC(O)', {'dbe': 0, 'OH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('C(O)C(O)C', {'dbe': 0, 'OH': 2}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CC(O)C(O)', {'dbe': 0, 'OH': 2}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
+            # ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('C(O)CC', {'dbe': 0, 'OH': 1}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('CC(O)C', {'dbe': 0, 'OH': 1}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('CCC(O)', {'dbe': 0, 'OH': 1}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('C(O)C(O)C', {'dbe': 0, 'OH': 2}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('CC(O)C(O)', {'dbe': 0, 'OH': 2}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
 
         return ox_dbe_lst
 
-    def get_hydroperoxy(self, exact=False):
+    # def get_hydroperoxy(self, exact=False):
+    #
+    #     if not exact:
+    #         exact = False
+    #     else:
+    #         pass
+    #
+    #     ox_dbe_lst = []
+    #
+    #     if exact is False and self.dbe is True:
+    #         _dbe_hydro = ('C(OO)/C=C/', {'dbe': 1, 'OOH': 1}, 'OAP')
+    #         ox_dbe_lst.append(_dbe_hydro)
+    #
+    #     elif exact is True and self.dbe is True:
+    #         _dbe_hydro = ('C(OO)/C=C/', {'dbe': 1, 'OOH': 1}, 'OAP')
+    #         ox_dbe_lst.append(_dbe_hydro)
+    #         _dbe_hydro = ('/C=C/C(OO)', {'dbe': 1, 'OOH': 1}, 'OAP')
+    #         ox_dbe_lst.append(_dbe_hydro)
+    #
+    #     return ox_dbe_lst
 
-        if not exact:
-            exact = False
-        else:
-            pass
-
-        ox_dbe_lst = []
-
-        if exact is False and self.dbe is True:
-            _dbe_hydro = ('C(OO)/C=C/', {'dbe': 1, 'OOH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-
-        elif exact is True and self.dbe is True:
-            _dbe_hydro = ('C(OO)/C=C/', {'dbe': 1, 'OOH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('/C=C/C(OO)', {'dbe': 1, 'OOH': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-
-        return ox_dbe_lst
-
-    def get_epoxy(self, exact=False):
-
-        if not exact:
-            exact = False
-        else:
-            pass
-
-        ox_dbe_lst = []
-
-        if exact is False and self.dbe is True:
-            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, 'epoxy': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-
-        elif exact is True and self.dbe is True:
-            _dbe_hydro = ('C1C(O1)C', {'dbe': 0, 'epoxy': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CC1C(O1)', {'dbe': 0, 'epoxy': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
-
-        return ox_dbe_lst
+    # def get_epoxy(self, exact=False):
+    #
+    #     if not exact:
+    #         exact = False
+    #     else:
+    #         pass
+    #
+    #     ox_dbe_lst = []
+    #
+    #     if exact is False and self.dbe is True:
+    #         _dbe_hydro = ('C1C(O1)C', {'dbe': 0, 'epoxy': 1}, 'OAP')
+    #         ox_dbe_lst.append(_dbe_hydro)
+    #
+    #     elif exact is True and self.dbe is True:
+    #         _dbe_hydro = ('C1C(O1)C', {'dbe': 0, 'epoxy': 1}, 'OAP')
+    #         ox_dbe_lst.append(_dbe_hydro)
+    #         _dbe_hydro = ('CC1C(O1)', {'dbe': 0, 'epoxy': 1}, 'OAP')
+    #         ox_dbe_lst.append(_dbe_hydro)
+    #
+    #     return ox_dbe_lst
 
     def get_keto(self, exact=False):
 
@@ -132,16 +132,18 @@ class DBEox(object):
         if exact is False and self.dbe is True:
             _dbe_hydro = ('C(=O)/C=C/', {'dbe': 1, 'keto': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('C(=O)CC', {'dbe': 0, 'keto': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('C(=O)CC', {'dbe': 0, 'keto': 1}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
 
         elif exact is True and self.dbe is True:
             _dbe_hydro = ('C(=O)/C=C/', {'dbe': 1, 'keto': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('C(=O)CC', {'dbe': 0, 'keto': 1}, 'OAP')
+            _dbe_hydro = ('/C=C/C(=O)', {'dbe': 1, 'keto': 1}, 'OAP')
             ox_dbe_lst.append(_dbe_hydro)
-            _dbe_hydro = ('CCC(=O)', {'dbe': 0, 'keto': 1}, 'OAP')
-            ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('C(=O)CC', {'dbe': 0, 'keto': 1}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
+            # _dbe_hydro = ('CCC(=O)', {'dbe': 0, 'keto': 1}, 'OAP')
+            # ox_dbe_lst.append(_dbe_hydro)
 
         return ox_dbe_lst
 
@@ -162,8 +164,8 @@ class DBEox(object):
         ox_dbe_lst = []
         if self.dbe is True:
             ox_dbe_lst.extend(self.get_hydroxy(exact=_exact))
-            ox_dbe_lst.extend(self.get_hydroperoxy(exact=_exact))
-            ox_dbe_lst.extend(self.get_epoxy(exact=_exact))
+            # ox_dbe_lst.extend(self.get_hydroperoxy(exact=_exact))
+            # ox_dbe_lst.extend(self.get_epoxy(exact=_exact))
             ox_dbe_lst.extend(self.get_keto(exact=_exact))
             ox_dbe_lst.extend(self.get_clevage())
             ox_dbe_lst.extend(self.get_shift())

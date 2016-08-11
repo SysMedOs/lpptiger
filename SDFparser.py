@@ -8,8 +8,8 @@ from rdkit import Chem
 
 from lpplibs.ExactMassCalc import Elem2Mass
 
-w = Chem.SDWriter('merged_info3.sdf')
-suppl = Chem.SDMolSupplier('merged_test.sdf')
+w = Chem.SDWriter('oxPLPC_info.sdf')
+suppl = Chem.SDMolSupplier('oxPLPC.sdf')
 mzcalc = Elem2Mass()
 
 # exact_mass_lst = []
