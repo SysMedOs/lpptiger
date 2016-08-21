@@ -36,7 +36,7 @@ class TheoFrag(object):
                           'd9-oxPC':
                               r'[O-]P(OCC[N+](C([2H])([2H])[2H])(C([2H])([2H])[2H])C([2H])([2H])[2H])(OC[C@]([H])(',
                           'PC': r'[O-]P(OCC[N+](C)(C)C)(OC[C@]([H])(',
-                          'PE': r'OP(OCC[N])(OC[C@]([H])(',
+                          'PE': r'OP(OCCN)(OC[C@]([H])(',
                           'PG': r'OP(OCC(O)CO)(OC[C@]([H])(',
                           'PS': r'OP(OCC(C(O)=O)N)(OC[C@]([H])('}
         self.pl_hg_lst = ['PA', 'PC', 'PE', 'PG', 'PS', 'PC_d9', 'd9-oxPC']
@@ -55,12 +55,12 @@ class TheoFrag(object):
     def smiles2frag(self, usr_smiles, description, plclass=None, chargelist=None):
 
         """
-
         :param usr_smiles: str, The SMILES code to process
         :param description: str, The description of the SMILES code compound
         :param chargelist: list, list of charge status use the key in self.charge_dct e.g. ['[M+H]+', '[M+Na]+']
         :return: dict, result_dct
         """
+
         if not plclass:
             plclass = 'PC'
         if not chargelist:

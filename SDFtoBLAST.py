@@ -41,6 +41,7 @@ class AbbrFrag(object):
         self.fa_dct = {'C': 1, 'H': 2, 'O': 2}
         self.water_dct = {'H': 2, 'O': 1}
 
+
     def get_mz(self, ion_df):
 
         mz_lst = []
