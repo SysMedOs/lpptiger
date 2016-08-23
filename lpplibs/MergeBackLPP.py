@@ -102,6 +102,32 @@ def pg_lpp(usr_sn1, usr_sn2):
 
 
 @lpp_merge(TheoLPP)
+def pi_lpp(usr_sn1, usr_sn2):
+    # Inositol, IUPAC (1R,2R,3S,4S,5R,6S)-cyclohexane-1,2,3,4,5,6-hexol
+    # O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O]
+    pi_hg = r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O])(OCC([H])('
+    # sn2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+    gly_part = r')C'
+    # sn2 = r'OC(CCCCCCCCCCCCCCC)=O'
+    pl_end = r')=O'
+    pl_str = ''.join([pi_hg, usr_sn1, gly_part, usr_sn2, pl_end])
+    return pl_str
+
+
+@lpp_merge(TheoLPP)
+def pi4p_lpp(usr_sn1, usr_sn2):
+    # Inositol-4-phospate
+    # O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O]
+    pi4p_hg = r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(OCC([H])('
+    # sn2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+    gly_part = r')C'
+    # sn2 = r'OC(CCCCCCCCCCCCCCC)=O'
+    pl_end = r')=O'
+    pl_str = ''.join([pi4p_hg, usr_sn1, gly_part, usr_sn2, pl_end])
+    return pl_str
+
+
+@lpp_merge(TheoLPP)
 def ps_lpp(usr_sn1, usr_sn2):
     ps_hg = r'OP(OCC(C(O)=O)N)(OCC([H])('
     # sn2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
@@ -115,8 +141,12 @@ def ps_lpp(usr_sn1, usr_sn2):
 sn1 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
 sn2 = r'OC(CCCCCCCCCCCCCCC)=O'
 
-pa_lpp(sn1, sn2)
+# pa_lpp(sn1, sn2)
+# pc_lpp(sn1, sn2)
+# pe_lpp(sn1, sn2)
+# pg_lpp(sn1, sn2)
+# pi_lpp(sn1, sn2)
+# pi4p_lpp(sn1, sn2)
+# ps_lpp(sn1, sn2)
+
 pc_lpp(sn1, sn2)
-pe_lpp(sn1, sn2)
-pg_lpp(sn1, sn2)
-ps_lpp(sn1, sn2)
