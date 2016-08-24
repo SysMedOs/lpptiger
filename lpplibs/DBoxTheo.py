@@ -20,8 +20,8 @@ class TheoDB_Oxidizer:
         print("Start to oxidize C=C -->")
 
     @staticmethod
-    def mod_sum():
-        mod_info_df = pd.read_csv('ModConfig.csv', index_col=0, dtype={'OAP': np.int32})
+    def mod_sum(usr_mod_table):
+        mod_info_df = pd.read_csv(usr_mod_table, index_col=0, dtype={'OAP': np.int32})
         # print(mod_info_df)
         return mod_info_df
 
@@ -34,7 +34,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
     """
 
     def _bulk_oxidizer(ox_func):
-        def __bulk_oxidizer(usr_fa_dct):
+        def __bulk_oxidizer(usr_fa_dct, usr_mod_table):
 
             num_fileds_lst = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH']
 
@@ -42,81 +42,91 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             print('fa_dct', fa_dct)
             db_count = fa_dct['DB_count']
 
-            mod_info_df = theodb_oxidizer_cls.mod_sum()
+            mod_info_df = theodb_oxidizer_cls.mod_sum(usr_mod_table)
             mod_typ_lst = mod_info_df.columns.tolist()
             mod_sum_df = pd.DataFrame()
-            # change the data type from str to int
-            mod_info_df.loc['OAP', :] = mod_info_df.loc['OAP', :].astype(int)
-            mod_info_df.loc['OCP', :] = mod_info_df.loc['OCP', :].astype(int)
-            mod_info_df.loc['DB', :] = mod_info_df.loc['DB', :].astype(int)
-            mod_info_df.loc['OH', :] = mod_info_df.loc['OH', :].astype(int)
-            mod_info_df.loc['KETO', :] = mod_info_df.loc['KETO', :].astype(int)
-            mod_info_df.loc['CHO', :] = mod_info_df.loc['CHO', :].astype(int)
-            mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
-
-            # start oxidation
-            for db_i in range(1, db_count + 1):
-                for _mod in mod_typ_lst:
-                    _tmp_mod_lst = mod_sum_df.columns.tolist()
-                    if len(_tmp_mod_lst) <= len(mod_typ_lst) and db_i == 1:
-                        mod_sum_df[''.join([str(db_i), '-', _mod])] = mod_info_df[_mod]
-                    else:
-                        for _tmp_mod in _tmp_mod_lst:
-                            _tmp_mod_lst = _tmp_mod.split('-')
-                            # print('_tmp_mod_lst', _tmp_mod_lst[-2], _tmp_mod_lst)
-                            if int(_tmp_mod_lst[-2]) == db_i - 1:
-                                _ocp_checker = mod_sum_df.loc['OCP', _tmp_mod]
-                                if _ocp_checker == 0:
-                                    _new_mod = ''.join([_tmp_mod, '-', str(db_i), '-', _mod])
-                                    # print(_new_mod)
-                                    # this order is important for the SMILES generated
-                                    mod_sum_df.loc[:, _new_mod] = mod_sum_df[_tmp_mod] + mod_info_df[_mod]
+            
+            if db_count > 0:
+                # change the data type from str to int
+                mod_info_df.loc['OAP', :] = mod_info_df.loc['OAP', :].astype(int)
+                mod_info_df.loc['OCP', :] = mod_info_df.loc['OCP', :].astype(int)
+                mod_info_df.loc['DB', :] = mod_info_df.loc['DB', :].astype(int)
+                mod_info_df.loc['OH', :] = mod_info_df.loc['OH', :].astype(int)
+                mod_info_df.loc['KETO', :] = mod_info_df.loc['KETO', :].astype(int)
+                mod_info_df.loc['CHO', :] = mod_info_df.loc['CHO', :].astype(int)
+                mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
+    
+                # start oxidation
+                for db_i in range(1, db_count + 1):
+                    for _mod in mod_typ_lst:
+                        _tmp_mod_lst = mod_sum_df.columns.tolist()
+                        if len(_tmp_mod_lst) <= len(mod_typ_lst) and db_i == 1:
+                            mod_sum_df[''.join([str(db_i), '-', _mod])] = mod_info_df[_mod]
+                        else:
+                            for _tmp_mod in _tmp_mod_lst:
+                                _tmp_mod_lst = _tmp_mod.split('-')
+                                # print('_tmp_mod_lst', _tmp_mod_lst[-2], _tmp_mod_lst)
+                                if int(_tmp_mod_lst[-2]) == db_i - 1:
+                                    _ocp_checker = mod_sum_df.loc['OCP', _tmp_mod]
+                                    if _ocp_checker == 0:
+                                        _new_mod = ''.join([_tmp_mod, '-', str(db_i), '-', _mod])
+                                        # print(_new_mod)
+                                        # this order is important for the SMILES generated
+                                        mod_sum_df.loc[:, _new_mod] = mod_sum_df[_tmp_mod] + mod_info_df[_mod]
+                                    else:
+                                        # print('OCP', _ocp_checker, _tmp_mod)
+                                        pass
                                 else:
-                                    print('OCP', _ocp_checker, _tmp_mod)
-                            else:
-                                pass
-            mod_sum_df = mod_sum_df.transpose()
-            mod_sum_df['MOD_NUM'] = mod_sum_df['OAP'] + mod_sum_df['OCP']
+                                    pass
+                mod_sum_df = mod_sum_df.transpose()
+                mod_sum_df['MOD_NUM'] = mod_sum_df['OAP'] + mod_sum_df['OCP']
+    
+                # filter the OCP and OAP. OAP should be full length
+                mod_ocp_sum_df = mod_sum_df.query('OCP == 1')
+                # OAP should have all DB, thus MOD_NUM == db_count
+                mod_oap_sum_df = mod_sum_df.query('OCP == 0 and MOD_NUM == %d' % db_count)
+    
+                # the end of smiles is different for OCP
+                mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
+                mod_ocp_sum_df.loc[mod_ocp_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
+                                                                          mod_ocp_sum_df['SMILES'] + ')=O')
+                mod_ocp_sum_df.is_copy = False
+                mod_oap_sum_idx_lst = mod_oap_sum_df.index.tolist()
+                mod_oap_sum_df.loc[mod_oap_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
+                                                                          mod_oap_sum_df['SMILES'] +
+                                                                          fa_dct['DB_post_part'])
+                mod_oap_sum_df.is_copy = False
+    
+                mod_sum_df = mod_ocp_sum_df.append(mod_oap_sum_df)
+                _full_smiles_lst = mod_sum_df['FULL_SMILES'].tolist()
+                _c_num_lst = []
+                for _smiles in _full_smiles_lst:
+                    _c_num_lst.append(_smiles.count('C'))
+                mod_sum_df.loc[:, 'C_NUM'] = _c_num_lst
+                mod_sum_df.is_copy = False
+    
+                # mod_sum_df.to_csv('oxDB.csv')
+                num_fileds_lst.append('C_NUM')
+                mod_sum_df[num_fileds_lst] = mod_sum_df[num_fileds_lst].astype(str)
+                mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
+                                                   + mod_sum_df['DB'] + '[' + mod_sum_df['DB'] + 'xDB,'
+                                                   + mod_sum_df['OH'] + 'xOH,'
+                                                   + mod_sum_df['KETO'] + 'xKETO]<CHO@C'
+                                                   + mod_sum_df['CHO'] + ',COOH@C'
+                                                   + mod_sum_df['COOH'] + '>{OAP:'
+                                                   + mod_sum_df['OAP'] + ',OCP:'
+                                                   + mod_sum_df['OCP'] + '}')
+                mod_sum_t_df = mod_sum_df.transpose()
+                # mod_sum_df.to_csv('oxDB_t.csv')
+            
+            else:
+                unox_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
+                            'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
+                            'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
+                            'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count']}
+                mod_sum_df = pd.DataFrame(unox_dct, index=['0-no_oxidation'])
 
-            # filter the OCP and OAP. OAP should be full length
-            mod_ocp_sum_df = mod_sum_df.query('OCP == 1')
-            # OAP should have all DB, thus MOD_NUM == db_count
-            mod_oap_sum_df = mod_sum_df.query('OCP == 0 and MOD_NUM == %d' % db_count)
-
-            # the end of smiles is different for OCP
-            mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
-            mod_ocp_sum_df.loc[mod_ocp_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
-                                                                      mod_ocp_sum_df['SMILES'] + ')=O')
-            mod_ocp_sum_df.is_copy = False
-            mod_oap_sum_idx_lst = mod_oap_sum_df.index.tolist()
-            mod_oap_sum_df.loc[mod_oap_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
-                                                                      mod_oap_sum_df['SMILES'] +
-                                                                      fa_dct['DB_post_part'])
-            mod_oap_sum_df.is_copy = False
-
-            mod_sum_df = mod_ocp_sum_df.append(mod_oap_sum_df)
-            _full_smiles_lst = mod_sum_df['FULL_SMILES'].tolist()
-            _c_num_lst = []
-            for _smiles in _full_smiles_lst:
-                _c_num_lst.append(_smiles.count('C'))
-            mod_sum_df.loc[:, 'C_NUM'] = _c_num_lst
-            mod_sum_df.is_copy = False
-
-            mod_sum_df.to_csv('oxDB.csv')
-            num_fileds_lst.append('C_NUM')
-            mod_sum_df[num_fileds_lst] = mod_sum_df[num_fileds_lst].astype(str)
-            mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
-                                               + mod_sum_df['DB'] + '[' + mod_sum_df['DB'] + 'xDB,'
-                                               + mod_sum_df['OH'] + 'xOH,'
-                                               + mod_sum_df['KETO'] + 'xKETO]<CHO@C'
-                                               + mod_sum_df['CHO'] + ',COOH@C'
-                                               + mod_sum_df['COOH'] + '>{OAP:'
-                                               + mod_sum_df['OAP'] + ',OCP:'
-                                               + mod_sum_df['OCP'] + '}')
-            mod_sum_t_df = mod_sum_df.transpose()
-            mod_sum_df.to_csv('oxDB_t.csv')
-
-            print(mod_sum_df.shape)
+            return mod_sum_df
 
         return __bulk_oxidizer
     return _bulk_oxidizer
@@ -160,7 +170,7 @@ def oxidizer(fa_link_dct):
             if len(pre_db_lst) >= 3:
                 db_str = pre_db_lst[1]
                 db_counter = db_str.count('C/C=C\\')
-                print('db_str', db_str, 'db_counter', db_counter)
+                # print('db_str', db_str, 'db_counter', db_counter)
 
                 db_info_dct['DB_count'] = db_counter
                 db_info_dct['DB_pre_part'] = ''.join([_usr_fa_pre_str, pre_db_lst[0]])
@@ -177,9 +187,17 @@ def oxidizer(fa_link_dct):
             else:
                 pass
         else:
-            pass
+            db_info_dct['DB_full_fa'] = _usr_fa_smiles
+            db_info_dct['DB_LINK_type'] = _usr_fa_link_str
+            db_info_dct['DB_C_count'] = _usr_fa_smiles.count('C')
+            db_info_dct['DB_count'] = 0
+    else:
+        db_info_dct['DB_full_fa'] = _usr_fa_smiles
+        db_info_dct['DB_LINK_type'] = _usr_fa_link_str
+        db_info_dct['DB_C_count'] = _usr_fa_smiles.count('C')
+        db_info_dct['DB_count'] = 0
 
-        return db_info_dct
+    return db_info_dct
 
 
 def fa_link_filter(usr_fa_smiles):
@@ -230,7 +248,8 @@ def fa_link_filter(usr_fa_smiles):
 # usr_fa = 'OC(CCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
 # usr_fa = 'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
 # usr_fa = 'OCCCCCCCC/C=C\CCCCCCCC'
-usr_fa = r'O/C=C\CCCCCC/C=C\CCCCCCCC'
-
-fa_dct = fa_link_filter(usr_fa)
-oxidizer(fa_dct)
+# usr_fa = r'O/C=C\CCCCCC/C=C\CCCCCCCC'
+#
+# fa_dct = fa_link_filter(usr_fa)
+# mod_df = oxidizer(fa_dct)
+# print('mod_df', mod_df.shape)
