@@ -108,6 +108,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # mod_sum_df.to_csv('oxDB.csv')
                 num_fileds_lst.append('C_NUM')
                 mod_sum_df[num_fileds_lst] = mod_sum_df[num_fileds_lst].astype(str)
+                # here CHO@C & COOH@C is 1 or 0 for T/F
                 mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
                                                    + mod_sum_df['DB'] + '[' + mod_sum_df['DB'] + 'xDB,'
                                                    + mod_sum_df['OH'] + 'xOH,'

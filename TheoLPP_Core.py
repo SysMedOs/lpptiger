@@ -6,24 +6,34 @@
 
 
 from __future__ import print_function
-# import re
+import time
 
 import pandas as pd
+
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
 from lpplibs.PLParser import PLParser
 from lpplibs.DBoxTheo import fa_link_filter, oxidizer
 from lpplibs import MergeBackLPP
+from lpplibs.AbbrGenerator import AbbrGenerator
 
+t_start = time.clock()
 
 pl_table = './lpplibs/CM_NormalLipids.xlsx'
 fa_table = './lpplibs/FA_list.csv'
 mod_table = './lpplibs/ModConfig.csv'
 
+save_sdf = 'new_method_sdf.sdf'
+sdf_writer = Chem.SDWriter(save_sdf)
+sdf_dct = {}
+
 pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
 
 parser = PLParser()
+abbr_gen = AbbrGenerator()
 
-pl_df = pd.read_excel(pl_table, sheetname=2)
+pl_df = pd.read_excel(pl_table, sheetname=1)
 fa_df = pd.read_csv(fa_table, index_col=0)
 
 print(pl_df.head())
@@ -60,30 +70,85 @@ for (_idx, _row) in pl_df.iterrows():
 
         for (_sn1_idx, _sn1_row) in sn1_mod_sum_df.iterrows():
             _sn1_mod_smiles = _sn1_row['FULL_SMILES']
+            _sn1_abbr_str, _sn1_typ_str = abbr_gen.decode(_sn1_row['FA_CHECKER'])
             # print(_sn1_row)
             for (_sn2_idx, _sn2_row) in sn2_mod_sum_df.iterrows():
                 _sn2_mod_smiles = _sn2_row['FULL_SMILES']
+                _sn2_abbr_str, _sn2_typ_str = abbr_gen.decode(_sn2_row['FA_CHECKER'])
                 # print(_sn2_row)
 
-                # TODO(zhixu.ni@uni-leipzig.de): take more info of each mod from sn1 & sn2
-                # _lpp_info_df = pd.DataFrame(data={'sn1': _sn1_row, 'sn2': _sn2_row})
+                # TODO(zhixu.ni@uni-leipzig.de): Add more info such as element composition in df
 
-                _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, _sn1_mod_smiles, _sn2_mod_smiles)
-                _lpp_info_dct = {'LPP_ORIGIN': _pl_abbr, 'LPP_SMILES': _lpp_smiles, 'LPP_CLASS': _pl_hg_abbr,
-                            'SN1_SMILES': _sn1_mod_smiles, 'SN2_SMILES': _sn2_mod_smiles,
-                            'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER']}
-                _lpp_id_str = ''.join([_pl_hg_abbr, '(', _sn1_row['FA_CHECKER'], '/', _sn2_row['FA_CHECKER'], ')'])
-                _lpp_info_se = pd.Series(data=_lpp_info_dct)
-                _pl_lpp_df[_lpp_id_str] = _lpp_info_se
+                _oap_ocp_lst = [_sn1_typ_str, _sn2_typ_str]
+                _lpp_typ = ''
+                if 'OCP' in _oap_ocp_lst:
+                    _lpp_typ = 'OCP'
+                elif ''.join(_oap_ocp_lst) in ['OAP', 'OAPOAP']:
+                    _lpp_typ = 'OAP'
 
-                del _lpp_info_dct, _lpp_info_se
+                # only export OAP & OCP
+                if _lpp_typ in ['OAP', 'OCP']:
+                    _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, _sn1_mod_smiles, _sn2_mod_smiles)
+                    _lpp_id_str = str(''.join([_pl_hg_abbr, '(', _sn1_abbr_str, '/', _sn2_abbr_str, ')']))
+                    # _lpp_name_str = _lpp_id_str.replace('/', '_')
+                    # _lpp_name_str = _lpp_name_str.replace(':', '-')
+                    # _lpp_name_str = _lpp_name_str.replace('@', 'at')
+                    # _lpp_name_str = _lpp_name_str.replace('<', '[')
+                    # _lpp_name_str = _lpp_name_str.replace('>', ']')
+                    # print (_lpp_name_str)
+                    _lpp_info_dct = {'LPP_ORIGIN': _pl_abbr, 'LPP_SMILES': _lpp_smiles, 'LPP_CLASS': _pl_hg_abbr,
+                                     'SN1_SMILES': _sn1_mod_smiles, 'SN2_SMILES': _sn2_mod_smiles,
+                                     'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
+                                     'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str, 'LM_ID': _lpp_id_str}
 
+                    _lpp_info_se = pd.Series(data=_lpp_info_dct)
+                    _pl_lpp_df[_lpp_id_str] = _lpp_info_se
+
+                    # check if same lpp generated already
+                    # Currently use bulk settings
+                    if _lpp_id_str in sdf_dct.keys():
+                        _lpp_origin = sdf_dct[_lpp_id_str]['LPP_ORIGIN']
+                        _lpp_origin_lst = _lpp_origin.split(',')
+                        if _pl_abbr in _lpp_origin_lst:
+                            pass
+                        else:
+                            _lpp_origin_lst.append(_pl_abbr)
+                            sdf_dct[_lpp_id_str]['LPP_ORIGIN'] = ','.join(_lpp_origin_lst)
+                    else:
+                        sdf_dct[_lpp_id_str] = _lpp_info_dct.copy()
+
+                    # clean memory by deleting these dicts and series
+                    del _lpp_info_dct, _lpp_info_se
+
+        # generate summary table
         _pl_lpp_df = _pl_lpp_df.transpose()
         print('_pl_lpp_df', _pl_lpp_df.shape)
-        print(_pl_lpp_df.head(5))
+        # print(_pl_lpp_df.head())
         sum_theo_lpp_dct[_pl_abbr] = _pl_lpp_df
+
+        # create sdf
+        # for (_lpp_i, _lpp_r) in _pl_lpp_df.iterrows():
 
 sum_theo_lpp_pl = pd.Panel(data=sum_theo_lpp_dct)
 print(sum_theo_lpp_pl.shape)
 
-print('==>==>==> %i of phospholipids processed==> ==> Finished !!!!' % len(c_lst))
+# write to sdf
+print('==>Start to generate SDF ==>')
+for _k_lpp in sdf_dct.keys():
+    _lpp_dct = sdf_dct[_k_lpp]
+    _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
+    print(_lpp_smiles)
+    _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
+    AllChem.Compute2DCoords(_lpp_mol)
+    _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
+
+    for _k in _lpp_dct.keys():
+        _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
+
+    sdf_writer.write(_lpp_mol)
+
+sdf_writer.close()
+
+t_spent = time.clock() - t_start
+print('==>==>%i of LPP generated ==> ==> ' % len(sdf_dct.keys()))
+print('==>==>==> %i of phospholipids processed in %.3fs ==> ==> ==> Finished !!!!!!' % (len(c_lst), t_spent))
