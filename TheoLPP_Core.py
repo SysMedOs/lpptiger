@@ -24,7 +24,7 @@ pl_table = './lpplibs/CM_NormalLipids.xlsx'
 fa_table = './lpplibs/FA_list.csv'
 mod_table = './lpplibs/ModConfig.csv'
 
-save_sdf = 'new_method_sdf.sdf'
+save_sdf = 'new_method_sdf_all.sdf'
 sdf_writer = Chem.SDWriter(save_sdf)
 sdf_dct = {}
 
@@ -38,6 +38,8 @@ fa_df = pd.read_csv(fa_table, index_col=0)
 
 print(pl_df.head())
 c_lst = []
+
+fa_lpp_df_dct ={}
 
 sum_theo_lpp_dct = {}
 for (_idx, _row) in pl_df.iterrows():
@@ -61,21 +63,37 @@ for (_idx, _row) in pl_df.iterrows():
         _pl_sn2_abbr = _pl_elem_lst[2]
         _pl_sn1_smiles = fa_df.loc[_pl_sn1_abbr, 'SMILES']
         _pl_sn2_smiles = fa_df.loc[_pl_sn2_abbr, 'SMILES']
-        print('sn1 =>', _pl_sn1_smiles, '|| sn2 =>', _pl_sn1_smiles)
-        sn1_link_dct = fa_link_filter(_pl_sn1_smiles)
-        sn1_mod_sum_df = oxidizer(sn1_link_dct, mod_table)
+        print('sn1 =>', _pl_sn1_smiles, '|| sn2 =>', _pl_sn2_smiles)
 
-        sn2_link_dct = fa_link_filter(_pl_sn2_smiles)
-        sn2_mod_sum_df = oxidizer(sn2_link_dct, mod_table)
+        # check if FA already oxidized to speed up
+        if _pl_sn1_abbr in fa_lpp_df_dct.keys():
+            sn1_mod_sum_df = fa_lpp_df_dct[_pl_sn1_abbr]
+        else:
+            sn1_link_dct = fa_link_filter(_pl_sn1_smiles)
+            sn1_mod_sum_df = oxidizer(sn1_link_dct, mod_table)
+            fa_lpp_df_dct[_pl_sn1_abbr] = sn1_mod_sum_df.copy()
+            
+        if _pl_sn2_abbr in fa_lpp_df_dct.keys():
+            sn2_mod_sum_df = fa_lpp_df_dct[_pl_sn2_abbr]
+        else:
+            sn2_link_dct = fa_link_filter(_pl_sn2_smiles)
+            sn2_mod_sum_df = oxidizer(sn2_link_dct, mod_table)
+            fa_lpp_df_dct[_pl_sn2_abbr] = sn2_mod_sum_df.copy()
 
         for (_sn1_idx, _sn1_row) in sn1_mod_sum_df.iterrows():
             _sn1_mod_smiles = _sn1_row['FULL_SMILES']
-            _sn1_abbr_str, _sn1_typ_str = abbr_gen.decode(_sn1_row['FA_CHECKER'])
+            _sn1_abbr_str = _sn1_row['FA_ABBR']
+            _sn1_typ_str = _sn1_row['FA_TYPE']
+            # _sn1_abbr_str, _sn1_typ_str = abbr_gen.decode(_sn1_row['FA_CHECKER'])
             # print(_sn1_row)
             for (_sn2_idx, _sn2_row) in sn2_mod_sum_df.iterrows():
                 _sn2_mod_smiles = _sn2_row['FULL_SMILES']
-                _sn2_abbr_str, _sn2_typ_str = abbr_gen.decode(_sn2_row['FA_CHECKER'])
+                _sn2_abbr_str = _sn2_row['FA_ABBR']
+                _sn2_typ_str = _sn2_row['FA_TYPE']
+                # _sn2_abbr_str, _sn2_typ_str = abbr_gen.decode(_sn2_row['FA_CHECKER'])
                 # print(_sn2_row)
+
+                # print('sn1 LPP =>', _sn1_abbr_str, ' | sn2 LPP =>', _sn2_abbr_str)
 
                 # TODO(zhixu.ni@uni-leipzig.de): Add more info such as element composition in df
 
@@ -122,7 +140,8 @@ for (_idx, _row) in pl_df.iterrows():
 
         # generate summary table
         _pl_lpp_df = _pl_lpp_df.transpose()
-        print('_pl_lpp_df', _pl_lpp_df.shape)
+        print('==> %i of LPP generated !!' % _pl_lpp_df.shape[0])
+        print('==> ==> Move to next lipid==> ')
         # print(_pl_lpp_df.head())
         sum_theo_lpp_dct[_pl_abbr] = _pl_lpp_df
 
@@ -134,10 +153,11 @@ print(sum_theo_lpp_pl.shape)
 
 # write to sdf
 print('==>Start to generate SDF ==>')
+print('!! %i structures in total !!' % len(sdf_dct.keys()))
 for _k_lpp in sdf_dct.keys():
     _lpp_dct = sdf_dct[_k_lpp]
     _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
-    print(_lpp_smiles)
+    # print(_lpp_smiles)
     _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
     AllChem.Compute2DCoords(_lpp_mol)
     _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))

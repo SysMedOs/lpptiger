@@ -27,7 +27,7 @@ class AbbrGenerator(object):
 
         mod_rgx = re.compile(r'[1-9]x\w{2,13}')  # filter out 0 mods, support to hydroperoxyl (12 letters)
         end_rgx = re.compile(r'CHO@C1|COOH@C1')  # filter out the correct end
-        typ_rgx = re.compile(r'O[AC]P[:]1')
+        typ_rgx = re.compile(r'O[AC]P[:][1-9]')
 
         lpp_code_checker = re.match(lpp_code_rgx, usr_code)
         if lpp_code_checker:
@@ -47,9 +47,15 @@ class AbbrGenerator(object):
                     lpp_abbr_str = fa_info_dct['fa']
                     lpp_typ_str = ''
             # check if OAP or OCP
-            if len(mod_lst) + len(end_lst) > 0 and len(typ_lst) == 1:
+            if len(mod_lst) + len(end_lst) > 0 and len(typ_lst) >= 1:
 
-                lpp_typ_str = typ_lst[0][0:3]
+                if len(typ_lst) == 1:
+                    lpp_typ_str = typ_lst[0][0:3]
+                elif len(typ_lst) == 2:
+                    lpp_typ_str = 'OCP'
+                else:
+                    lpp_typ_str = ''
+
 
                 if len(mod_lst) > 0:
                     _mod_str = ','.join(mod_lst)
@@ -64,9 +70,8 @@ class AbbrGenerator(object):
 
                 lpp_abbr_str = ''.join([fa_info_dct['fa'], _mod_str, _end_str])
 
+            # lpp_info_lst = (lpp_abbr_str, lpp_typ_str)
             return lpp_abbr_str, lpp_typ_str
-
-
 
 # x = 'P-18:1[1xDB,0xOH,1xKETO]<CHO@C0,COOH@C0>{OAP:1,OCP:0}'
 # x = 'P-18:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}'

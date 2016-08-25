@@ -11,6 +11,8 @@ import re
 import numpy as np
 import pandas as pd
 
+from AbbrGenerator import AbbrGenerator
+
 # from rdkit import Chem
 # from rdkit.Chem import Draw
 
@@ -39,8 +41,12 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             num_fileds_lst = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH']
 
             fa_dct = ox_func(usr_fa_dct)
-            print('fa_dct', fa_dct)
+            # print('fa_dct', fa_dct)
             db_count = fa_dct['DB_count']
+            if fa_dct['DB_LINK_type'] in ['O-', 'P-']:
+                ocp_end_part = ''
+            else:
+                ocp_end_part = ')=O'
 
             mod_info_df = theodb_oxidizer_cls.mod_sum(usr_mod_table)
             mod_typ_lst = mod_info_df.columns.tolist()
@@ -89,7 +95,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # the end of smiles is different for OCP
                 mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
                 mod_ocp_sum_df.loc[mod_ocp_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
-                                                                          mod_ocp_sum_df['SMILES'] + ')=O')
+                                                                          mod_ocp_sum_df['SMILES'] + ocp_end_part)
                 mod_ocp_sum_df.is_copy = False
                 mod_oap_sum_idx_lst = mod_oap_sum_df.index.tolist()
                 mod_oap_sum_df.loc[mod_oap_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
@@ -117,6 +123,16 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                                    + mod_sum_df['COOH'] + '>{OAP:'
                                                    + mod_sum_df['OAP'] + ',OCP:'
                                                    + mod_sum_df['OCP'] + '}')
+                abbr_gen = AbbrGenerator()
+                mod_sum_df['FA_ABBR'] = ''
+                mod_sum_df['FA_TYPE'] = ''
+                for (_fa_idx, _fa_row) in mod_sum_df.iterrows():
+                    _fa_code = str(_fa_row['FA_CHECKER'])
+                    _fa_abbr, _fa_typ = abbr_gen.decode(_fa_code)
+                    _fa_row['FA_ABBR'] = _fa_abbr
+                    # print('_fa_code', _fa_code)
+                    # print(_fa_typ, ' | ', _fa_abbr)
+                    _fa_row['FA_TYPE'] = _fa_typ
                 mod_sum_t_df = mod_sum_df.transpose()
                 # mod_sum_df.to_csv('oxDB_t.csv')
             
@@ -124,7 +140,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 unox_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
                             'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                             'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
-                            'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count']}
+                            'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
+                            'FA_ABBR': '%i:0' % fa_dct['DB_C_count'], 'FA_TYPE': ''}
                 mod_sum_df = pd.DataFrame(unox_dct, index=['0-no_oxidation'])
 
             return mod_sum_df
@@ -177,6 +194,7 @@ def oxidizer(fa_link_dct):
                 db_info_dct['DB_pre_part'] = ''.join([_usr_fa_pre_str, pre_db_lst[0]])
                 db_info_dct['DB_main_part'] = pre_db_lst[1]
                 db_info_dct['DB_post_part'] = ''.join([pre_db_lst[-1], _usr_fa_post_str])
+                db_info_dct['DB_end_part'] = _usr_fa_post_str
                 if (''.join([db_info_dct['DB_pre_part'], db_info_dct['DB_main_part'], db_info_dct['DB_post_part']])
                         == _usr_fa_smiles):
                     db_info_dct['DB_full_fa'] = _usr_fa_smiles
@@ -188,11 +206,13 @@ def oxidizer(fa_link_dct):
             else:
                 pass
         else:
+            db_info_dct['DB_end_part'] = _usr_fa_post_str
             db_info_dct['DB_full_fa'] = _usr_fa_smiles
             db_info_dct['DB_LINK_type'] = _usr_fa_link_str
             db_info_dct['DB_C_count'] = _usr_fa_smiles.count('C')
             db_info_dct['DB_count'] = 0
     else:
+        db_info_dct['DB_end_part'] = _usr_fa_post_str
         db_info_dct['DB_full_fa'] = _usr_fa_smiles
         db_info_dct['DB_LINK_type'] = _usr_fa_link_str
         db_info_dct['DB_C_count'] = _usr_fa_smiles.count('C')
@@ -243,14 +263,15 @@ def fa_link_filter(usr_fa_smiles):
     else:
         fa_link_dct = {}
 
-    print(fa_link_dct)
+    # print(fa_link_dct)
     return fa_link_dct
 
+# mod_table = 'ModConfig.csv'
 # usr_fa = 'OC(CCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
-# usr_fa = 'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
-# usr_fa = 'OCCCCCCCC/C=C\CCCCCCCC'
-# usr_fa = r'O/C=C\CCCCCC/C=C\CCCCCCCC'
-#
+# # usr_fa = 'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+# # usr_fa = 'OCCCCCCCC/C=C\CCCCCCCC'
+# # usr_fa = r'O/C=C\CCCCCC/C=C\CCCCCCCC'
+# #
 # fa_dct = fa_link_filter(usr_fa)
-# mod_df = oxidizer(fa_dct)
+# mod_df = oxidizer(fa_dct, mod_table)
 # print('mod_df', mod_df.shape)
