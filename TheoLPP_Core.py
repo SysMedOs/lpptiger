@@ -24,11 +24,12 @@ pl_table = './lpplibs/CM_NormalLipids.xlsx'
 fa_table = './lpplibs/FA_list.csv'
 mod_table = './lpplibs/ModConfig.csv'
 
-save_sdf = 'new_method_sdf_all.sdf'
+save_sdf = 'new_method_sdf_PG_max_1keto_1lessDB.sdf'
 sdf_writer = Chem.SDWriter(save_sdf)
 sdf_dct = {}
 
-pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
+# pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
+pl_class_use_lst = ['PG']
 
 parser = PLParser()
 abbr_gen = AbbrGenerator()

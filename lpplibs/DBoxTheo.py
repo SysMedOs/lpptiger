@@ -85,6 +85,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                 else:
                                     pass
                 mod_sum_df = mod_sum_df.transpose()
+                # no more than one keto & max reduce 1 DB
+                _min_DB = db_count - 1
+                mod_sum_df = mod_sum_df[(mod_sum_df.KETO < 2) & (mod_sum_df.DB >= _min_DB)]
                 mod_sum_df['MOD_NUM'] = mod_sum_df['OAP'] + mod_sum_df['OCP']
     
                 # filter the OCP and OAP. OAP should be full length
