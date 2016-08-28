@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import re
+import json
 
 import numpy as np
 import pandas as pd
@@ -38,7 +39,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
     def _bulk_oxidizer(ox_func):
         def __bulk_oxidizer(usr_fa_dct, usr_mod_table):
 
-            num_fileds_lst = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH']
+            nam_fields_last = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH']
 
             fa_dct = ox_func(usr_fa_dct)
             # print('fa_dct', fa_dct)
@@ -115,8 +116,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df.is_copy = False
     
                 # mod_sum_df.to_csv('oxDB.csv')
-                num_fileds_lst.append('C_NUM')
-                mod_sum_df[num_fileds_lst] = mod_sum_df[num_fileds_lst].astype(str)
+                nam_fields_last.append('C_NUM')
+                mod_sum_df[nam_fields_last] = mod_sum_df[nam_fields_last].astype(str)
+
                 # here CHO@C & COOH@C is 1 or 0 for T/F
                 mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
                                                    + mod_sum_df['DB'] + '[' + mod_sum_df['DB'] + 'xDB,'
@@ -129,6 +131,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 abbr_gen = AbbrGenerator()
                 mod_sum_df['FA_ABBR'] = ''
                 mod_sum_df['FA_TYPE'] = ''
+                mod_sum_df['FA_JSON'] = ''
                 for (_fa_idx, _fa_row) in mod_sum_df.iterrows():
                     _fa_code = str(_fa_row['FA_CHECKER'])
                     _fa_abbr, _fa_typ = abbr_gen.decode(_fa_code)
@@ -136,16 +139,50 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                     # print('_fa_code', _fa_code)
                     # print(_fa_typ, ' | ', _fa_abbr)
                     _fa_row['FA_TYPE'] = _fa_typ
-                mod_sum_t_df = mod_sum_df.transpose()
+
+                    _fa_row['FA_JSON'] = json.dumps({'LINK_TYPE': fa_dct['DB_LINK_type'], 'C': _fa_row['C_NUM'],
+                                                     'DB': _fa_row['DB'], 'OH': _fa_row['OH'],
+                                                     'KETO': _fa_row['KETO'], 'CHO': _fa_row['CHO'],
+                                                     'COOH': _fa_row['COOH'], 'OAP': _fa_row['OAP'],
+                                                     'OCP': _fa_row['OCP']})
+                    # print(_fa_row['FA_JSON'])
+                # mod_sum_t_df = mod_sum_df.transpose()
+                # print(mod_sum_t_df.columns.tolist())
                 # mod_sum_df.to_csv('oxDB_t.csv')
-            
+
             else:
+                if fa_dct['DB_LINK_type'] == 'O-':
+                    _lyso_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
+                elif fa_dct['DB_LINK_type'] == 'P-':
+                    _lyso_fa_abbr = 'P-%i:0' % fa_dct['DB_C_count']
+                elif fa_dct['DB_LINK_type'] == '':
+                    _lyso_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+                else:
+                    _lyso_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+
+                unox_json = ('{"C": "%i", "KETO": "0", "OH": "0", "OAP": "0", "OCP": "0", "COOH": "0", "DB": "0", '
+                             '"LINK_TYPE": "", "CHO": "0"}' % fa_dct['DB_C_count'])
+
                 unox_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
                             'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                             'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
                             'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
-                            'FA_ABBR': '%i:0' % fa_dct['DB_C_count'], 'FA_TYPE': ''}
+                            'FA_ABBR': _lyso_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unox_json}
+
                 mod_sum_df = pd.DataFrame(unox_dct, index=['0-no_oxidation'])
+
+            lyso_json = ('{"C": "0", "KETO": "0", "OH": "0", "OAP": "0", "OCP": "0", "COOH": "0", "DB": "0", '
+                         '"LINK_TYPE": "LYSO", "CHO": "0"}')
+
+            lyso_dct = {'SMILES': 'O', 'OAP': 0, 'OCP': 0, 'DB': 0,
+                        'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
+                        'FULL_SMILES': 'O', 'C_NUM': 0,
+                        'FA_CHECKER': '0:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}',
+                        'FA_ABBR': '0:0', 'FA_TYPE': 'LYSO', 'FA_JSON': lyso_json}
+
+            _lyso_df = pd.DataFrame(lyso_dct, index=['0-lyso'])
+
+            mod_sum_df = mod_sum_df.append(_lyso_df)
 
             return mod_sum_df
 

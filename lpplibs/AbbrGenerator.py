@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import re
+import json
 
 
 class AbbrGenerator(object):
@@ -56,7 +57,6 @@ class AbbrGenerator(object):
                 else:
                     lpp_typ_str = ''
 
-
                 if len(mod_lst) > 0:
                     _mod_str = ','.join(mod_lst)
                     _mod_str = ''.join(['[', _mod_str, ']'])
@@ -72,6 +72,25 @@ class AbbrGenerator(object):
 
             # lpp_info_lst = (lpp_abbr_str, lpp_typ_str)
             return lpp_abbr_str, lpp_typ_str
+
+    def from_json(self, usr_json_str):
+
+        # prepare output
+        lpp_abbr_str = ''
+        lpp_typ_str = ''
+
+        fa_dct = json.load(usr_json_str)
+        if fa_dct['OAP'] == 1 and fa_dct['OCP'] == 0:
+            lpp_typ_str = 'OAP'
+        if fa_dct['OAP'] == 0 and fa_dct['OCP'] == 1:
+            lpp_typ_str = 'OCP'
+        if fa_dct['OAP'] == 0 and fa_dct['OCP'] == 0:
+            lpp_typ_str = ''
+
+        lpp_abbr_str = ''.join([fa_dct['C_num'], ':', fa_dct['DB_num']])
+        if fa_dct['MOD_NUM'] > 0:
+            lpp_mod_lst = []
+
 
 # x = 'P-18:1[1xDB,0xOH,1xKETO]<CHO@C0,COOH@C0>{OAP:1,OCP:0}'
 # x = 'P-18:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}'

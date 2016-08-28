@@ -7,11 +7,12 @@
 
 from __future__ import print_function
 import time
+import json
 
 import pandas as pd
 
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
 from lpplibs.PLParser import PLParser
 from lpplibs.DBoxTheo import fa_link_filter, oxidizer
@@ -24,12 +25,12 @@ pl_table = './lpplibs/CM_NormalLipids.xlsx'
 fa_table = './lpplibs/FA_list.csv'
 mod_table = './lpplibs/ModConfig.csv'
 
-save_sdf = 'new_method_sdf_PG_max_1keto_1lessDB.sdf'
+save_sdf = 'new_method_sdf_PA_max_1keto_1lessDB.sdf'
 sdf_writer = Chem.SDWriter(save_sdf)
 sdf_dct = {}
 
 # pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
-pl_class_use_lst = ['PG']
+pl_class_use_lst = ['PA']
 
 parser = PLParser()
 abbr_gen = AbbrGenerator()
@@ -40,7 +41,7 @@ fa_df = pd.read_csv(fa_table, index_col=0)
 print(pl_df.head())
 c_lst = []
 
-fa_lpp_df_dct ={}
+fa_lpp_df_dct = {}
 
 sum_theo_lpp_dct = {}
 for (_idx, _row) in pl_df.iterrows():
@@ -85,6 +86,8 @@ for (_idx, _row) in pl_df.iterrows():
             _sn1_mod_smiles = _sn1_row['FULL_SMILES']
             _sn1_abbr_str = _sn1_row['FA_ABBR']
             _sn1_typ_str = _sn1_row['FA_TYPE']
+            # _sn1_json = _sn1_row['FA_JSON']
+            # print(_sn1_row)
             # _sn1_abbr_str, _sn1_typ_str = abbr_gen.decode(_sn1_row['FA_CHECKER'])
             # print(_sn1_row)
             for (_sn2_idx, _sn2_row) in sn2_mod_sum_df.iterrows():
@@ -96,19 +99,15 @@ for (_idx, _row) in pl_df.iterrows():
 
                 # print('sn1 LPP =>', _sn1_abbr_str, ' | sn2 LPP =>', _sn2_abbr_str)
 
-                # TODO(zhixu.ni@uni-leipzig.de): Add more info such as element composition in df
-
                 _oap_ocp_lst = [_sn1_typ_str, _sn2_typ_str]
-                _lpp_typ = ''
-                if 'OCP' in _oap_ocp_lst:
-                    _lpp_typ = 'OCP'
-                elif ''.join(_oap_ocp_lst) in ['OAP', 'OAPOAP']:
-                    _lpp_typ = 'OAP'
+                _lpp_typ = ''.join(_oap_ocp_lst)
 
                 # only export OAP & OCP
-                if _lpp_typ in ['OAP', 'OCP']:
-                    _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, _sn1_mod_smiles, _sn2_mod_smiles)
+                if _lpp_typ not in ['LYSOLYSO', 'UNMODUNMOD']:
+                    _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, _sn2_mod_smiles, _sn1_mod_smiles)
                     _lpp_id_str = str(''.join([_pl_hg_abbr, '(', _sn1_abbr_str, '/', _sn2_abbr_str, ')']))
+
+                    _lpp_sub_class_json = '{"SN1": "%s", "SN2": "%s"}' % (_sn1_typ_str, _sn2_typ_str)
                     # _lpp_name_str = _lpp_id_str.replace('/', '_')
                     # _lpp_name_str = _lpp_name_str.replace(':', '-')
                     # _lpp_name_str = _lpp_name_str.replace('@', 'at')
@@ -117,8 +116,10 @@ for (_idx, _row) in pl_df.iterrows():
                     # print (_lpp_name_str)
                     _lpp_info_dct = {'LPP_ORIGIN': _pl_abbr, 'LPP_SMILES': _lpp_smiles, 'LPP_CLASS': _pl_hg_abbr,
                                      'SN1_SMILES': _sn1_mod_smiles, 'SN2_SMILES': _sn2_mod_smiles,
-                                     'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
-                                     'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str, 'LM_ID': _lpp_id_str}
+                                     'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str,
+                                     'SN1_JSON': _sn1_row['FA_JSON'], 'SN2_JSON': _sn2_row['FA_JSON'],
+                                     'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json}
+                    # 'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
 
                     _lpp_info_se = pd.Series(data=_lpp_info_dct)
                     _pl_lpp_df[_lpp_id_str] = _lpp_info_se
@@ -162,6 +163,13 @@ for _k_lpp in sdf_dct.keys():
     _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
     AllChem.Compute2DCoords(_lpp_mol)
     _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
+    _lpp_mass = Descriptors.MolWt(_lpp_mol)
+    _lpp_exactmass = Descriptors.ExactMolWt(_lpp_mol)
+    _lpp_formula = rdMolDescriptors.CalcMolFormula(_lpp_mol)
+    _lpp_mol.SetProp('EXACT_MASS', '%.6f' % _lpp_exactmass)
+    _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
+    _lpp_mol.SetProp('FORMULA', _lpp_formula)
+    # _lpp_mol
 
     for _k in _lpp_dct.keys():
         _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))

@@ -46,7 +46,7 @@ class AbbrFrag(object):
         self.ox_dct = {}
         self.ox_dct['CH3'] = {'C': 1, 'H': 3}
         self.ox_dct['CH3COOH'] = {'C': 2, 'H': 4, 'O': 2}
-        self.ox_dct['keto'] = {'H': -2, 'O': 1}
+        self.ox_dct['KETO'] = {'H': -2, 'O': 1}
         self.ox_dct['C=O'] = {'H': -2, 'O': 1}
         self.ox_dct['OH'] = {'O': 1}
         self.ox_dct['CHO'] = {'H': -2, 'O': 1}
@@ -220,7 +220,7 @@ class AbbrFrag(object):
 
     def parse(self):
 
-        oxpl_re = re.compile(r'(oxPC)([(])(.*)([/])(.*)([)])')
+        oxpl_re = re.compile(r'(PC)([(])(.*)([/])(.*)([)])')
 
         _match = oxpl_re.match(self.lpp_abbr)
         if _match:
@@ -264,11 +264,15 @@ class AbbrFrag(object):
             print('_sn_abbr', _sn_abbr, sn_abbr)
 
             sn_unox_re = re.compile(r'(\d{1,2})([:])(\d)')
-            sn_ox_re = re.compile(r'(\d{1,2})([:])(\d)([\[\(])(.*)([\)\]])')
+            sn_ox_re = re.compile(r'(\d{1,2})([:])(\d)([\[\(<])(.*)([\)\]>])')
+            sn_o_ox_re = re.compile(r'(O-\d{1,2})([:])(\d)([\[\(<])(.*)([\)\]>])')
+            sn_p_ox_re = re.compile(r'(P-\d{1,2})([:])(\d)([\[\(<])(.*)([\)\]>])')
             ox_re = re.compile(r'(\d)(x)(.{0,10})')
 
             _match_sn_unox = sn_unox_re.match(_sn_abbr)
             _match_sn_ox = sn_ox_re.match(_sn_abbr)
+            _match_sn_o_ox = sn_o_ox_re.match(_sn_abbr)
+            _match_sn_p_ox = sn_p_ox_re.match(_sn_abbr)
 
             _hydro_checker = 0
 
@@ -278,7 +282,7 @@ class AbbrFrag(object):
                 print('_sn_lst_unox', _sn_lst, _re_sn)
                 if _re_sn == _sn_abbr:
                     sn_elem_dct['C'] = int(_sn_lst[0])
-                    sn_elem_dct['H'] += int(_sn_lst[0]) * 2 + 2 - 2 * int(_sn_lst[2])
+                    sn_elem_dct['H'] += int(_sn_lst[0]) * 2 - 2 * int(_sn_lst[2])
                     print(sn_abbr, _sn_lst, sn_elem_dct)
                     return sn_elem_dct, _hydro_checker
 
@@ -286,7 +290,7 @@ class AbbrFrag(object):
                 _sn_lst = _match_sn_ox.groups()
                 print('_sn_lst_ox', _sn_lst, sn_elem_dct)
                 sn_elem_dct['C'] = int(_sn_lst[0])
-                sn_elem_dct['H'] += int(_sn_lst[0]) * 2 + 2 - 2 * int(_sn_lst[2])
+                sn_elem_dct['H'] += int(_sn_lst[0]) * 2 - 2 * int(_sn_lst[2])
                 _ox_info = _sn_lst[4]
                 _ox_info_lst = _ox_info.split(',')
                 print('_ox_info_lst', _ox_info_lst)
@@ -305,11 +309,62 @@ class AbbrFrag(object):
                                 if _elem in _ox_dct.keys():
                                     _ox_add = _ox_count * _ox_dct[_elem]
                                     sn_elem_dct[_elem] += _ox_add
+            if _match_sn_o_ox:
+                _sn_lst = _match_sn_o_ox.groups()
+                print('_sn_lst_ox', _sn_lst, sn_elem_dct)
+                sn_elem_dct['O'] = 1
+                _num_c = _sn_lst[0].split('-')[1]
+                sn_elem_dct['C'] = int(_num_c)
+                sn_elem_dct['H'] += int(_num_c) * 2 + 2 - 2 * int(_sn_lst[2])
+                _ox_info = _sn_lst[4]
+                _ox_info_lst = _ox_info.split(',')
+                print('_ox_info_lst', _ox_info_lst)
+                for _ox in _ox_info_lst:
+                    _match_ox = ox_re.match(_ox)
+                    if _match_ox:
+                        _ox_lst = _match_ox.groups()
+                        print('_ox_lst', _ox_lst)
+                        if _ox_lst[2] in self.ox_dct.keys():
+                            if _ox_lst[2] == 'OH':
+                                _hydro_checker += 1
+                            _ox_count = int(_ox_lst[0])
+                            _ox_dct = self.ox_dct[_ox_lst[2]]
+                            print('_ox_dct', _ox_dct)
+                            for _elem in ['C', 'H', 'O']:
+                                if _elem in _ox_dct.keys():
+                                    _ox_add = _ox_count * _ox_dct[_elem]
+                                    sn_elem_dct[_elem] += _ox_add
+            if _match_sn_p_ox:
+                _sn_lst = _match_sn_p_ox.groups()
+                print('_sn_lst_ox', _sn_lst, sn_elem_dct)
+                sn_elem_dct['O'] = 1
+                _num_c = _sn_lst[0].split('-')[1]
+                sn_elem_dct['C'] = int(_num_c)
+                sn_elem_dct['H'] += int(_num_c) * 2 - 2 * int(_sn_lst[2])
+                _ox_info = _sn_lst[4]
+                _ox_info_lst = _ox_info.split(',')
+                print('_ox_info_lst', _ox_info_lst)
+                for _ox in _ox_info_lst:
+                    _match_ox = ox_re.match(_ox)
+                    if _match_ox:
+                        _ox_lst = _match_ox.groups()
+                        print('_ox_lst', _ox_lst)
+                        if _ox_lst[2] in self.ox_dct.keys():
+                            if _ox_lst[2] == 'OH':
+                                _hydro_checker += 1
+                            _ox_count = int(_ox_lst[0])
+                            _ox_dct = self.ox_dct[_ox_lst[2]]
+                            print('_ox_dct', _ox_dct)
+                            for _elem in ['C', 'H', 'O']:
+                                if _elem in _ox_dct.keys():
+                                    _ox_add = _ox_count * _ox_dct[_elem]
+                                    sn_elem_dct[_elem] += _ox_add
+
                 return sn_elem_dct, _hydro_checker
 
-sdf_file = 'oxPAPC_OH_KETO_sameDB.sdf'
-msp_file = 'oxPAPC_OH_KETO_sameDB_2104.msp'
-f_obj = open(msp_file, mode='w')
+sdf_file = r'SDFs\new_method_sdf_PC_max_1keto_1lessDB.sdf'
+msp_file = r'new_method_sdf_PC_max_1keto_1lessDB.msp'
+f_obj = open(msp_file, 'w')
 f_obj.write('')
 f_obj.close()
 
@@ -317,7 +372,7 @@ suppl = Chem.SDMolSupplier(sdf_file)
 
 alde_re = re.compile(r'.*CHO.*')
 acid_re = re.compile(r'.*COOH.*')
-keto_re = re.compile(r'.*xketo.*')
+keto_re = re.compile(r'.*xKETO.*')
 hydro_re = re.compile(r'.*xOH.*')
 
 for m in suppl:
@@ -332,33 +387,33 @@ for m in suppl:
     if alde_re.match(_id):
         _charge_lst = ['[M+FA-H]-']
         # _charge_lst = ['[M-H]-']
-        _frag_pattern = 'ion_scores_PLPC_OCP_CHO_neg.csv'
+        _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OCP_CHO_neg.csv'
         _lpp_type = 'OCP-alde'
     elif acid_re.match(_id):
         _charge_lst = ['[M-H]-']
-        _frag_pattern = 'ion_scores_PLPC_OCP_COOH_neg.csv'
+        _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OCP_COOH_neg.csv'
         _lpp_type = 'OCP-acid'
     else:
         # _charge_lst = ['[M+FA-H]-']
         if hydro_re.match(_id) and keto_re.match(_id):
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_keto_OH_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_keto_OH_neg.csv'
             _lpp_type = 'OAP'
         elif hydro_re.match(_id) and not keto_re.match(_id):
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_OH_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_OH_neg.csv'
             _lpp_type = 'OAP'
         elif keto_re.match(_id) and not hydro_re.match(_id):
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_keto_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_keto_neg.csv'
             _lpp_type = 'OAP'
         else:
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_keto_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_keto_neg.csv'
             _lpp_type = 'OAP'
 
     if _frag_pattern != '':
