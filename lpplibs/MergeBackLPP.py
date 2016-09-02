@@ -43,9 +43,9 @@ def lpp_merge(theolpp_cls):
     """
 
     def _lpp_merge(px_lpp):
-        def __lpp_merge(usr_hg, usr_sn1, usr_sn2):
+        def __lpp_merge(usr_hg, sn1=None, sn2=None):
 
-            lpp_str = px_lpp(usr_hg, usr_sn1, usr_sn2)
+            lpp_str = px_lpp(usr_hg, sn1, sn2)
             # print(lpp_str)
             # theolpp_cls.smiles2abbr(usr_sn1, usr_sn2)
             # theolpp_cls.smiles2img(lpp_str)
@@ -56,7 +56,7 @@ def lpp_merge(theolpp_cls):
 
 
 @lpp_merge(TheoLPP)
-def pl_lpp(usr_hg, usr_sn1, usr_sn2):
+def pl_lpp(usr_hg, sn1=None, sn2=None):
     pl_hg_dct = {'PA': r'OP(O)(OCC([H])(',
                  'PC': r'[O-]P(OCC[N+](C)(C)C)(OCC([H])(',
                  'PE': r'OP(OCCN)(OCC([H])(',
@@ -75,7 +75,33 @@ def pl_lpp(usr_hg, usr_sn1, usr_sn2):
         # sn2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
         pl_end = r')=O'
         # the following order is important!!
-        pl_str = ''.join([pl_hg, usr_sn1, gly_part, usr_sn2, pl_end])
+        pl_str = ''.join([pl_hg, sn2, gly_part, sn1, pl_end])
+        return pl_str
+
+
+@lpp_merge(TheoLPP)
+def pl_hg_lpp(usr_hg, sn1=None, sn2=None):
+    pl_hg_dct = {'PA': r'OP(O)(O)=O',
+                 'PC': r'[O-]P(OCC[N+](C)(C)C)(O)=O',
+                 'PE': r'OP(OCCN)(O)=O',
+                 'PG': r'OP(OCC(O)CO)(O)=O',
+                 'PS': r'OP(OCC(C(O)=O)N)(O)=O',
+                 'PI': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O])(O)=O',
+                 'PIP': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(O)=O',
+                 'PI4P': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(O)=O'}
+
+    gly_pre_part = r'/C=C/(',
+
+    if usr_hg.upper() in pl_hg_dct.keys():
+        pl_hg = pl_hg_dct[usr_hg.upper()]
+        gly_part = r')C'
+        # sn1 FA 16:0
+        # sn1 = r'OC(CCCCCCCCCCCCCCC)=O'
+        # sn2 FA 18:2 (9Z, 12Z)
+        # sn2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
+        pl_end = r')=O'
+        # the following order is important!!
+        pl_str = ''.join([pl_hg, sn2, gly_part, sn1, pl_end])
         return pl_str
 
 

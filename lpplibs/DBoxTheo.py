@@ -44,6 +44,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             fa_dct = ox_func(usr_fa_dct)
             # print('fa_dct', fa_dct)
             db_count = fa_dct['DB_count']
+            # O- & P- link sn, the SMILES are different
             if fa_dct['DB_LINK_type'] in ['O-', 'P-']:
                 ocp_end_part = ''
             else:
@@ -52,6 +53,23 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             mod_info_df = theodb_oxidizer_cls.mod_sum(usr_mod_table)
             mod_typ_lst = mod_info_df.columns.tolist()
             mod_sum_df = pd.DataFrame()
+            # print(mod_info_df.index.tolist())
+            _def_frags_dct = {}
+            for _mod_key in mod_typ_lst:
+                # _mod_smi = fa_dct['DB_pre_part'] + mod_info_df.loc['FRAG', _mod_key]
+                # _mod_smi_lst = [_mod_smi]
+                if _mod_key not in ['aldehyde', 'aldehyde_short', 'carboxylic_acid', 'carboxylic_acid_short']:
+                    _def_frags_dct[_mod_key] = ''.join([fa_dct['DB_pre_part'] +
+                                                        mod_info_df.loc['FRAG', _mod_key] +
+                                                        ocp_end_part])
+                else:
+                    _def_frags_dct[_mod_key] = ''
+
+            _def_frags_df = pd.DataFrame(_def_frags_dct, index=['FRAG_SMILES'])
+            mod_info_df = mod_info_df.append(_def_frags_df)
+
+            del _def_frags_df, _def_frags_dct
+            # print(mod_info_df.index.tolist())
             
             if db_count > 0:
                 # change the data type from str to int
@@ -62,24 +80,86 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_info_df.loc['KETO', :] = mod_info_df.loc['KETO', :].astype(int)
                 mod_info_df.loc['CHO', :] = mod_info_df.loc['CHO', :].astype(int)
                 mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
-    
+                # mod_info_df['FRAG_SMILES'] = ''
+
                 # start oxidation
                 for db_i in range(1, db_count + 1):
+                    # print(db_i)
                     for _mod in mod_typ_lst:
                         _tmp_mod_lst = mod_sum_df.columns.tolist()
                         if len(_tmp_mod_lst) <= len(mod_typ_lst) and db_i == 1:
-                            mod_sum_df[''.join([str(db_i), '-', _mod])] = mod_info_df[_mod]
+                            _mod_one = ''.join([str(db_i), '-', _mod])
+                            mod_sum_df[_mod_one] = mod_info_df[_mod]
+                            # add one more cleavage site for the first -OH bond
+                            if mod_sum_df.loc['FRAG_SMILES', _mod_one][-7:] == 'C(O))=O':
+                                _mod_one_lst = ['["', mod_sum_df.loc['FRAG_SMILES', _mod_one][:-7], ocp_end_part, '","',
+                                                mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]']
+                                _mod_one_json = ''.join(_mod_one_lst)
+                                mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
+                            elif mod_sum_df.loc['FRAG_SMILES', _mod_one][-4:] == 'C(O)':
+                                _mod_one_lst = ['["', mod_sum_df.loc['FRAG_SMILES', _mod_one][:-4], '","',
+                                                mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]']
+                                _mod_one_json = ''.join(_mod_one_lst)
+                                mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
+                            else:
+                                _mod_one_json = ''.join(['["', mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]'])
+                                mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
+                            # print(mod_sum_df)
                         else:
                             for _tmp_mod in _tmp_mod_lst:
-                                _tmp_mod_lst = _tmp_mod.split('-')
+                                _tmp_mod = str(_tmp_mod)
+                                # print('_tmp_mod', _tmp_mod, _tmp_mod_lst)
+                                __tmp_mod_lst = _tmp_mod.split('-')
                                 # print('_tmp_mod_lst', _tmp_mod_lst[-2], _tmp_mod_lst)
-                                if int(_tmp_mod_lst[-2]) == db_i - 1:
+                                if int(__tmp_mod_lst[-2]) == db_i - 1:
                                     _ocp_checker = mod_sum_df.loc['OCP', _tmp_mod]
                                     if _ocp_checker == 0:
                                         _new_mod = ''.join([_tmp_mod, '-', str(db_i), '-', _mod])
                                         # print(_new_mod)
                                         # this order is important for the SMILES generated
-                                        mod_sum_df.loc[:, _new_mod] = mod_sum_df[_tmp_mod] + mod_info_df[_mod]
+                                        # mod_sum_df.loc[:, _new_mod] = mod_sum_df[_tmp_mod] + mod_info_df[_mod]
+                                        _tmp_mod_df = pd.DataFrame(mod_sum_df[_tmp_mod] + mod_info_df[_mod],
+                                                                   columns=[_new_mod])
+                                        # print(_tmp_mod, _new_mod)
+                                        # print('_tmp_mod_df', _tmp_mod_df.index.tolist())
+                                        # print(mod_sum_df.columns.tolist())
+                                        # print(mod_sum_df.loc['SMILES', _tmp_mod])
+                                        _tmp_mod_smiles = (fa_dct['DB_pre_part'] +
+                                                           mod_sum_df.loc['SMILES', _tmp_mod] +
+                                                           mod_info_df.loc['FRAG', _mod] + ocp_end_part)
+                                        # print('pre_mod_smiles0', fa_dct['DB_pre_part'])
+                                        # print('pre_mod_smiles', mod_sum_df.loc['SMILES', _tmp_mod])
+                                        # print('pre_mod_smiles2', mod_info_df.loc['FRAG', _mod])
+                                        # print('_tmp_mod_smiles', _tmp_mod_smiles)
+                                        _tmp_frags_lst = json.loads(mod_sum_df.loc['FRAG_SMILES', _tmp_mod])
+                                        # print('_tmp_frags_lst', _tmp_frags_lst)
+                                        # print('_tmp_mod_smiles', _tmp_mod_smiles)
+
+                                        # Add one more cleavage site for OH
+                                        if _tmp_mod_smiles[-7:] == 'C(O))=O':
+                                            _tmp_frags_lst.append(''.join([_tmp_mod_smiles[:-7], ocp_end_part]))
+                                        elif _tmp_mod_smiles[-4:] == 'C(O)':
+                                            _tmp_frags_lst.append(_tmp_mod_smiles[:-4])
+
+                                        # Filter out full length OCPs
+                                        if db_i == db_count:
+                                            if _tmp_mod_smiles[-4:] == 'C)=O':
+                                                _tmp_frags_lst.append(_tmp_mod_smiles)
+                                            elif _tmp_mod_smiles[-1:] == 'C':
+                                                _tmp_frags_lst.append(_tmp_mod_smiles)
+                                        else:
+                                            _tmp_frags_lst.append(_tmp_mod_smiles)
+
+                                        # print(_tmp_frags_lst)
+                                        _tmp_mod_df.loc['FRAG_SMILES', _new_mod] = json.dumps(_tmp_frags_lst)
+                                        # _tmp_mod_df['FRAG_SMILES'] = (_tmp_mod_df['FRAG_SMILES'] + '|' +
+                                        #                               fa_dct['DB_pre_part'] +
+                                        #                               _tmp_mod_df['SMILES'] + _tmp_mod_df['FRAGS'])
+                                        mod_sum_df.loc[:, _new_mod] = _tmp_mod_df
+                                        # print('_tmp_mod_df', _tmp_mod_df.columns.tolist())
+                                        # print('_tmp_mod_df', _tmp_mod_df)
+                                        # print('mod_sum_df', mod_sum_df.columns.tolist())
+
                                     else:
                                         # print('OCP', _ocp_checker, _tmp_mod)
                                         pass
@@ -119,6 +199,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 nam_fields_last.append('C_NUM')
                 mod_sum_df[nam_fields_last] = mod_sum_df[nam_fields_last].astype(str)
 
+                # mod_sum_df['FRAG_SMILES'] = mod_sum_df['FRAG_SMILES'] + fa_dct['DB_post_part']
+
                 # here CHO@C & COOH@C is 1 or 0 for T/F
                 mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
                                                    + mod_sum_df['DB'] + '[' + mod_sum_df['DB'] + 'xDB,'
@@ -132,6 +214,14 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df['FA_ABBR'] = ''
                 mod_sum_df['FA_TYPE'] = ''
                 mod_sum_df['FA_JSON'] = ''
+                # mod_sum_df['C_NUM'] = mod_sum_df['C_NUM'].astype(int)
+                # mod_sum_df['DB'] = mod_sum_df['DB'].astype(int)
+                # mod_sum_df['OH'] = mod_sum_df['OH'].astype(int)
+                # mod_sum_df['KETO'] = mod_sum_df['KETO'].astype(int)
+                # mod_sum_df['CHO'] = mod_sum_df['CHO'].astype(int)
+                # mod_sum_df['COOH'] = mod_sum_df['COOH'].astype(int)
+                # mod_sum_df['OAP'] = mod_sum_df['OAP'].astype(int)
+                # mod_sum_df['OCP'] = mod_sum_df['OCP'].astype(int)
                 for (_fa_idx, _fa_row) in mod_sum_df.iterrows():
                     _fa_code = str(_fa_row['FA_CHECKER'])
                     _fa_abbr, _fa_typ = abbr_gen.decode(_fa_code)
@@ -140,11 +230,12 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                     # print(_fa_typ, ' | ', _fa_abbr)
                     _fa_row['FA_TYPE'] = _fa_typ
 
-                    _fa_row['FA_JSON'] = json.dumps({'LINK_TYPE': fa_dct['DB_LINK_type'], 'C': _fa_row['C_NUM'],
-                                                     'DB': _fa_row['DB'], 'OH': _fa_row['OH'],
-                                                     'KETO': _fa_row['KETO'], 'CHO': _fa_row['CHO'],
-                                                     'COOH': _fa_row['COOH'], 'OAP': _fa_row['OAP'],
-                                                     'OCP': _fa_row['OCP']})
+                    # force all numbers to int, important for json coding!
+                    _fa_row['FA_JSON'] = json.dumps({'LINK_TYPE': fa_dct['DB_LINK_type'], 'C': int(_fa_row['C_NUM']),
+                                                     'DB': int(_fa_row['DB']), 'OH': int(_fa_row['OH']),
+                                                     'KETO': int(_fa_row['KETO']), 'CHO': int(_fa_row['CHO']),
+                                                     'COOH': int(_fa_row['COOH']), 'OAP': int(_fa_row['OAP']),
+                                                     'OCP': int(_fa_row['OCP'])})
                     # print(_fa_row['FA_JSON'])
                 # mod_sum_t_df = mod_sum_df.transpose()
                 # print(mod_sum_t_df.columns.tolist())
@@ -152,37 +243,39 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             else:
                 if fa_dct['DB_LINK_type'] == 'O-':
-                    _lyso_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
+                    _unox_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
                 elif fa_dct['DB_LINK_type'] == 'P-':
-                    _lyso_fa_abbr = 'P-%i:0' % fa_dct['DB_C_count']
+                    _unox_fa_abbr = 'P-%i:0' % fa_dct['DB_C_count']
                 elif fa_dct['DB_LINK_type'] == '':
-                    _lyso_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+                    _unox_fa_abbr = '%i:0' % fa_dct['DB_C_count']
                 else:
-                    _lyso_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+                    _unox_fa_abbr = '%i:0' % fa_dct['DB_C_count']
 
-                unox_json = ('{"C": "%i", "KETO": "0", "OH": "0", "OAP": "0", "OCP": "0", "COOH": "0", "DB": "0", '
-                             '"LINK_TYPE": "", "CHO": "0"}' % fa_dct['DB_C_count'])
+                unox_json = ('{"C": %i, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
+                             '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
 
                 unox_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
                             'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                             'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
                             'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
-                            'FA_ABBR': _lyso_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unox_json}
+                            'FA_ABBR': _unox_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unox_json,
+                            'FRAG_SMILES': '[""]'}
 
                 mod_sum_df = pd.DataFrame(unox_dct, index=['0-no_oxidation'])
 
-            lyso_json = ('{"C": "0", "KETO": "0", "OH": "0", "OAP": "0", "OCP": "0", "COOH": "0", "DB": "0", '
-                         '"LINK_TYPE": "LYSO", "CHO": "0"}')
+            lyso_json = ('{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
+                         '"LINK_TYPE": "LYSO", "CHO": 0}')
 
             lyso_dct = {'SMILES': 'O', 'OAP': 0, 'OCP': 0, 'DB': 0,
                         'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                         'FULL_SMILES': 'O', 'C_NUM': 0,
                         'FA_CHECKER': '0:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}',
-                        'FA_ABBR': '0:0', 'FA_TYPE': 'LYSO', 'FA_JSON': lyso_json}
+                        'FA_ABBR': '0:0', 'FA_TYPE': 'LYSO', 'FA_JSON': lyso_json, 'FRAG_SMILES': '[""]'}
 
             _lyso_df = pd.DataFrame(lyso_dct, index=['0-lyso'])
 
             mod_sum_df = mod_sum_df.append(_lyso_df)
+            # print(mod_sum_df.head())
 
             return mod_sum_df
 
@@ -210,7 +303,7 @@ def oxidizer(fa_link_dct):
 
     fa_rgx = re.compile(r'(%s)([C/\\=()]*)(%s)' % (_usr_fa_pre_rgx_str, _usr_fa_post_rgx_str))
 
-    db_rgx = re.compile(r'(C/C[=]C\\)')
+    # db_rgx = re.compile(r'(C/C[=]C\\)')
 
     # Construct regular expression for DB
     # if use FA: 'OC(CCCCCCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
@@ -246,12 +339,14 @@ def oxidizer(fa_link_dct):
             else:
                 pass
         else:
+            db_info_dct['DB_pre_part'] = fa_link_dct['FULL_smiles']
             db_info_dct['DB_end_part'] = _usr_fa_post_str
             db_info_dct['DB_full_fa'] = _usr_fa_smiles
             db_info_dct['DB_LINK_type'] = _usr_fa_link_str
             db_info_dct['DB_C_count'] = _usr_fa_smiles.count('C')
             db_info_dct['DB_count'] = 0
     else:
+        db_info_dct['DB_pre_part'] = fa_link_dct['FULL_smiles']
         db_info_dct['DB_end_part'] = _usr_fa_post_str
         db_info_dct['DB_full_fa'] = _usr_fa_smiles
         db_info_dct['DB_LINK_type'] = _usr_fa_link_str
@@ -271,6 +366,14 @@ def fa_link_filter(usr_fa_smiles):
     post_o_link_str = r'C'
     post_p_link_str = r'C'
 
+    post_ester_link_cho_str = r'C=O)=O'
+    post_o_link_cho_str = r'C=O'
+    post_p_link_cho_str = r'C=O'
+
+    post_ester_link_cooh_str = r'C(O)=O)=O'
+    post_o_link_cooh_str = r'C(O)=O'
+    post_p_link_cooh_str = r'C(O)=O'
+
     pre_ester_link_rgx_str = r'OC[(]'
     pre_o_link_rgx_str = r'OCC'
     pre_p_link_rgx_str = r'O/C[=]C\\C'
@@ -279,27 +382,85 @@ def fa_link_filter(usr_fa_smiles):
     post_o_link_rgx_str = r'C'
     post_p_link_rgx_str = r'C'
 
+    post_ester_link_cho_rgx_str = r'C=O[)]=O'
+    post_o_link_cho_rgx_str = r'C=O'
+    post_p_link_cho_rgx_str = r'C=O'
+
+    post_ester_link_cooh_rgx_str = r'C[(]O[)]=O[)]=O'
+    post_o_link_cooh_rgx_str = r'C[(]O[)][=]O'
+    post_p_link_cooh_rgx_str = r'C[(]O[)][=]O'
+
     pre_ester_link_rgx = re.compile(pre_ester_link_rgx_str)
     pre_o_link_rgx = re.compile(pre_o_link_rgx_str)
     pre_p_link_rgx = re.compile(pre_p_link_rgx_str)
 
-    # post_ester_link_rgx = re.compile(post_ester_link_rgx_str)
-    # post_o_link_rgx = re.compile(post_o_link_rgx_str)
-    # post_p_link_rgx = re.compile(post_p_link_rgx_str)
+    post_ester_link_rgx = re.compile(r'.*%s' % post_ester_link_rgx_str)
+    post_o_link_rgx = re.compile(r'.*%s' % post_o_link_rgx_str)
+    post_p_link_rgx = re.compile(r'.*%s' % post_p_link_rgx_str)
+
+    post_ester_link_cho_rgx = re.compile(r'.*%s' % post_ester_link_cho_rgx_str)
+    post_o_link_cho_rgx = re.compile(r'.*%s' % post_o_link_cho_rgx_str)
+    post_p_link_cho_rgx = re.compile(r'.*%s' % post_p_link_cho_rgx_str)
+
+    post_ester_link_cooh_rgx = re.compile(r'.*%s' % post_ester_link_cooh_rgx_str)
+    post_o_link_cooh_rgx = re.compile(r'.*%s' % post_o_link_cooh_rgx_str)
+    post_p_link_cooh_rgx = re.compile(r'.*%s' % post_p_link_cooh_rgx_str)
 
     ester_link_checker = re.match(pre_ester_link_rgx, usr_fa_smiles)
     o_link_checker = re.match(pre_o_link_rgx, usr_fa_smiles)
     p_link_checker = re.match(pre_p_link_rgx, usr_fa_smiles)
+
+    post_ester_link_checker = re.match(post_ester_link_rgx, usr_fa_smiles)
+    post_o_link_checker = re.match(post_o_link_rgx, usr_fa_smiles)
+    post_p_link_checker = re.match(post_p_link_rgx, usr_fa_smiles)
+
+    post_ester_link_cho_checker = re.match(post_ester_link_cho_rgx, usr_fa_smiles)
+    post_o_link_cho_checker = re.match(post_o_link_cho_rgx, usr_fa_smiles)
+    post_p_link_cho_checker = re.match(post_p_link_cho_rgx, usr_fa_smiles)
+
+    post_ester_link_cooh_checker = re.match(post_ester_link_cooh_rgx, usr_fa_smiles)
+    post_o_link_cooh_checker = re.match(post_o_link_cooh_rgx, usr_fa_smiles)
+    post_p_link_cooh_checker = re.match(post_p_link_cooh_rgx, usr_fa_smiles)
+    
+    post_rgx = ''
+    post_str = ''
     
     if ester_link_checker:
-        fa_link_dct = {'FULL_smiles': usr_fa_smiles, 'PRE_str': pre_ester_link_str, 'POST_str': post_ester_link_str,
-                       'PRE_rgx': pre_ester_link_rgx_str, 'POST_rgx': post_ester_link_rgx_str, 'LINK_type': ''}
+        if post_ester_link_checker:
+            post_str = post_ester_link_str
+            post_rgx = post_ester_link_rgx_str
+        elif post_ester_link_cho_checker:
+            post_str = post_ester_link_cho_str
+            post_rgx = post_ester_link_cho_rgx_str
+        elif post_ester_link_cooh_checker:
+            post_str = post_ester_link_cooh_str
+            post_rgx = post_ester_link_cooh_rgx_str
+        fa_link_dct = {'FULL_smiles': usr_fa_smiles, 'PRE_str': pre_ester_link_str, 'POST_str': post_str,
+                       'PRE_rgx': pre_ester_link_rgx_str, 'POST_rgx': post_rgx, 'LINK_type': ''}
     elif o_link_checker:
-        fa_link_dct = {'FULL_smiles': usr_fa_smiles, 'PRE_str': pre_o_link_str, 'POST_str': post_o_link_str,
-                       'PRE_rgx': pre_o_link_rgx_str, 'POST_rgx': post_o_link_rgx_str, 'LINK_type': 'O-'}
+        if post_o_link_checker:
+            post_str = post_o_link_str
+            post_rgx = post_o_link_rgx_str
+        elif post_o_link_cho_checker:
+            post_str = post_o_link_cho_str
+            post_rgx = post_o_link_cho_rgx_str
+        elif post_o_link_cooh_checker:
+            post_str = post_o_link_cooh_str
+            post_rgx = post_o_link_cooh_rgx_str
+        fa_link_dct = {'FULL_smiles': usr_fa_smiles, 'PRE_str': pre_o_link_str, 'POST_str': post_str,
+                       'PRE_rgx': pre_o_link_rgx_str, 'POST_rgx': post_rgx, 'LINK_type': 'O-'}
     elif p_link_checker:
-        fa_link_dct = {'FULL_smiles': usr_fa_smiles, 'PRE_str': pre_p_link_str, 'POST_str': post_p_link_str,
-                       'PRE_rgx': pre_p_link_rgx_str, 'POST_rgx': post_p_link_rgx_str, 'LINK_type': 'P-'}
+        if post_p_link_checker:
+            post_str = post_p_link_str
+            post_rgx = post_p_link_rgx_str
+        elif post_p_link_cho_checker:
+            post_str = post_p_link_cho_str
+            post_rgx = post_p_link_cho_rgx_str
+        elif post_p_link_cooh_checker:
+            post_str = post_p_link_cooh_str
+            post_rgx = post_p_link_cooh_rgx_str
+        fa_link_dct = {'FULL_smiles': usr_fa_smiles, 'PRE_str': pre_p_link_str, 'POST_str': post_str,
+                       'PRE_rgx': pre_p_link_rgx_str, 'POST_rgx': post_rgx, 'LINK_type': 'P-'}
     else:
         fa_link_dct = {}
 
