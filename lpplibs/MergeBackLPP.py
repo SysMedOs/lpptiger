@@ -57,14 +57,14 @@ def lpp_merge(theolpp_cls):
 
 @lpp_merge(TheoLPP)
 def pl_lpp(usr_hg, sn1=None, sn2=None):
-    pl_hg_dct = {'PA': r'OP(O)(OCC([H])(',
-                 'PC': r'[O-]P(OCC[N+](C)(C)C)(OCC([H])(',
-                 'PE': r'OP(OCCN)(OCC([H])(',
-                 'PG': r'OP(OCC(O)CO)(OCC([H])(',
-                 'PS': r'OP(OCC(C(O)=O)N)(OCC([H])(',
-                 'PI': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O])(OCC([H])(',
-                 'PIP': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(OCC([H])(',
-                 'PI4P': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(OCC([H])('}
+    pl_hg_dct = {'PA': r'OP(O)(OCC(',
+                 'PC': r'[O-]P(OCC[N+](C)(C)C)(OCC(',
+                 'PE': r'OP(OCCN)(OCC(',
+                 'PG': r'OP(OCC(O)CO)(OCC(',
+                 'PS': r'OP(OCC(C(O)=O)N)(OCC(',
+                 'PI': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O])(OCC(',
+                 'PIP': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(OCC(',
+                 'PI4P': r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(OCC('}
 
     if usr_hg.upper() in pl_hg_dct.keys():
         pl_hg = pl_hg_dct[usr_hg.upper()]

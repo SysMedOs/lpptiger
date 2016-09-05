@@ -15,7 +15,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, rdMolDescriptors
 
 
-class SNFrag(object):
+class SNMainFrag(object):
     def __init__(self, pl_class, frag_score_list):
         self.pl_type = pl_class
         pl_frag_df = pd.read_excel(frag_score_list)
@@ -25,6 +25,30 @@ class SNFrag(object):
         pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
         pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
         self.pl_frag_df = pl_frag_df
+
+        self.charge_elem_dct = {'[M+H]+': {'H': 1}, '[M+Na]+': {'Na': 1},
+                                '[M+K]+': {'Na': 1}, '[M+NH4]+': {'H': 4, 'N': 1},
+                                '[M-H]-': {'H': -1}, '[M+FA-H]-': {'H': 1, 'C': 1, 'O': 2},
+                                '[M+HCOO]-': {'H': 1, 'C': 1, 'O': 2}}
+
+        # iupac '97
+        # elem, num, [exact mass isotopes], [abundances each isotope]
+        self.periodic_table_dct = {'H': [1, [1.0078250321, 2.0141017780], [0.999885, 0.0001157]],
+                                   'D': [1, [2.0141017780], [0.0001157]],
+                                   'C': [6, [12.0, 13.0033548378], [0.9893, 0.0107]],
+                                   'N': [7, [14.0030740052, 15.0001088984], [0.99632, 0.00368]],
+                                   'O': [8, [15.9949146221, 16.99913150, 17.9991604], [0.99757, 0.00038, 0.00205]],
+                                   'Na': [11, [22.98976967], [1.0]],
+                                   'P': [15, [30.97376151], [1.0]],
+                                   'S': [16, [31.97207069, 32.97145850, 33.96786683, 35.96708088],
+                                         [0.9493, 0.0076, 0.0429, 0.0002]],
+                                   'Cl': [17, [34.96885271, 36.96590260], [0.7578, 0.2422]],
+                                   'K': [19, [38.9637069, 39.96399867, 40.96182597], [0.932581, 0.000117, 0.067302]],
+                                   'Ca': [20, [39.9625912, 41.9586183, 42.9587668, 43.9554811, 45.9536928, 47.952534],
+                                          [0.96941, 0.00647, 0.00135, 0.02086, 0.00004, 0.00187]],
+                                   'Fe': [26, [53.9396148, 55.9349421, 56.9353987, 57.9332805],
+                                          [0.05845, 0.91754, 0.02119, 0.00282]],
+                                   'Cu': [29, [62.9296011, 64.9277937], [0.6917, 0.3083]]}
 
     def calc_frags(self, lpp_info_dct, mode='neg'):
 
@@ -48,10 +72,10 @@ class SNFrag(object):
 
         # filter out both sn1 and sn2 modified species
         if _sn1_mod_dct['OAP'] + _sn1_mod_dct['OCP'] > 0 and _sn2_mod_dct['OAP'] + _sn2_mod_dct['OCP'] > 0:
-            print('====>>>>>sn1 and sn2 both modified!! currently not supported!! skip now ====>>>>>')
+            print('====>>>>>sn1 and sn2 both modified!! currently not supported!! ====>>>>> skip now !!')
 
         elif _sn1_mod_dct['LINK_TYPE'] in ['O-', 'P-'] or _sn2_mod_dct['LINK_TYPE'] in ['O-', 'P-']:
-            print('====>>>>>sn1 or sn2 O-/P- link!! currently not supported!! skip now ====>>>>>')
+            print('====>>>>>sn1 or sn2 O-/P- link!! currently not supported!! ====>>>>> skip now !!')
         else:
 
             # get fragment scores in pandas series
@@ -59,22 +83,32 @@ class SNFrag(object):
             # print(_score_se)
 
             if _lpp_type == 'PC':
-                _frag_dct['[M+FA-H]-'] = self.calc_mz(_lpp_full_smi) + (int(_score_se.loc['[M+FA-H]-']),)
-                _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi) + (int(_score_se.loc['[M-H]-']),)
+                _frag_dct['[M+FA-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M+FA-H]-']),
+                                                      charge='[M+FA-H]-')
+                _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
             else:
-                _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi) + (int(_score_se.loc['[M-H]-']),)
+                _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
 
             if '[sn1-H]-' in frag_type_lst:
-                _sn_info_tp = self.calc_mz(_sn1_smi)
                 if _sn1_mod_dct['LINK_TYPE'] == 'LYSO':
                     pass
                 else:
-                    _frag_dct['[sn1-H]-'] = _sn_info_tp + (int(_score_se.loc['[sn1-H]-']),)
+                    _frag_dct['[sn1-H]-'] = self.calc_mz(_sn1_smi, score=int(_score_se.loc['[sn1-H]-']))
 
             if '[sn2-H]-' in frag_type_lst:
-                _frag_dct['[sn2-H]-'] = self.calc_mz(_sn2_smi) + (int(_score_se.loc['[sn2-H]-']),)
+                _frag_dct['[sn2-H]-'] = self.calc_mz(_sn2_smi, score=int(_score_se.loc['[sn2-H]-']))
 
-                print(_frag_dct)
+            if '[sn1-H2O-H]-' in frag_type_lst:
+                if _sn1_mod_dct['LINK_TYPE'] == 'LYSO':
+                    pass
+                else:
+                    _frag_dct['[sn1-H2O-H]-'] = self.calc_mod_mz(_frag_dct['[sn1-H]-'], mod='[sn1-H2O-H]-',
+                                                                 charge='[M-H]-')
+            if '[sn2-H2O-H]-' in frag_type_lst:
+                _frag_dct['[sn2-H2O-H]-'] = self.calc_mod_mz(_frag_dct['[sn2-H]-'], mod='[sn2-H2O-H]-', charge='[M-H]-')
+
+        msp_json = json.dumps(_frag_dct)
+        return msp_json
 
     def get_score_type(self, sn_mod_dct, lpp_class):
 
@@ -90,7 +124,11 @@ class SNFrag(object):
         sn_cooh = sn_mod_dct['COOH']
         # sn_link = sn_mod_dct['LINK_TYPE']
 
-        if sn_oap == 1:
+        if sn_oap == 0 and sn_ocp == 0:
+            _lpp_r = self.pl_frag_df[self.pl_frag_df['TYPE'] == 'UNMOD']
+            return _lpp_r.iloc[0, :]
+
+        if sn_oap >= 1:
             _lpp_score_df = self.pl_frag_df[(self.pl_frag_df['TYPE'] == 'OAP') &
                                             (self.pl_frag_df['PL_CLASS'] == lpp_class)]
             for (_lpp_idx, _lpp_r) in _lpp_score_df.iterrows():
@@ -131,20 +169,12 @@ class SNFrag(object):
             _lpp_r = _lpp_score_df[(_lpp_score_df['sn2_FA'] == -1) & (_lpp_score_df['sn2_DB'] == -1)]
             return _lpp_r.iloc[0, :]
 
-    def get_frag_scores(self):
-        pass
-
-    @staticmethod
-    def calc_mz(smi, charge='[M-H]-'):
+    def calc_mz(self, smi, score=0, charge='[M-H]-'):
 
         charge_mz_dct = {'[M+H]+': 1.007825, '[M+Na]+': 22.989770, '[M+K]+': 38.963708, '[M+NH4]+': 18.034374,
                          '[M-H]-': -1.007825, '[M+FA-H]-': 44.997654, '[M+HCOO]-': 44.997654}
 
-        charge_elem_dct = {'[M+H]+': {'H': 1}, '[M+Na]+': {'Na': 1}, '[M+K]+': {'Na': 1}, '[M+NH4]+': {'H': 4, 'N': 1},
-                           '[M-H]-': {'H': -1}, '[M+FA-H]-': {'H': 1, 'C': 1, 'O': 2},
-                           '[M+HCOO]-': {'H': 1, 'C': 1, 'O': 2}}
-
-        if charge in charge_mz_dct.keys() and charge in charge_elem_dct.keys():
+        if charge in charge_mz_dct.keys() and charge in self.charge_elem_dct.keys():
             pass
         else:
             charge = '[M-H]-'
@@ -155,10 +185,76 @@ class SNFrag(object):
         _formula = rdMolDescriptors.CalcMolFormula(_mol)
         _exactmass = rdMolDescriptors.CalcExactMolWt(_mol)
 
-        _elem_rgx = re.compile(r'[A-Z][a-z]?[0-9]{0,3}')
-        _elem_bulk_lst = re.findall(_elem_rgx, _formula)
-        _elem_num_rgx = re.compile(r'([A-Z][a-z]?)([0-9]{0,3})')
+        _elem_dct = self.parse_formula(_formula)
+
+        # print(_elem_bulk_lst, _exactmass)
+        _ion_elem_dct = {}
+
+        # get sum keys form both dict
+        _charged_keys_lst = set(sum([_elem_dct.keys(), self.charge_elem_dct[charge].keys()], []))
+        for _key in _charged_keys_lst:
+            _ion_elem_dct[_key] = _elem_dct.get(_key, 0) + self.charge_elem_dct[charge].get(_key, 0)
+
+        ion_mz = _exactmass + charge_mz_dct[charge]
+        elem_order_lst = ['C', 'H', 'N', 'O', 'P', 'S', 'Na', 'K']
+        _ion_elem = ''
+        for _e in elem_order_lst:
+            if _e in _charged_keys_lst:
+                _ion_elem += _e
+                if _ion_elem_dct[_e] > 1:
+                    _ion_elem += str(_ion_elem_dct[_e])
+                else:
+                    pass
+        if charge in ['[M+H]+', '[M+Na]+', '[M+K]+', '[M+NH4]+']:
+            _ion_elem += '+'
+        elif charge in ['[M-H]-', '[M+FA-H]-', '[M+HCOO]-']:
+            _ion_elem += '-'
+
+        # charged_info = '|'.join([frag_type, _ion_elem])
+
+        charged_info = (round(ion_mz, 4), score, _ion_elem)
+
+        return charged_info
+
+    def calc_mod_mz(self, origin_info, mod=None, score=0, charge='[M-H]-'):
+
+        _origin_elem = origin_info[2]
+        # _origin_mz = origin_info[0]
+
+        if charge in self.charge_elem_dct.keys():
+            pass
+        else:
+            charge = '[M-H]-'
+
+        mod_dct = {'-H2O': {'H': -2, 'O': -1}, '+H2O': {'H': 2, 'O': 1}, '-CO2': {'C': -1, 'O': -2}}
+
+        if re.match(r'.*[-]H2O.*', mod):
+            _mod_elem_dct = mod_dct['-H2O']
+        elif re.match(r'.*[+]H2O.*', mod):
+            _mod_elem_dct = mod_dct['+H2O']
+        elif re.match(r'.*[-]CO2.*', mod):
+            _mod_elem_dct = mod_dct['-CO2']
+        else:
+            _mod_elem_dct = {}
+
+        _origin_elem_dct = self.parse_formula(_origin_elem)
+        _mod_fin_dct = _origin_elem_dct.copy()
+
+        for _elem in _mod_elem_dct.keys():
+            _mod_fin_dct[_elem] += _mod_elem_dct[_elem]
+
+        mod_mz = self.formula_to_mz(_mod_fin_dct, charge=charge)
+        return mod_mz
+
+    @staticmethod
+    def parse_formula(formula=None):
+
         _elem_dct = {}
+
+        _elem_rgx = re.compile(r'[A-Z][a-z]?[0-9]{0,3}')
+        _elem_bulk_lst = re.findall(_elem_rgx, formula)
+        _elem_num_rgx = re.compile(r'([A-Z][a-z]?)([0-9]{0,3})')
+
         for _elem in _elem_bulk_lst:
             _elem_checker = re.match(_elem_num_rgx, _elem)
             _elem_lst = _elem_checker.groups()
@@ -168,80 +264,84 @@ class SNFrag(object):
             except ValueError:
                 _elem_dct[_elem_lst[0]] = 1
 
-        # print(_elem_bulk_lst, _exactmass)
-        _elem_charged_dct = {}
+        return _elem_dct
 
-        # get sum keys form both dict
-        _charged_keys_lst = set(sum([_elem_dct.keys(), charge_elem_dct[charge].keys()], []))
-        for _key in _charged_keys_lst:
-            _elem_charged_dct[_key] = _elem_dct.get(_key, 0) + charge_elem_dct[charge].get(_key, 0)
+    def formula_to_mz(self, elem_info, charge='[M-H]-'):
 
-        charge_mz = _exactmass + charge_mz_dct[charge]
-        elem_order_lst = ['C', 'H', 'N', 'O', 'P', 'S', 'Na', 'K']
-        _charged_elem = ''
-        for _e in elem_order_lst:
-            if _e in _charged_keys_lst:
-                _charged_elem += _e
-                if _elem_charged_dct[_e] > 1:
-                    _charged_elem += str(_elem_charged_dct[_e])
-                else:
-                    pass
-        if charge in ['[M+H]+', '[M+Na]+', '[M+K]+', '[M+NH4]+']:
-            _charged_elem += '+'
-        elif charge in ['[M-H]-', '[M+FA-H]-', '[M+HCOO]-']:
-            _charged_elem += '-'
+        if isinstance(elem_info, str):
+            ion_dct = self.parse_formula(elem_info)
+        elif isinstance(elem_info, dict):
+            ion_dct = elem_info.copy()
 
-        charged_info = (_charged_elem, round(charge_mz, 4))
+        if charge in self.charge_elem_dct.keys():
+            charge_dct = self.charge_elem_dct[charge]
+        else:
+            # set as '[M-H]-'
+            charge_dct = {'H': -1}
 
-        return charged_info
+        for _element in charge_dct.keys():
+            if _element in ion_dct.keys():
+                ion_dct[_element] += charge_dct[_element]
+
+        ion_mz = 0.0
+
+        for _elem in ion_dct.keys():
+            if _elem in self.periodic_table_dct.keys():
+                ion_mz += ion_dct[_elem] * self.periodic_table_dct[_elem][1][0]
+            else:
+                print('!!Unsupported elements!!')
+                break
+
+        ion_mz = round(ion_mz, 4)
+        return ion_mz
 
 
 # usr_smi = r'OC(CCCCC(O)/C=C/C(O)/C=C/C(O)/C=C/CC(O)=O)=O'
-usr_smi = r'OP(OCCN)(OCC([H])(OC(CCCCCCC/C=C/C/C=C/CCCCC)=O)COC(CCCCCCC(O)CCC/C=C/CCCCC)=O)=O'
-
-lpp_dct1 = {
-    'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCC)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O))=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O"]',
-    'SN2_FRAGS': '["OC(CCCC)=O", "OC(CCCC/C=C/C)=O", "OC(CCCC/C=C/C/C=C/)=O", "OC(CCCC/C=C/C/C=C/C(O))=O"]',
-    'SN1_SMILES': 'O/C=C\\CCCCCCCCCCCCCC', 'LPP_ORIGIN': 'PE(P-16:0/18:4)', 'SN1_ABBR': 'P-16:0',
-    'SN_JSON': '{"SN1": "UNMOD", "SN2": "OCP"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
-    'SN1_JSON': '{"C": 16, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "P-", "CHO": 0}',
-    'LM_ID': 'PE(P-16:0/15:3[3xDB,1xOH]<COOH@C15>)',
-    'SN2_JSON': '{"C": 15, "KETO": 0, "OH": 1, "OAP": 3, "OCP": 1, "COOH": 1, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
-    'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O)CO/C=C\\CCCCCCCCCCCCCC)=O',
-    'SN2_SMILES': 'OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O', 'SN2_ABBR': '15:3[3xDB,1xOH]<COOH@C15>'}
-
-lpp_dct2 = {
-    'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O"]',
-    'SN2_FRAGS': '["OC(CC)=O", "OC(CCC(O))=O", "OC(CCC(O)/C=C/)=O", "OC(CCC(O)/C=C/C(O))=O", "OC(CCC(O)/C=C/C(O)/C=C/C)=O"]',
-    'SN1_SMILES': 'OC(CCCCCCC(O)/C=C/CCCCCC)=O', 'LPP_ORIGIN': 'PE(16:1/20:4)', 'SN1_ABBR': '16:1[1xDB,1xOH]',
-    'SN_JSON': '{"SN1": "OAP", "SN2": "OCP"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '["OC(CCCCCC)=O","OC(CCCCCCC(O))=O"]',
-    'SN1_JSON': '{"C": 16, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}',
-    'LM_ID': 'PE(16:1[1xDB,1xOH]/14:3[3xDB,2xOH]<COOH@C14>)',
-    'SN2_JSON': '{"C": 14, "KETO": 0, "OH": 2, "OAP": 3, "OCP": 1, "COOH": 1, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
-    'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O',
-    'SN2_SMILES': 'OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O', 'SN2_ABBR': '14:3[3xDB,2xOH]<COOH@C14>'}
-
-lpp_dct3 = {'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CCCCCCCC/C=C\C(O)CCCCCC)=O)=O"]',
-            'SN2_FRAGS': '[""]', 'SN1_SMILES': 'OC(CCCCCCCCCCCCCCCCCCC)=O', 'LPP_ORIGIN': 'PE(16:0/20:0)', 'SN1_ABBR': '0:0',
-            'SN_JSON': '{"SN1": "LYSO", "SN2": "UNMOD"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
-            'SN1_JSON': '{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "", "CHO": 0}',
-            'LM_ID': 'PE(0:0/18:1)',
-            'SN2_JSON': '{"C": 18, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}',
-            'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CCCCCCCC/C=C\C(O)CCCCCC)=O)=O',
-            'SN2_SMILES': 'OC(CCCCCCCC/C=C\C(O)CCCCCC)=O', 'SN2_ABBR': '20:0'}
-
-lpp_dct4 = {'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O)=O"]',
-            'SN2_FRAGS': '[""]', 'SN1_SMILES': 'O', 'LPP_ORIGIN': 'PE(16:0/20:0)', 'SN1_ABBR': '0:0',
-            'SN_JSON': '{"SN1": "LYSO", "SN2": "UNMOD"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
-            'SN1_JSON': '{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "LYSO", "CHO": 0}',
-            'LM_ID': 'PE(0:0/18:3)',
-            'SN2_JSON': '{"C": 18, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
-            'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O)=O',
-            'SN2_SMILES': 'OC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O', 'SN2_ABBR': '20:0'}
-
-frag_score = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
-
-_lpp_lst = [lpp_dct1, lpp_dct2, lpp_dct3, lpp_dct4]
-a = SNFrag('PE', frag_score)
-for l in _lpp_lst:
-    a.calc_frags(l)
+# usr_smi = r'OP(OCCN)(OCC([H])(OC(CCCCCCC/C=C/C/C=C/CCCCC)=O)COC(CCCCCCC(O)CCC/C=C/CCCCC)=O)=O'
+#
+# lpp_dct1 = {
+#     'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCC)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O))=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O"]',
+#     'SN2_FRAGS': '["OC(CCCC)=O", "OC(CCCC/C=C/C)=O", "OC(CCCC/C=C/C/C=C/)=O", "OC(CCCC/C=C/C/C=C/C(O))=O"]',
+#     'SN1_SMILES': 'O/C=C\\CCCCCCCCCCCCCC', 'LPP_ORIGIN': 'PE(P-16:0/18:4)', 'SN1_ABBR': 'P-16:0',
+#     'SN_JSON': '{"SN1": "UNMOD", "SN2": "OCP"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
+#     'SN1_JSON': '{"C": 16, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "P-", "CHO": 0}',
+#     'LM_ID': 'PE(P-16:0/15:3[3xDB,1xOH]<COOH@C15>)',
+#     'SN2_JSON': '{"C": 15, "KETO": 0, "OH": 1, "OAP": 3, "OCP": 1, "COOH": 1, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
+#     'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O)CO/C=C\\CCCCCCCCCCCCCC)=O',
+#     'SN2_SMILES': 'OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O', 'SN2_ABBR': '15:3[3xDB,1xOH]<COOH@C15>'}
+#
+# lpp_dct2 = {
+#     'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O"]',
+#     'SN2_FRAGS': '["OC(CC)=O", "OC(CCC(O))=O", "OC(CCC(O)/C=C/)=O", "OC(CCC(O)/C=C/C(O))=O", "OC(CCC(O)/C=C/C(O)/C=C/C)=O"]',
+#     'SN1_SMILES': 'OC(CCCCCCC(O)/C=C/CCCCCC)=O', 'LPP_ORIGIN': 'PE(16:1/20:4)', 'SN1_ABBR': '16:1[1xDB,1xOH]',
+#     'SN_JSON': '{"SN1": "OAP", "SN2": "OCP"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '["OC(CCCCCC)=O","OC(CCCCCCC(O))=O"]',
+#     'SN1_JSON': '{"C": 16, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}',
+#     'LM_ID': 'PE(16:1[1xDB,1xOH]/14:3[3xDB,2xOH]<COOH@C14>)',
+#     'SN2_JSON': '{"C": 14, "KETO": 0, "OH": 2, "OAP": 3, "OCP": 1, "COOH": 1, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
+#     'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O',
+#     'SN2_SMILES': 'OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O', 'SN2_ABBR': '14:3[3xDB,2xOH]<COOH@C14>'}
+#
+# lpp_dct3 = {'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CCCCCCCC/C=C\C(O)CCCCCC)=O)=O"]',
+#             'SN2_FRAGS': '[""]', 'SN1_SMILES': 'OC(CCCCCCCCCCCCCCCCCCC)=O', 'LPP_ORIGIN': 'PE(16:0/20:0)', 'SN1_ABBR': '0:0',
+#             'SN_JSON': '{"SN1": "LYSO", "SN2": "UNMOD"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
+#             'SN1_JSON': '{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "", "CHO": 0}',
+#             'LM_ID': 'PE(0:0/18:1)',
+#             'SN2_JSON': '{"C": 18, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}',
+#             'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CCCCCCCC/C=C\C(O)CCCCCC)=O)=O',
+#             'SN2_SMILES': 'OC(CCCCCCCC/C=C\C(O)CCCCCC)=O', 'SN2_ABBR': '20:0'}
+#
+# lpp_dct4 = {'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O)=O"]',
+#             'SN2_FRAGS': '[""]', 'SN1_SMILES': 'O', 'LPP_ORIGIN': 'PE(16:0/20:0)', 'SN1_ABBR': '0:0',
+#             'SN_JSON': '{"SN1": "LYSO", "SN2": "UNMOD"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
+#             'SN1_JSON': '{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "LYSO", "CHO": 0}',
+#             'LM_ID': 'PE(0:0/18:3)',
+#             'SN2_JSON': '{"C": 18, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
+#             'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O)=O',
+#             'SN2_SMILES': 'OC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O', 'SN2_ABBR': '20:0'}
+#
+# frag_score = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
+#
+# _lpp_lst = [lpp_dct1, lpp_dct2, lpp_dct3, lpp_dct4]
+# a = SNMainFrag('PE', frag_score)
+# for l in _lpp_lst:
+#     a.calc_frags(l)

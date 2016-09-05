@@ -17,6 +17,7 @@ from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 from lpplibs.PLParser import PLParser
 from lpplibs.DBoxTheo import fa_link_filter, oxidizer
 from lpplibs import MergeBackLPP
+from lpplibs.SNMainFrag import SNMainFrag
 from lpplibs.AbbrGenerator import AbbrGenerator
 
 t_start = time.clock()
@@ -29,11 +30,13 @@ mod_table = './lpplibs/ModConfig.csv'
 pl_class_use_lst = ['PE']
 
 save_sdf = '%s_short_max_1keto_1lessDB_FRAG.sdf' % ''.join(pl_class_use_lst)
+score_xlsx = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
 sdf_writer = Chem.SDWriter(save_sdf)
 sdf_dct = {}
 
 parser = PLParser()
 abbr_gen = AbbrGenerator()
+frag_gen = SNMainFrag('PE', score_xlsx)
 
 pl_df = pd.read_excel(pl_table, sheetname=2)
 fa_df = pd.read_csv(fa_table, index_col=0)
@@ -109,34 +112,37 @@ for (_idx, _row) in pl_df.iterrows():
 
                     _lpp_sub_class_json = '{"SN1": "%s", "SN2": "%s"}' % (_sn1_typ_str, _sn2_typ_str)
 
-                    _lpp_sn1_frag_lst = json.loads(_sn1_row['FRAG_SMILES'])
-                    if _lpp_sn1_frag_lst != ['']:
-                        _lpp_sn1_frag_lst.append(_sn1_row['FULL_SMILES'])
-                    else:
-                        _lpp_sn1_frag_lst = [_sn1_row['FULL_SMILES']]
+                    # _lpp_sn1_frag_lst = json.loads(_sn1_row['FRAG_SMILES'])
+                    # if _lpp_sn1_frag_lst != ['']:
+                    #     _lpp_sn1_frag_lst.append(_sn1_row['FULL_SMILES'])
+                    # else:
+                    #     _lpp_sn1_frag_lst = [_sn1_row['FULL_SMILES']]
+                    #
+                    # _lpp_sn2_frag_lst = json.loads(_sn2_row['FRAG_SMILES'])
+                    # if _lpp_sn2_frag_lst != ['']:
+                    #     _lpp_sn2_frag_lst.append(_sn2_row['FULL_SMILES'])
+                    # else:
+                    #     _lpp_sn2_frag_lst = [_sn2_row['FULL_SMILES']]
+                    #
+                    # _lpp_frag_lst = []
+                    #
+                    # for _sn1_frag in _lpp_sn1_frag_lst:
+                    #     for _sn2_frag in _lpp_sn2_frag_lst:
+                    #         _lpp_frag_lst.append(MergeBackLPP.pl_lpp(_pl_hg_abbr,
+                    #                                                  sn1=_sn1_frag, sn2=_sn2_frag))
+                    # _lpp_frag_json = json.dumps(_lpp_frag_lst)
 
-                    _lpp_sn2_frag_lst = json.loads(_sn2_row['FRAG_SMILES'])
-                    if _lpp_sn2_frag_lst != ['']:
-                        _lpp_sn2_frag_lst.append(_sn2_row['FULL_SMILES'])
-                    else:
-                        _lpp_sn2_frag_lst = [_sn2_row['FULL_SMILES']]
-
-                    _lpp_frag_lst = []
-
-                    for _sn1_frag in _lpp_sn1_frag_lst:
-                        for _sn2_frag in _lpp_sn2_frag_lst:
-                            _lpp_frag_lst.append(MergeBackLPP.pl_lpp(_pl_hg_abbr,
-                                                                     sn1=_sn1_frag, sn2=_sn2_frag))
-                    _lpp_frag_json = json.dumps(_lpp_frag_lst)
-
+                    # 'LPP_FRAG': _lpp_frag_json,
+                    # 'SN1_FRAGS': _sn1_row['FRAG_SMILES'], 'SN2_FRAGS': _sn2_row['FRAG_SMILES'],
                     _lpp_info_dct = {'LPP_ORIGIN': _pl_abbr, 'LPP_SMILES': _lpp_smiles, 'LPP_CLASS': _pl_hg_abbr,
                                      'SN1_SMILES': _sn1_mod_smiles, 'SN2_SMILES': _sn2_mod_smiles,
                                      'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str,
                                      'SN1_JSON': _sn1_row['FA_JSON'], 'SN2_JSON': _sn2_row['FA_JSON'],
-                                     'SN1_FRAGS': _sn1_row['FRAG_SMILES'], 'SN2_FRAGS': _sn2_row['FRAG_SMILES'],
-                                     'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json, 'LPP_FRAG': _lpp_frag_json}
+                                     'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json}
 
-                    print(_lpp_info_dct)
+                    _lpp_info_dct['FRAG_MSP_JSON'] = frag_gen.calc_frags(_lpp_info_dct)
+
+                    # print(_lpp_info_dct)
                     # 'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
 
                     _lpp_info_se = pd.Series(data=_lpp_info_dct)

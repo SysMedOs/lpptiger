@@ -1,7 +1,7 @@
 ,no_oxidation,hydroxyl,hydroxyl_no_db,keto,keto_no_db,aldehyde,aldehyde_short,carboxylic_acid,carboxylic_acid_short
 SMILES,C/C=C/,C(O)/C=C/,C(O)CC,C(=O)/C=C/,C(=O)CC,CC=O,C=O,CC(O)=O,C(O)=O
 FRAG,C,C(O),C(O),C(=O),C(=O),CC=O,C=O,CC(O)=O,C(O)=O
-OAP,1,1,1,1,1,0,0,0,0
+OAP,0,1,1,1,1,0,0,0,0
 OCP,0,0,0,0,0,1,1,1,1
 DB,1,1,0,1,0,0,0,0,0
 OH,0,1,1,0,0,0,0,0,0
