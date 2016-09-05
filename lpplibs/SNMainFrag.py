@@ -14,6 +14,8 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdMolDescriptors
 
+from MergeBackLPP import pl_lpp
+
 
 class SNMainFrag(object):
     def __init__(self, pl_class, frag_score_list):
@@ -29,7 +31,11 @@ class SNMainFrag(object):
         self.charge_elem_dct = {'[M+H]+': {'H': 1}, '[M+Na]+': {'Na': 1},
                                 '[M+K]+': {'Na': 1}, '[M+NH4]+': {'H': 4, 'N': 1},
                                 '[M-H]-': {'H': -1}, '[M+FA-H]-': {'H': 1, 'C': 1, 'O': 2},
-                                '[M+HCOO]-': {'H': 1, 'C': 1, 'O': 2}}
+                                '[M+HCOO]-': {'H': 1, 'C': 1, 'O': 2},
+                                '+': {'H': 1}, '-': {'H': -1}}
+
+        self.charge_mz_dct = {'[M+H]+': 1.007825, '[M+Na]+': 22.989770, '[M+K]+': 38.963708, '[M+NH4]+': 18.034374,
+                              '[M-H]-': -1.007825, '[M+FA-H]-': 44.997654, '[M+HCOO]-': 44.997654}
 
         # iupac '97
         # elem, num, [exact mass isotopes], [abundances each isotope]
@@ -82,35 +88,48 @@ class SNMainFrag(object):
             _score_se = self.get_score_type(_sn2_mod_dct, _lpp_type)
             # print(_score_se)
 
-            if _lpp_type == 'PC':
-                _frag_dct['[M+FA-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M+FA-H]-']),
-                                                      charge='[M+FA-H]-')
-                _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
+            if _sn1_mod_dct['LINK_TYPE'] == 'LYSO' or _sn2_mod_dct['LINK_TYPE'] == 'LYSO':
+                print('>>>Skip lyso species now >>>>>>')
+                pass
             else:
-                _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
-
-            if '[sn1-H]-' in frag_type_lst:
-                if _sn1_mod_dct['LINK_TYPE'] == 'LYSO':
-                    pass
+                if _lpp_type == 'PC':
+                    _frag_dct['[M+FA-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M+FA-H]-']),
+                                                          charge='[M+FA-H]-')
+                    _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
                 else:
+                    _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
+
+                if '[sn1-H]-' in frag_type_lst:
+
                     _frag_dct['[sn1-H]-'] = self.calc_mz(_sn1_smi, score=int(_score_se.loc['[sn1-H]-']))
 
-            if '[sn2-H]-' in frag_type_lst:
-                _frag_dct['[sn2-H]-'] = self.calc_mz(_sn2_smi, score=int(_score_se.loc['[sn2-H]-']))
+                if '[sn2-H]-' in frag_type_lst:
+                    _frag_dct['[sn2-H]-'] = self.calc_mz(_sn2_smi, score=int(_score_se.loc['[sn2-H]-']))
 
-            if '[sn1-H2O-H]-' in frag_type_lst:
-                if _sn1_mod_dct['LINK_TYPE'] == 'LYSO':
-                    pass
-                else:
-                    _frag_dct['[sn1-H2O-H]-'] = self.calc_mod_mz(_frag_dct['[sn1-H]-'], mod='[sn1-H2O-H]-',
-                                                                 charge='[M-H]-')
-            if '[sn2-H2O-H]-' in frag_type_lst:
-                _frag_dct['[sn2-H2O-H]-'] = self.calc_mod_mz(_frag_dct['[sn2-H]-'], mod='[sn2-H2O-H]-', charge='[M-H]-')
+                # for the rest part of modifications
+                for _ion_typ in frag_type_lst:
+                    if _ion_typ in ['[M-H]-', '[M+FA-H]-', '[sn1-H]-', '[sn2-H]-']:
+                        pass
+                    else:
+                        if int(_score_se.loc[_ion_typ]) > 0:
+                            _frag_dct[_ion_typ] = self.calc_mz(elem_info=None, mod=_ion_typ,
+                                                               score=int(_score_se.loc[_ion_typ]),
+                                                               charge='[M-H]-', lpp_info_dct=lpp_info_dct)
+                        else:
+                            pass
 
         msp_json = json.dumps(_frag_dct)
         return msp_json
 
     def get_score_type(self, sn_mod_dct, lpp_class):
+        """
+        This is to decide the possible fragments and corresponding intensities.
+        The type and number of each modification will be checked.
+        The corresponding row in the ion_scores_df will be selected and given to the fragments.
+        :param sn_mod_dct:
+        :param lpp_class:
+        :return:
+        """
 
         # json dict format as below
         # '{"C": 16, "KETO": 0, "OH": 0, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}'
@@ -169,37 +188,40 @@ class SNMainFrag(object):
             _lpp_r = _lpp_score_df[(_lpp_score_df['sn2_FA'] == -1) & (_lpp_score_df['sn2_DB'] == -1)]
             return _lpp_r.iloc[0, :]
 
-    def calc_mz(self, smi, score=0, charge='[M-H]-'):
+    def calc_mz(self, elem_info, mod=None, score=0, charge='[M-H]-', lpp_info_dct=None):
 
-        charge_mz_dct = {'[M+H]+': 1.007825, '[M+Na]+': 22.989770, '[M+K]+': 38.963708, '[M+NH4]+': 18.034374,
-                         '[M-H]-': -1.007825, '[M+FA-H]-': 44.997654, '[M+HCOO]-': 44.997654}
-
-        if charge in charge_mz_dct.keys() and charge in self.charge_elem_dct.keys():
+        if charge in self.charge_mz_dct.keys() and charge in self.charge_elem_dct.keys():
             pass
         else:
             charge = '[M-H]-'
 
-        _mol = Chem.MolFromSmiles(smi)
-        AllChem.Compute2DCoords(_mol)
+        if isinstance(elem_info, str):
+            # test if elem_info is smiles code
+            try:
+                _mol = Chem.MolFromSmiles(elem_info)
+                AllChem.Compute2DCoords(_mol)
+                # _exactmass = rdMolDescriptors.CalcExactMolWt(_mol)
+                _formula = rdMolDescriptors.CalcMolFormula(_mol)
+                _elem_dct = self.parse_formula(_formula)
+            except:
+                _elem_dct = self.parse_formula(elem_info)
+        elif isinstance(elem_info, dict):
+            _elem_dct = elem_info.copy()
+        else:
+            _elem_dct = {}
 
-        _formula = rdMolDescriptors.CalcMolFormula(_mol)
-        _exactmass = rdMolDescriptors.CalcExactMolWt(_mol)
+        if mod is not None or mod != '':
+            if _elem_dct is None or _elem_dct == {}:
+                _elem_dct = self.get_mod_elem(elem_dct=None, mod=mod, lpp_info_dct=lpp_info_dct)
+            else:
+                _elem_dct = self.get_mod_elem(elem_dct=_elem_dct, mod=mod, lpp_info_dct=lpp_info_dct)
 
-        _elem_dct = self.parse_formula(_formula)
+        ion_mz, _ion_elem_dct = self.formula_to_mz(_elem_dct, charge=charge)
 
-        # print(_elem_bulk_lst, _exactmass)
-        _ion_elem_dct = {}
-
-        # get sum keys form both dict
-        _charged_keys_lst = set(sum([_elem_dct.keys(), self.charge_elem_dct[charge].keys()], []))
-        for _key in _charged_keys_lst:
-            _ion_elem_dct[_key] = _elem_dct.get(_key, 0) + self.charge_elem_dct[charge].get(_key, 0)
-
-        ion_mz = _exactmass + charge_mz_dct[charge]
         elem_order_lst = ['C', 'H', 'N', 'O', 'P', 'S', 'Na', 'K']
         _ion_elem = ''
         for _e in elem_order_lst:
-            if _e in _charged_keys_lst:
+            if _e in _ion_elem_dct.keys():
                 _ion_elem += _e
                 if _ion_elem_dct[_e] > 1:
                     _ion_elem += str(_ion_elem_dct[_e])
@@ -212,9 +234,9 @@ class SNMainFrag(object):
 
         # charged_info = '|'.join([frag_type, _ion_elem])
 
-        charged_info = (round(ion_mz, 4), score, _ion_elem)
+        ion_info = (round(ion_mz, 4), score, _ion_elem)
 
-        return charged_info
+        return ion_info
 
     def calc_mod_mz(self, origin_info, mod=None, score=0, charge='[M-H]-'):
 
@@ -244,7 +266,6 @@ class SNMainFrag(object):
             _mod_fin_dct[_elem] += _mod_elem_dct[_elem]
 
         mod_mz = self.formula_to_mz(_mod_fin_dct, charge=charge)
-        return mod_mz
 
     @staticmethod
     def parse_formula(formula=None):
@@ -279,22 +300,100 @@ class SNMainFrag(object):
             # set as '[M-H]-'
             charge_dct = {'H': -1}
 
-        for _element in charge_dct.keys():
-            if _element in ion_dct.keys():
-                ion_dct[_element] += charge_dct[_element]
+        # for _element in charge_dct.keys():
+        #     if _element in ion_dct.keys():
+        #         ion_dct[_element] += charge_dct[_element]
+
+        # get sum keys form both dict
+        _ion_elem_dct = {}
+        _charged_keys_lst = set(sum([elem_info.keys(), self.charge_elem_dct[charge].keys()], []))
+        for _key in _charged_keys_lst:
+            _ion_elem_dct[_key] = elem_info.get(_key, 0) + self.charge_elem_dct[charge].get(_key, 0)
 
         ion_mz = 0.0
 
-        for _elem in ion_dct.keys():
+        for _elem in _ion_elem_dct.keys():
             if _elem in self.periodic_table_dct.keys():
-                ion_mz += ion_dct[_elem] * self.periodic_table_dct[_elem][1][0]
+                ion_mz += _ion_elem_dct[_elem] * self.periodic_table_dct[_elem][1][0]
             else:
                 print('!!Unsupported elements!!')
                 break
 
         ion_mz = round(ion_mz, 4)
-        return ion_mz
+        return ion_mz, _ion_elem_dct
 
+    def get_mod_elem(self, elem_dct=None, mod=None, lpp_info_dct=None):
+
+        mod_dct = {'-H2O': {'H': -2, 'O': -1}, '+H2O': {'H': 2, 'O': 1},
+                   '-CO2': {'C': -1, 'O': -2}, '+FA': {'H': 1, 'C': 1, 'O': 2}}
+
+        # get the formula as dict
+        if elem_dct is None:
+            if lpp_info_dct is None:
+                _elem_dct = {}
+            else:
+                _lpp_type = lpp_info_dct['LPP_CLASS']
+                _lpp_full_smi = lpp_info_dct['LPP_SMILES']
+                _sn1_smi = lpp_info_dct['SN1_SMILES']
+                _sn2_smi = lpp_info_dct['SN2_SMILES']
+                _lyso_smi = 'O'
+                if re.match(r'\[M-[sS][nN][1].*', mod):
+                    _frag_smi = pl_lpp(_lpp_type, sn1=_lyso_smi, sn2=_sn2_smi)
+                elif re.match(r'\[M-[sS][nN][2].*', mod):
+                    _frag_smi = pl_lpp(_lpp_type, sn1=_sn2_smi, sn2=_lyso_smi)
+                elif re.match(r'\[[sS][nN][1].*', mod):
+                    _frag_smi = _sn1_smi
+                elif re.match(r'\[[sS][nN][2].*', mod):
+                    _frag_smi = _sn2_smi
+                elif re.match(r'\[M[+-][HCF].*', mod):
+                    _frag_smi = _lpp_full_smi
+                else:
+                    _frag_smi = ''
+
+                _mol = Chem.MolFromSmiles(_frag_smi)
+                AllChem.Compute2DCoords(_mol)
+                _formula = rdMolDescriptors.CalcMolFormula(_mol)
+                _elem_dct = self.parse_formula(_formula)
+        else:
+            _elem_dct = elem_dct.copy()
+
+        # print('mod', mod)
+
+        if mod is None or mod == '':
+            _mod_elem_dct = {}
+        else:
+            chk1 = re.compile(r'.*[-]H2O.*')
+            # chk2 = re.compile(r'.*[+]H2O.*')
+            chk3 = re.compile(r'.*[-]CO2.*')
+            chk4 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
+
+            if chk1.match(mod):
+                _mod_elem_dct = mod_dct['-H2O']
+            # for [M-sn+H2O-H]-, the H2O was add already
+            # elif chk2.match(mod):
+            #     _mod_elem_dct = mod_dct['+H2O']
+            elif chk3.match(mod):
+                _mod_elem_dct = mod_dct['-CO2']
+            elif chk4.match(mod):
+                m4 = chk4.match(mod)
+                m4_lst = m4.groups()
+                m4_elem = m4_lst[1]
+                _charge = m4_lst[2]
+                _mod_elem_dct = self.parse_formula(formula=m4_elem)
+                # naturalize the formula
+                if _charge in self.charge_elem_dct.keys():
+                    _mod_elem_dct['H'] += -1 * self.charge_elem_dct[_charge]['H']
+                # print('found PE HG ------------------------------------------------------>>>>>>>>>>>>>>>')
+            else:
+                _mod_elem_dct = {}
+
+        # get sum keys form both dict
+        _frag_elem_dct = {}
+        _charged_keys_lst = set(sum([_elem_dct.keys(), _mod_elem_dct.keys()], []))
+        for _key in _charged_keys_lst:
+            _frag_elem_dct[_key] = _elem_dct.get(_key, 0) + _mod_elem_dct.get(_key, 0)
+
+        return _frag_elem_dct
 
 # usr_smi = r'OC(CCCCC(O)/C=C/C(O)/C=C/C(O)/C=C/CC(O)=O)=O'
 # usr_smi = r'OP(OCCN)(OCC([H])(OC(CCCCCCC/C=C/C/C=C/CCCCC)=O)COC(CCCCCCC(O)CCC/C=C/CCCCC)=O)=O'
