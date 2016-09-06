@@ -29,6 +29,7 @@ mod_table = './lpplibs/ModConfig.csv'
 
 # pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
 pl_class_use_lst = ['PE']
+pl_class = pl_class_use_lst[0]
 
 save_sdf = '%s_short_max_1keto_1lessDB_FRAG.sdf' % ''.join(pl_class_use_lst)
 save_msp = '%s_short_max_1keto_1lessDB_FRAG.msp' % ''.join(pl_class_use_lst)
@@ -39,7 +40,7 @@ sdf_dct = {}
 
 parser = PLParser()
 abbr_gen = AbbrGenerator()
-frag_gen = SNMainFrag('PE', score_xlsx)
+frag_gen = SNMainFrag(pl_class, score_xlsx)
 
 pl_df = pd.read_excel(pl_table, sheetname=2)
 fa_df = pd.read_csv(fa_table, index_col=0)

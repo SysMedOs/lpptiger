@@ -20,7 +20,7 @@ from MergeBackLPP import pl_lpp
 class SNMainFrag(object):
     def __init__(self, pl_class, frag_score_list):
         self.pl_type = pl_class
-        pl_frag_df = pd.read_excel(frag_score_list)
+        pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
         pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
         pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
         pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
@@ -92,12 +92,16 @@ class SNMainFrag(object):
                 print('>>>Skip lyso species now >>>>>>')
                 pass
             else:
-                if _lpp_type == 'PC':
-                    _frag_dct['[M+FA-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M+FA-H]-']),
-                                                          charge='[M+FA-H]-')
-                    _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
+                # if _lpp_type == 'PC':
+                #     _frag_dct['[M+FA-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M+FA-H]-']),
+                #                                           charge='[M+FA-H]-')
+                #     # _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
+                # else:
+                _pr_info = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
+                if _pr_info[1] > 0:
+                    _frag_dct['[M-H]-'] = _pr_info
                 else:
-                    _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
+                    pass
 
                 if '[sn1-H]-' in frag_type_lst:
 
@@ -107,10 +111,37 @@ class SNMainFrag(object):
                     _frag_dct['[sn2-H]-'] = self.calc_mz(_sn2_smi, score=int(_score_se.loc['[sn2-H]-']))
 
                 # for the rest part of modifications
+                # change score of sn1 and sn2 if sn1 is mod but sn2 unmod
+                if int(_sn1_mod_dct['OAP']) + int(_sn1_mod_dct['OCP']) > 0 and \
+                                        int(_sn2_mod_dct['OAP']) + int(_sn2_mod_dct['OCP']) == 0:
+                    _score_se = _score_se.rename({'[sn1-H]-': '[sn2-H]-', '[sn2-H]-': '[sn1-H]-'})
+                    # print('sn1 mod & sn2 unmod >>>', _score_se.index.tolist())
+                    for _ion_typ in frag_type_lst:
+                        if _ion_typ in ['[sn1-H]-', '[sn2-H]-']:
+                            pass
+                        else:
+                            sn1_chk = re.compile(r'(\[.*)([sS][nN]1)(.*[-])')
+                            sn2_chk = re.compile(r'(\[.*)([sS][nN]2)(.*[-])')
+                            if sn1_chk.match(_ion_typ):
+                                _sn_typ = sn1_chk.sub(r'\1sn2\3', _ion_typ)
+                                _score_se = _score_se.rename({_ion_typ: _sn_typ})
+                            elif sn2_chk.match(_ion_typ):
+                                _sn_typ = sn2_chk.sub(r'\1sn1\3', _ion_typ)
+                                _score_se = _score_se.rename({_ion_typ: _sn_typ})
+                            # print(_score_se.index.tolist())
+
+                    pre_frag_type_lst = _score_se.index.tolist()
+                    frag_type_lst = []
+                    for _typ in pre_frag_type_lst:
+                        if _typ[-1] == '-':
+                            frag_type_lst.append(_typ)
+                    print('>>> sn1 mod & sn2 unmod >>>')
+
                 for _ion_typ in frag_type_lst:
                     if _ion_typ in ['[M-H]-', '[M+FA-H]-', '[sn1-H]-', '[sn2-H]-']:
                         pass
                     else:
+
                         if int(_score_se.loc[_ion_typ]) > 0:
                             _frag_dct[_ion_typ] = self.calc_mz(elem_info=None, mod=_ion_typ,
                                                                score=int(_score_se.loc[_ion_typ]),
@@ -323,7 +354,9 @@ class SNMainFrag(object):
     def get_mod_elem(self, elem_dct=None, mod=None, lpp_info_dct=None):
 
         mod_dct = {'-H2O': {'H': -2, 'O': -1}, '+H2O': {'H': 2, 'O': 1},
-                   '-CO2': {'C': -1, 'O': -2}, '+FA': {'H': 1, 'C': 1, 'O': 2}}
+                   '-CO2': {'C': -1, 'O': -2}, '+FA': {'H': 2, 'C': 1, 'O': 2},
+                   '-C3H9N': {'C': -3, 'H': -9, 'N': -1}, '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
+                   '-CH2': {'C': -1, 'H': -2}}
 
         # get the formula as dict
         if elem_dct is None:
@@ -338,7 +371,7 @@ class SNMainFrag(object):
                 if re.match(r'\[M-[sS][nN][1].*', mod):
                     _frag_smi = pl_lpp(_lpp_type, sn1=_lyso_smi, sn2=_sn2_smi)
                 elif re.match(r'\[M-[sS][nN][2].*', mod):
-                    _frag_smi = pl_lpp(_lpp_type, sn1=_sn2_smi, sn2=_lyso_smi)
+                    _frag_smi = pl_lpp(_lpp_type, sn1=_sn1_smi, sn2=_lyso_smi)
                 elif re.match(r'\[[sS][nN][1].*', mod):
                     _frag_smi = _sn1_smi
                 elif re.match(r'\[[sS][nN][2].*', mod):
@@ -356,89 +389,63 @@ class SNMainFrag(object):
             _elem_dct = elem_dct.copy()
 
         # print('mod', mod)
-
+        _mod_sum_elem_dct = {'C': 0, 'H': 0, 'N': 0, 'O': 0}
         if mod is None or mod == '':
-            _mod_elem_dct = {}
+            _mod_sum_elem_dct = {}
         else:
             chk1 = re.compile(r'.*[-]H2O.*')
             # chk2 = re.compile(r'.*[+]H2O.*')
+            chk2 = re.compile(r'.*[+]FA.*')
             chk3 = re.compile(r'.*[-]CO2.*')
-            chk4 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
+            chk4 = re.compile(r'.*[-]C3H9N.*')
+            chk5 = re.compile(r'.*[-]CH3COOH.*')
+            chk6 = re.compile(r'.*[-]CH2.*')
+            chk7 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
 
             if chk1.match(mod):
                 _mod_elem_dct = mod_dct['-H2O']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             # for [M-sn+H2O-H]-, the H2O was add already
             # elif chk2.match(mod):
             #     _mod_elem_dct = mod_dct['+H2O']
-            elif chk3.match(mod):
+            if chk2.match(mod):
+                _mod_elem_dct = mod_dct['+FA']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            if chk3.match(mod):
                 _mod_elem_dct = mod_dct['-CO2']
-            elif chk4.match(mod):
-                m4 = chk4.match(mod)
-                m4_lst = m4.groups()
-                m4_elem = m4_lst[1]
-                _charge = m4_lst[2]
-                _mod_elem_dct = self.parse_formula(formula=m4_elem)
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            if chk4.match(mod):
+                _mod_elem_dct = mod_dct['-C3H9N']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            if chk5.match(mod):
+                _mod_elem_dct = mod_dct['-CH3COOH']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            if chk6.match(mod):
+                _mod_elem_dct = mod_dct['-CH2']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            elif chk7.match(mod):
+                m7 = chk7.match(mod)
+                m7_lst = m7.groups()
+                m7_elem = m7_lst[1]
+                _charge = m7_lst[2]
+                _mod_sum_elem_dct = self.parse_formula(formula=m7_elem)
                 # naturalize the formula
                 if _charge in self.charge_elem_dct.keys():
-                    _mod_elem_dct['H'] += -1 * self.charge_elem_dct[_charge]['H']
+                    _mod_sum_elem_dct['H'] += -1 * self.charge_elem_dct[_charge]['H']
                 # print('found PE HG ------------------------------------------------------>>>>>>>>>>>>>>>')
             else:
-                _mod_elem_dct = {}
+                pass
 
         # get sum keys form both dict
         _frag_elem_dct = {}
-        _charged_keys_lst = set(sum([_elem_dct.keys(), _mod_elem_dct.keys()], []))
+        _charged_keys_lst = set(sum([_elem_dct.keys(), _mod_sum_elem_dct.keys()], []))
         for _key in _charged_keys_lst:
-            _frag_elem_dct[_key] = _elem_dct.get(_key, 0) + _mod_elem_dct.get(_key, 0)
+            _frag_elem_dct[_key] = _elem_dct.get(_key, 0) + _mod_sum_elem_dct.get(_key, 0)
 
         return _frag_elem_dct
-
-# usr_smi = r'OC(CCCCC(O)/C=C/C(O)/C=C/C(O)/C=C/CC(O)=O)=O'
-# usr_smi = r'OP(OCCN)(OCC([H])(OC(CCCCCCC/C=C/C/C=C/CCCCC)=O)COC(CCCCCCC(O)CCC/C=C/CCCCC)=O)=O'
-#
-# lpp_dct1 = {
-#     'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCC)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O))=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O", "OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O)CO/C=C\\\\CCCCCCCCCCCCCC)=O"]',
-#     'SN2_FRAGS': '["OC(CCCC)=O", "OC(CCCC/C=C/C)=O", "OC(CCCC/C=C/C/C=C/)=O", "OC(CCCC/C=C/C/C=C/C(O))=O"]',
-#     'SN1_SMILES': 'O/C=C\\CCCCCCCCCCCCCC', 'LPP_ORIGIN': 'PE(P-16:0/18:4)', 'SN1_ABBR': 'P-16:0',
-#     'SN_JSON': '{"SN1": "UNMOD", "SN2": "OCP"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
-#     'SN1_JSON': '{"C": 16, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "P-", "CHO": 0}',
-#     'LM_ID': 'PE(P-16:0/15:3[3xDB,1xOH]<COOH@C15>)',
-#     'SN2_JSON': '{"C": 15, "KETO": 0, "OH": 1, "OAP": 3, "OCP": 1, "COOH": 1, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
-#     'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O)CO/C=C\\CCCCCCCCCCCCCC)=O',
-#     'SN2_SMILES': 'OC(CCCC/C=C/C/C=C/C(O)/C=C/CC(O)=O)=O', 'SN2_ABBR': '15:3[3xDB,1xOH]<COOH@C15>'}
-#
-# lpp_dct2 = {
-#     'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O))=O)=O", "OP(OCCN)(OCC([H])(OC(CC)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O))=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O))=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O", "OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O"]',
-#     'SN2_FRAGS': '["OC(CC)=O", "OC(CCC(O))=O", "OC(CCC(O)/C=C/)=O", "OC(CCC(O)/C=C/C(O))=O", "OC(CCC(O)/C=C/C(O)/C=C/C)=O"]',
-#     'SN1_SMILES': 'OC(CCCCCCC(O)/C=C/CCCCCC)=O', 'LPP_ORIGIN': 'PE(16:1/20:4)', 'SN1_ABBR': '16:1[1xDB,1xOH]',
-#     'SN_JSON': '{"SN1": "OAP", "SN2": "OCP"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '["OC(CCCCCC)=O","OC(CCCCCCC(O))=O"]',
-#     'SN1_JSON': '{"C": 16, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}',
-#     'LM_ID': 'PE(16:1[1xDB,1xOH]/14:3[3xDB,2xOH]<COOH@C14>)',
-#     'SN2_JSON': '{"C": 14, "KETO": 0, "OH": 2, "OAP": 3, "OCP": 1, "COOH": 1, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
-#     'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O)COC(CCCCCCC(O)/C=C/CCCCCC)=O)=O',
-#     'SN2_SMILES': 'OC(CCC(O)/C=C/C(O)/C=C/C/C=C/CC(O)=O)=O', 'SN2_ABBR': '14:3[3xDB,2xOH]<COOH@C14>'}
-#
-# lpp_dct3 = {'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CCCCCCCC/C=C\C(O)CCCCCC)=O)=O"]',
-#             'SN2_FRAGS': '[""]', 'SN1_SMILES': 'OC(CCCCCCCCCCCCCCCCCCC)=O', 'LPP_ORIGIN': 'PE(16:0/20:0)', 'SN1_ABBR': '0:0',
-#             'SN_JSON': '{"SN1": "LYSO", "SN2": "UNMOD"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
-#             'SN1_JSON': '{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "", "CHO": 0}',
-#             'LM_ID': 'PE(0:0/18:1)',
-#             'SN2_JSON': '{"C": 18, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 1, "LINK_TYPE": "", "CHO": 0}',
-#             'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CCCCCCCC/C=C\C(O)CCCCCC)=O)=O',
-#             'SN2_SMILES': 'OC(CCCCCCCC/C=C\C(O)CCCCCC)=O', 'SN2_ABBR': '20:0'}
-#
-# lpp_dct4 = {'LPP_FRAG': '["OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O)=O"]',
-#             'SN2_FRAGS': '[""]', 'SN1_SMILES': 'O', 'LPP_ORIGIN': 'PE(16:0/20:0)', 'SN1_ABBR': '0:0',
-#             'SN_JSON': '{"SN1": "LYSO", "SN2": "UNMOD"}', 'LPP_CLASS': 'PE', 'SN1_FRAGS': '[""]',
-#             'SN1_JSON': '{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, "LINK_TYPE": "LYSO", "CHO": 0}',
-#             'LM_ID': 'PE(0:0/18:3)',
-#             'SN2_JSON': '{"C": 18, "KETO": 0, "OH": 1, "OAP": 1, "OCP": 0, "COOH": 0, "DB": 3, "LINK_TYPE": "", "CHO": 0}',
-#             'LPP_SMILES': 'OP(OCCN)(OCC([H])(OC(CCCCCCCCCCCCCCCCCCC)=O)COC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O)=O',
-#             'SN2_SMILES': 'OC(CC/C=C\C/C=C\C/C=C\C(O)CCCCCC)=O', 'SN2_ABBR': '20:0'}
-#
-# frag_score = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
-#
-# _lpp_lst = [lpp_dct1, lpp_dct2, lpp_dct3, lpp_dct4]
-# a = SNMainFrag('PE', frag_score)
-# for l in _lpp_lst:
-#     a.calc_frags(l)

@@ -241,27 +241,26 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # print(mod_sum_t_df.columns.tolist())
                 # mod_sum_df.to_csv('oxDB_t.csv')
 
+            if fa_dct['DB_LINK_type'] == 'O-':
+                _unmod_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
+            elif fa_dct['DB_LINK_type'] == 'P-':
+                _unmod_fa_abbr = 'P-%i:0' % fa_dct['DB_C_count']
+            elif fa_dct['DB_LINK_type'] == '':
+                _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
             else:
-                if fa_dct['DB_LINK_type'] == 'O-':
-                    _unox_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
-                elif fa_dct['DB_LINK_type'] == 'P-':
-                    _unox_fa_abbr = 'P-%i:0' % fa_dct['DB_C_count']
-                elif fa_dct['DB_LINK_type'] == '':
-                    _unox_fa_abbr = '%i:0' % fa_dct['DB_C_count']
-                else:
-                    _unox_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+                _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
 
-                unox_json = ('{"C": %i, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
-                             '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
+            unmod_json = ('{"C": %i, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
+                         '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
 
-                unox_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
-                            'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
-                            'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
-                            'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
-                            'FA_ABBR': _unox_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unox_json,
-                            'FRAG_SMILES': '[""]'}
+            unmod_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
+                        'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
+                        'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
+                        'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
+                        'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json,
+                        'FRAG_SMILES': '[""]'}
 
-                mod_sum_df = pd.DataFrame(unox_dct, index=['0-no_oxidation'])
+            unmod_df = pd.DataFrame(unmod_dct, index=['0-no_oxidation'])
 
             lyso_json = ('{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
                          '"LINK_TYPE": "LYSO", "CHO": 0}')
@@ -274,6 +273,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             _lyso_df = pd.DataFrame(lyso_dct, index=['0-lyso'])
 
+            mod_sum_df = mod_sum_df.append(unmod_df)
             mod_sum_df = mod_sum_df.append(_lyso_df)
             # print(mod_sum_df.head())
 
