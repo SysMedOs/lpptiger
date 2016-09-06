@@ -293,6 +293,8 @@ class SNMainFrag(object):
             ion_dct = self.parse_formula(elem_info)
         elif isinstance(elem_info, dict):
             ion_dct = elem_info.copy()
+        else:
+            ion_dct = {}
 
         if charge in self.charge_elem_dct.keys():
             charge_dct = self.charge_elem_dct[charge]
@@ -300,15 +302,11 @@ class SNMainFrag(object):
             # set as '[M-H]-'
             charge_dct = {'H': -1}
 
-        # for _element in charge_dct.keys():
-        #     if _element in ion_dct.keys():
-        #         ion_dct[_element] += charge_dct[_element]
-
         # get sum keys form both dict
         _ion_elem_dct = {}
-        _charged_keys_lst = set(sum([elem_info.keys(), self.charge_elem_dct[charge].keys()], []))
+        _charged_keys_lst = set(sum([ion_dct.keys(), charge_dct.keys()], []))
         for _key in _charged_keys_lst:
-            _ion_elem_dct[_key] = elem_info.get(_key, 0) + self.charge_elem_dct[charge].get(_key, 0)
+            _ion_elem_dct[_key] = ion_dct.get(_key, 0) + charge_dct.get(_key, 0)
 
         ion_mz = 0.0
 
