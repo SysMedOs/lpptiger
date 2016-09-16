@@ -20,6 +20,7 @@ from lpplibs import MergeBackLPP
 from lpplibs.SNMainFrag import SNMainFrag
 from lpplibs.AbbrGenerator import AbbrGenerator
 from lpplibs import MSPcreator
+from lpplibs import SDFsummary
 
 t_start = time.clock()
 
@@ -30,9 +31,10 @@ mod_table = './lpplibs/ModConfig.csv'
 # pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
 pl_class_use_lst = ['PE']
 pl_class = pl_class_use_lst[0]
+save_spectra = 0
 
-save_sdf = '%s_short_max_1keto_1lessDB_FRAG.sdf' % ''.join(pl_class_use_lst)
-save_msp = '%s_short_max_1keto_1lessDB_FRAG.msp' % ''.join(pl_class_use_lst)
+save_sdf = '%s_18-1-2_max_1keto_1lessDB_FRAG.sdf' % ''.join(pl_class_use_lst)
+save_msp = '%s_18-1-2_max_1keto_1lessDB_FRAG.msp' % ''.join(pl_class_use_lst)
 score_xlsx = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
 sdf_writer = Chem.SDWriter(save_sdf)
 msp_obj = open(save_msp, mode='w')
@@ -40,9 +42,10 @@ sdf_dct = {}
 
 parser = PLParser()
 abbr_gen = AbbrGenerator()
+
 frag_gen = SNMainFrag(pl_class, score_xlsx)
 
-pl_df = pd.read_excel(pl_table, sheetname=2)
+pl_df = pd.read_excel(pl_table, sheetname=6)
 fa_df = pd.read_csv(fa_table, index_col=0)
 
 print(pl_df.head())
@@ -143,8 +146,8 @@ for (_idx, _row) in pl_df.iterrows():
                                      'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str,
                                      'SN1_JSON': _sn1_row['FA_JSON'], 'SN2_JSON': _sn2_row['FA_JSON'],
                                      'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json}
-
-                    _lpp_info_dct['MSP_JSON'] = frag_gen.calc_frags(_lpp_info_dct)
+                    if save_spectra == 1:
+                        _lpp_info_dct['MSP_JSON'] = frag_gen.calc_frags(_lpp_info_dct)
 
                     # print(_lpp_info_dct)
                     # 'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
@@ -188,7 +191,7 @@ for _k_lpp in sdf_dct.keys():
 
     _lpp_dct = sdf_dct[_k_lpp]
 
-    if len(json.loads(_lpp_dct['MSP_JSON']).keys()) > 0:
+    if save_spectra == 1 and len(json.loads(_lpp_dct['MSP_JSON']).keys()) > 0:
         _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
         # print(_lpp_smiles)
         _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
@@ -218,9 +221,39 @@ for _k_lpp in sdf_dct.keys():
         sdf_writer.write(_lpp_mol)
         MSPcreator.to_msp(msp_obj, _lpp_dct)
 
+    elif save_spectra == 0:
+        _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
+        # print(_lpp_smiles)
+        _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
+        AllChem.Compute2DCoords(_lpp_mol)
+        _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
+        _lpp_mass = Descriptors.MolWt(_lpp_mol)
+        _lpp_exactmass = rdMolDescriptors.CalcExactMolWt(_lpp_mol)
+        _lpp_formula = rdMolDescriptors.CalcMolFormula(_lpp_mol)
+        _lpp_mol.SetProp('EXACT_MASS', '%.6f' % _lpp_exactmass)
+        _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
+        _lpp_mol.SetProp('FORMULA', _lpp_formula)
+
+        if str(_lpp_dct['LPP_CLASS']) == 'PC':
+            _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+FA-H]-')
+            _lpp_neg_precursor_info = '{"[M+FA-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+
+        else:
+            _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M-H]-')
+            _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+
+        _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
+        _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
+
+        for _k in _lpp_dct.keys():
+            _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
+
+        sdf_writer.write(_lpp_mol)
 
 sdf_writer.close()
 msp_obj.close()
+
+SDFsummary.sdf2xlsx(save_sdf, save_sdf[:-4] + '.xlsx')
 
 t_spent = time.clock() - t_start
 print('==>==>%i of LPP generated ==> ==> ' % len(sdf_dct.keys()))

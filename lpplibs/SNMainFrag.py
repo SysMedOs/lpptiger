@@ -20,13 +20,18 @@ from MergeBackLPP import pl_lpp
 class SNMainFrag(object):
     def __init__(self, pl_class, frag_score_list):
         self.pl_type = pl_class
-        pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
-        pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
-        pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
-        pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
-        pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
-        pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
-        self.pl_frag_df = pl_frag_df
+        try:
+            pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
+
+            pl_frag_df = pd.DataFrame()
+            pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
+            pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
+            pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
+            pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
+            pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
+            self.pl_frag_df = pl_frag_df
+        except:
+            pass
 
         self.charge_elem_dct = {'[M+H]+': {'H': 1}, '[M+Na]+': {'Na': 1},
                                 '[M+K]+': {'Na': 1}, '[M+NH4]+': {'H': 4, 'N': 1},
@@ -115,20 +120,29 @@ class SNMainFrag(object):
                 if int(_sn1_mod_dct['OAP']) + int(_sn1_mod_dct['OCP']) > 0 and \
                                         int(_sn2_mod_dct['OAP']) + int(_sn2_mod_dct['OCP']) == 0:
                     _score_se = _score_se.rename({'[sn1-H]-': '[sn2-H]-', '[sn2-H]-': '[sn1-H]-'})
-                    # print('sn1 mod & sn2 unmod >>>', _score_se.index.tolist())
+                    if '[sn1-H2O-H]-' in frag_type_lst and '[sn2-H2O-H]-':
+                        _score_se = _score_se.rename({'[sn1-H2O-H]-': '[sn2-H2O-H]-', '[sn2-H2O-H]-': '[sn1-H2O-H]-'})
+                    if '[sn1-CO2-H]-' in frag_type_lst and '[sn2-CO2-H]-':
+                        _score_se = _score_se.rename({'[sn1-CO2-H]-': '[sn2-CO2-H]-', '[sn2-CO2-H]-': '[sn1-CO2-H]-'})
+
+                    _sn_switch_dct ={}
                     for _ion_typ in frag_type_lst:
-                        if _ion_typ in ['[sn1-H]-', '[sn2-H]-']:
+                        if _ion_typ in ['[sn1-H]-', '[sn2-H]-',
+                                        '[sn1-H2O-H]-', '[sn2-H2O-H]-',
+                                        '[sn1-CO2-H]-', '[sn2-CO2-H]-']:
                             pass
                         else:
                             sn1_chk = re.compile(r'(\[.*)([sS][nN]1)(.*[-])')
                             sn2_chk = re.compile(r'(\[.*)([sS][nN]2)(.*[-])')
                             if sn1_chk.match(_ion_typ):
                                 _sn_typ = sn1_chk.sub(r'\1sn2\3', _ion_typ)
-                                _score_se = _score_se.rename({_ion_typ: _sn_typ})
+                                _sn_switch_dct[_ion_typ] = _sn_typ
                             elif sn2_chk.match(_ion_typ):
                                 _sn_typ = sn2_chk.sub(r'\1sn1\3', _ion_typ)
-                                _score_se = _score_se.rename({_ion_typ: _sn_typ})
-                            # print(_score_se.index.tolist())
+                                _sn_switch_dct[_ion_typ] = _sn_typ
+
+                    if len(_sn_switch_dct.keys()) > 0:
+                        _score_se = _score_se.rename(_sn_switch_dct)
 
                     pre_frag_type_lst = _score_se.index.tolist()
                     frag_type_lst = []
@@ -141,6 +155,7 @@ class SNMainFrag(object):
                     if _ion_typ in ['[M-H]-', '[M+FA-H]-', '[sn1-H]-', '[sn2-H]-']:
                         pass
                     else:
+                        # print(_score_se.loc[_ion_typ])
 
                         if int(_score_se.loc[_ion_typ]) > 0:
                             _frag_dct[_ion_typ] = self.calc_mz(elem_info=None, mod=_ion_typ,
