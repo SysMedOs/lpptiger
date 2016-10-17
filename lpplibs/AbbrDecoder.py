@@ -59,19 +59,19 @@ class AbbrDecoder(object):
 
 
 
-t1 = 'PA(16:0/18:1)'
-t2 = 'PAx(0:0/18:1)'
-t3 = 'PG(16:0/18:2)'
-t3 = 'PC(18:0/20:4)'
-l = [t1, t2, t3]
-a = AbbrDecoder()
-for i in l:
-    x = a.get_main_parts(i)
-    print x
-    b = x[0]
-    print b
-    m = a.get_pl_elem(b)
-print 'fin!'
+# t1 = 'PA(16:0/18:1)'
+# t2 = 'PAx(0:0/18:1)'
+# t3 = 'PG(16:0/18:2)'
+# t3 = 'PC(18:0/20:4)'
+# l = [t1, t2, t3]
+# a = AbbrDecoder()
+# for i in l:
+#     x = a.get_main_parts(i)
+#     print x
+#     b = x[0]
+#     print b
+#     m = a.get_pl_elem(b)
+# print 'fin!'
 
 
 

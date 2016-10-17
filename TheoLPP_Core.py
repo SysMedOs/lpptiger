@@ -29,12 +29,14 @@ fa_table = './lpplibs/FA_list.csv'
 mod_table = './lpplibs/ModConfig.csv'
 
 # pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
-pl_class_use_lst = ['PE']
+pl_class_use_lst = ['PS']
 pl_class = pl_class_use_lst[0]
 save_spectra = 0
 
-save_sdf = '%s_18-1-2_max_1keto_1lessDB_FRAG.sdf' % ''.join(pl_class_use_lst)
-save_msp = '%s_18-1-2_max_1keto_1lessDB_FRAG.msp' % ''.join(pl_class_use_lst)
+# save_sdf = '%s_all2_max_1keto_1lessDB_FRAG.sdf' % ''.join(pl_class_use_lst)
+# save_msp = '%s_all2_max_1keto_1lessDB_FRAG.msp' % ''.join(pl_class_use_lst)
+save_sdf = '%s_ISOP.sdf' % ''.join(pl_class_use_lst)
+save_msp = '%s_ISOP.msp' % ''.join(pl_class_use_lst)
 score_xlsx = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
 sdf_writer = Chem.SDWriter(save_sdf)
 msp_obj = open(save_msp, mode='w')
@@ -45,7 +47,7 @@ abbr_gen = AbbrGenerator()
 
 frag_gen = SNMainFrag(pl_class, score_xlsx)
 
-pl_df = pd.read_excel(pl_table, sheetname=6)
+pl_df = pd.read_excel(pl_table, sheetname=3)
 fa_df = pd.read_csv(fa_table, index_col=0)
 
 print(pl_df.head())
@@ -113,7 +115,8 @@ for (_idx, _row) in pl_df.iterrows():
                 _lpp_typ = ''.join(_oap_ocp_lst)
 
                 # only export OAP & OCP
-                if _lpp_typ not in ['LYSOLYSO', 'UNMODUNMOD']:
+                # if _lpp_typ not in ['LYSOLYSO', 'UNMODUNMOD']:
+                if _lpp_typ not in ['LYSOLYSO']:
                     _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, sn1=_sn1_mod_smiles, sn2=_sn2_mod_smiles)
                     _lpp_id_str = str(''.join([_pl_hg_abbr, '(', _sn1_abbr_str, '/', _sn2_abbr_str, ')']))
 

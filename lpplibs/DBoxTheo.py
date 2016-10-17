@@ -14,6 +14,8 @@ import pandas as pd
 
 from AbbrGenerator import AbbrGenerator
 
+from ISOPoxTheo import IsoProstanOx
+
 # from rdkit import Chem
 # from rdkit.Chem import Draw
 
@@ -70,17 +72,18 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             del _def_frags_df, _def_frags_dct
             # print(mod_info_df.index.tolist())
+
+            # change the data type from str to int
+            mod_info_df.loc['OAP', :] = mod_info_df.loc['OAP', :].astype(int)
+            mod_info_df.loc['OCP', :] = mod_info_df.loc['OCP', :].astype(int)
+            mod_info_df.loc['DB', :] = mod_info_df.loc['DB', :].astype(int)
+            mod_info_df.loc['OH', :] = mod_info_df.loc['OH', :].astype(int)
+            mod_info_df.loc['KETO', :] = mod_info_df.loc['KETO', :].astype(int)
+            mod_info_df.loc['CHO', :] = mod_info_df.loc['CHO', :].astype(int)
+            mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
+            # mod_info_df['FRAG_SMILES'] = ''
             
-            if db_count > 0:
-                # change the data type from str to int
-                mod_info_df.loc['OAP', :] = mod_info_df.loc['OAP', :].astype(int)
-                mod_info_df.loc['OCP', :] = mod_info_df.loc['OCP', :].astype(int)
-                mod_info_df.loc['DB', :] = mod_info_df.loc['DB', :].astype(int)
-                mod_info_df.loc['OH', :] = mod_info_df.loc['OH', :].astype(int)
-                mod_info_df.loc['KETO', :] = mod_info_df.loc['KETO', :].astype(int)
-                mod_info_df.loc['CHO', :] = mod_info_df.loc['CHO', :].astype(int)
-                mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
-                # mod_info_df['FRAG_SMILES'] = ''
+            if 0 < db_count <= 2:
 
                 # start oxidation
                 for db_i in range(1, db_count + 1):
@@ -214,14 +217,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df['FA_ABBR'] = ''
                 mod_sum_df['FA_TYPE'] = ''
                 mod_sum_df['FA_JSON'] = ''
-                # mod_sum_df['C_NUM'] = mod_sum_df['C_NUM'].astype(int)
-                # mod_sum_df['DB'] = mod_sum_df['DB'].astype(int)
-                # mod_sum_df['OH'] = mod_sum_df['OH'].astype(int)
-                # mod_sum_df['KETO'] = mod_sum_df['KETO'].astype(int)
-                # mod_sum_df['CHO'] = mod_sum_df['CHO'].astype(int)
-                # mod_sum_df['COOH'] = mod_sum_df['COOH'].astype(int)
-                # mod_sum_df['OAP'] = mod_sum_df['OAP'].astype(int)
-                # mod_sum_df['OCP'] = mod_sum_df['OCP'].astype(int)
+
                 for (_fa_idx, _fa_row) in mod_sum_df.iterrows():
                     _fa_code = str(_fa_row['FA_CHECKER'])
                     _fa_abbr, _fa_typ = abbr_gen.decode(_fa_code)
@@ -241,6 +237,25 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # print(mod_sum_t_df.columns.tolist())
                 # mod_sum_df.to_csv('oxDB_t.csv')
 
+            if 3 <= db_count:
+                isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
+                ox_isop = IsoProstanOx(fa_dct, isop_cfg)
+
+                _isop_lpp_lst = ox_isop.get_isop_lpp()
+
+                for _isop in _isop_lpp_lst:
+
+                    _idx = str(_isop_lpp_lst.index(_isop))
+
+                    _isop_dct = {'SMILES': _isop, 'OAP': 1, 'OCP': 0, 'DB': 0,
+                                 'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 1,
+                                 'FULL_SMILES': 'O', 'C_NUM': 20,
+                                 'FA_CHECKER': '20:4[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:1,OCP:0}',
+                                 'FA_ABBR': 'ISOP', 'FA_TYPE': 'OAP', 'FA_JSON': '', 'FRAG_SMILES': '[""]'}
+                    _isop_df = pd.DataFrame(_isop_dct, index=[_idx])
+                    mod_sum_df = mod_sum_df.append(_isop_df)
+                    print('mod_sum_df', mod_sum_df.shape)
+
             if fa_dct['DB_LINK_type'] == 'O-':
                 _unmod_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
             elif fa_dct['DB_LINK_type'] == 'P-':
@@ -251,14 +266,14 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
 
             unmod_json = ('{"C": %i, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
-                         '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
+                          '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
 
             unmod_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
-                        'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
-                        'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
-                        'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
-                        'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json,
-                        'FRAG_SMILES': '[""]'}
+                         'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
+                         'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
+                         'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
+                         'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json,
+                         'FRAG_SMILES': '[""]'}
 
             unmod_df = pd.DataFrame(unmod_dct, index=['0-no_oxidation'])
 
@@ -275,7 +290,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             mod_sum_df = mod_sum_df.append(unmod_df)
             mod_sum_df = mod_sum_df.append(_lyso_df)
-            # print(mod_sum_df.head())
+            print(mod_sum_df)
 
             return mod_sum_df
 
@@ -308,7 +323,7 @@ def oxidizer(fa_link_dct):
     # Construct regular expression for DB
     # if use FA: 'OC(CCCCCCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
     # get ('CCCCCC', 'C/C=C\\C/C=C\\C/C=C\\C/C=C\\', 'C/C=C\\', 'CCCC')
-    fa_main_rgx = re.compile(r'(C*)((C[/]C[=]C\\){1,8})(C*)')
+    fa_main_rgx = re.compile(r'(C*)(([/]C[=]C\\C){1,8})(C*)')
 
     fa_checker = re.match(fa_rgx, _usr_fa_smiles)
     if fa_checker:
@@ -320,7 +335,7 @@ def oxidizer(fa_link_dct):
 
             if len(pre_db_lst) >= 3:
                 db_str = pre_db_lst[1]
-                db_counter = db_str.count('C/C=C\\')
+                db_counter = db_str.count('/C=C\C')
                 # print('db_str', db_str, 'db_counter', db_counter)
 
                 db_info_dct['DB_count'] = db_counter

@@ -15,7 +15,8 @@ class AbbrGenerator(object):
     def __init__(self):
         pass
 
-    def decode(self, usr_code):
+    @staticmethod
+    def decode(usr_code):
 
         # prepare output
         lpp_abbr_str = ''
@@ -73,7 +74,8 @@ class AbbrGenerator(object):
             # lpp_info_lst = (lpp_abbr_str, lpp_typ_str)
             return lpp_abbr_str, lpp_typ_str
 
-    def from_json(self, usr_json_str):
+    @staticmethod
+    def from_json(usr_json_str):
 
         # prepare output
         lpp_abbr_str = ''

@@ -20,18 +20,20 @@ from MergeBackLPP import pl_lpp
 class SNMainFrag(object):
     def __init__(self, pl_class, frag_score_list):
         self.pl_type = pl_class
-        try:
-            pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
+        print(self.pl_type)
+        # try:
+        pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
 
-            pl_frag_df = pd.DataFrame()
-            pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
-            pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
-            pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
-            pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
-            pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
-            self.pl_frag_df = pl_frag_df
-        except:
-            pass
+        # pl_frag_df = pd.DataFrame()
+        pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
+        pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
+        pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
+        pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
+        pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
+        self.pl_frag_df = pl_frag_df
+        print('self.pl_frag_df', self.pl_frag_df.shape)
+        # except:
+        #     pass
 
         self.charge_elem_dct = {'[M+H]+': {'H': 1}, '[M+Na]+': {'Na': 1},
                                 '[M+K]+': {'Na': 1}, '[M+NH4]+': {'H': 4, 'N': 1},
@@ -370,7 +372,9 @@ class SNMainFrag(object):
 
         mod_dct = {'-H2O': {'H': -2, 'O': -1}, '+H2O': {'H': 2, 'O': 1},
                    '-CO2': {'C': -1, 'O': -2}, '+FA': {'H': 2, 'C': 1, 'O': 2},
-                   '-C3H9N': {'C': -3, 'H': -9, 'N': -1}, '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
+                   '-C3H9N': {'C': -3, 'H': -9, 'N': -1},
+                   '-C3H5NO2': {'C': -3, 'O': -2, 'H': -5, 'N': -1},
+                   '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
                    '-CH2': {'C': -1, 'H': -2}}
 
         # get the formula as dict
@@ -391,7 +395,7 @@ class SNMainFrag(object):
                     _frag_smi = _sn1_smi
                 elif re.match(r'\[[sS][nN][2].*', mod):
                     _frag_smi = _sn2_smi
-                elif re.match(r'\[M[+-][HCF].*', mod):
+                elif re.match(r'\[M[+-][HCFA].*', mod):
                     _frag_smi = _lpp_full_smi
                 else:
                     _frag_smi = ''
@@ -408,14 +412,22 @@ class SNMainFrag(object):
         if mod is None or mod == '':
             _mod_sum_elem_dct = {}
         else:
+            chk0 = re.compile(r'.*-[sS][nN][12].*')
             chk1 = re.compile(r'.*[-]H2O.*')
-            # chk2 = re.compile(r'.*[+]H2O.*')
-            chk2 = re.compile(r'.*[+]FA.*')
+            chk2 = re.compile(r'.*[+]H2O.*')
             chk3 = re.compile(r'.*[-]CO2.*')
             chk4 = re.compile(r'.*[-]C3H9N.*')
             chk5 = re.compile(r'.*[-]CH3COOH.*')
             chk6 = re.compile(r'.*[-]CH2.*')
-            chk7 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
+            chk7 = re.compile(r'.*[-]C3H5NO2.*')
+
+            chk9 = re.compile(r'.*[+]FA.*')
+            chk10 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
+
+            if chk0.match(mod):
+                _mod_elem_dct = mod_dct['-H2O']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
 
             if chk1.match(mod):
                 _mod_elem_dct = mod_dct['-H2O']
@@ -425,7 +437,7 @@ class SNMainFrag(object):
             # elif chk2.match(mod):
             #     _mod_elem_dct = mod_dct['+H2O']
             if chk2.match(mod):
-                _mod_elem_dct = mod_dct['+FA']
+                _mod_elem_dct = mod_dct['+H2O']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             if chk3.match(mod):
@@ -444,8 +456,17 @@ class SNMainFrag(object):
                 _mod_elem_dct = mod_dct['-CH2']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
-            elif chk7.match(mod):
-                m7 = chk7.match(mod)
+            if chk7.match(mod):
+                _mod_elem_dct = mod_dct['-C3H5NO2']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+
+            if chk9.match(mod):
+                _mod_elem_dct = mod_dct['+FA']
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            if chk10.match(mod):
+                m7 = chk10.match(mod)
                 m7_lst = m7.groups()
                 m7_elem = m7_lst[1]
                 _charge = m7_lst[2]
