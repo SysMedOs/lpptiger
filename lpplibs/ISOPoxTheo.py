@@ -16,40 +16,115 @@ from AbbrGenerator import AbbrGenerator
 
 
 class IsoProstanOx(object):
-
     def __init__(self, db_info_dct, isop_mod_cfg):
         self.db_info_dct = db_info_dct
         self.isop_mod_df = pd.read_csv(isop_mod_cfg, header=0, index_col=0)
 
     @staticmethod
-    def get_count(isop_smi):
+    def get_isop_series(isop_info_dct, usr_pre_smi, usr_pre_db_count, reverse=False):
 
-        c_count = isop_smi.count('C')
+        pre_c_count = usr_pre_smi.count('C')
 
+        if reverse is False:
+            isop_series = pre_c_count + 3 * usr_pre_db_count + isop_info_dct['MAIN_SERIES']
+            isop_series = str(isop_series)
+        elif reverse is True:
+            isop_series = pre_c_count + 3 * usr_pre_db_count + isop_info_dct['REVERSE_SERIES']
+            isop_series = str(isop_series)
+        else:
+            isop_series = ''
 
-    @staticmethod
-    def get_isop_abbr(isop_info_dct, usr_c, usr_db):
+        return isop_series
+
+    def get_isop_checker(self, isop_info_dct, usr_c, usr_db, usr_series):
 
         # usr_code = 'P-18:0[0xDB,0xOH,1xKETO]<CHO@C0,COOH@C0>{OAP:1,OCP:0}'
 
-        abbr_formater = ('{RING_TYPE}{DB_COUNT}-{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,{OH_COUNT}xOH,{KETO_COUNT}xKETO]'
-                         '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
-                         .format(RING_TYPE=isop_info_dct['RING_TYPE'],
-                                 C_COUNT=usr_c,
-                                 DB_COUNT=usr_db,
-                                 OH_COUNT=isop_info_dct['OH'],
-                                 KETO_COUNT=isop_info_dct['KETO'],
-                                 CHO_COUNT=isop_info_dct['CHO'],
-                                 COOH_COUNT=isop_info_dct['COOH'],
-                                 left='{',
-                                 OAP_COUNT=isop_info_dct['OAP'],
-                                 OCP_COUNT=isop_info_dct['OCP'],
-                                 right='}'
-                                 )
-                         )
+        ring_type =isop_info_dct['RING_TYPE']
+        ring_type_lst = ring_type.split('-')
 
-        print(abbr_formater)
-        return abbr_formater
+        # for IsoP-[ABCDEFGHIJ] and IsoK[DE]
+        if len(ring_type_lst) == 2:
+            abbr_formatter = ('{ISOP_SERIES}-{RING_TYPE}{SERIES_DB_COUNT}-{ISOX}-{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,'
+                              '{OH_COUNT}xOH,{KETO_COUNT}xKETO]'
+                              '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
+                              .format(ISOP_SERIES=usr_series,
+                                      RING_TYPE=ring_type_lst[1],
+                                      SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
+                                      ISOX=ring_type_lst[0],
+                                      C_COUNT=usr_c,
+                                      DB_COUNT=usr_db,
+                                      OH_COUNT=isop_info_dct['OH'],
+                                      KETO_COUNT=isop_info_dct['KETO'],
+                                      CHO_COUNT=isop_info_dct['CHO'],
+                                      COOH_COUNT=isop_info_dct['COOH'],
+                                      left='{',
+                                      OAP_COUNT=isop_info_dct['OAP'],
+                                      OCP_COUNT=isop_info_dct['OCP'],
+                                      right='}'
+                                      )
+                              )
+        # For IsoTxA and IsoTxB
+        else:
+            abbr_formatter = ('{ISOP_SERIES}-{RING_TYPE}{SERIES_DB_COUNT}-{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,'
+                              '{OH_COUNT}xOH,{KETO_COUNT}xKETO]'
+                              '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
+                              .format(ISOP_SERIES=usr_series,
+                                      RING_TYPE=isop_info_dct['RING_TYPE'],
+                                      SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
+                                      C_COUNT=usr_c,
+                                      DB_COUNT=usr_db,
+                                      OH_COUNT=isop_info_dct['OH'],
+                                      KETO_COUNT=isop_info_dct['KETO'],
+                                      CHO_COUNT=isop_info_dct['CHO'],
+                                      COOH_COUNT=isop_info_dct['COOH'],
+                                      left='{',
+                                      OAP_COUNT=isop_info_dct['OAP'],
+                                      OCP_COUNT=isop_info_dct['OCP'],
+                                      right='}'
+                                      )
+                              )
+
+        return abbr_formatter
+
+    def get_info_dct(self, isop_smi, isop_info_dct, usr_db, usr_pre_db_count, usr_pre_smi, reverse=False):
+
+        isop_series = self.get_isop_series(isop_info_dct, usr_pre_smi, usr_pre_db_count, reverse=reverse)
+
+        c_count = isop_smi.count('C')
+
+        isop_checker = self.get_isop_checker(isop_info_dct, usr_c=c_count, usr_db=usr_db, usr_series=isop_series)
+        abbr_gen = AbbrGenerator()
+        isop_abbr, isop_typ_str = abbr_gen.decode(isop_checker)
+
+        isop_json = ('{left}"C": {C_COUNT}, "KETO": {KETO_COUNT}, "OH": {OH_COUNT}, '
+                     '"OAP": {OAP_COUNT}, "OCP": {OCP_COUNT}, "IsoP":{RING_TYPE}{DB_COUNT}'
+                     '"COOH": {COOH_COUNT}, "DB": {DB_COUNT}, "LINK_TYPE": "", "CHO": {CHO_COUNT}{right}'
+                     .format(RING_TYPE=isop_info_dct['RING_TYPE'],
+                             C_COUNT=c_count,
+                             DB_COUNT=usr_db,
+                             OH_COUNT=isop_info_dct['OH'],
+                             KETO_COUNT=isop_info_dct['KETO'],
+                             CHO_COUNT=isop_info_dct['CHO'],
+                             COOH_COUNT=isop_info_dct['COOH'],
+                             left='{',
+                             OAP_COUNT=isop_info_dct['OAP'],
+                             OCP_COUNT=isop_info_dct['OCP'],
+                             right='}'
+                             )
+                     )
+
+        isop_lpp_sum_dct = {'SMILES': isop_smi, 'C_NUM': c_count, 'DB': usr_db,
+                            'OAP': isop_info_dct['OAP'], 'OCP': isop_info_dct['OCP'],
+                            'OH': isop_info_dct['OH'], 'KETO': isop_info_dct['KETO'],
+                            'CHO': isop_info_dct['CHO'], 'COOH': isop_info_dct['COOH'],
+                            'MOD_NUM': 1,
+                            'FULL_SMILES': isop_smi,
+                            'FA_CHECKER': isop_checker,
+                            'FA_ABBR': isop_abbr, 'FA_TYPE': isop_typ_str, 'FA_JSON': isop_json,
+                            'FRAG_SMILES': '[""]'}
+
+        return isop_abbr, isop_lpp_sum_dct
 
     def get_isop_lpp(self):
 
@@ -74,7 +149,7 @@ class IsoProstanOx(object):
 
             print(_ring_info_dct['ORIGIN_SMILES'])
             print(usr_db_main_smi)
-            _pattern_rgx = re.compile(_ring_info_dct['ORIGIN_SMILES'])
+            # _pattern_rgx = re.compile(_ring_info_dct['ORIGIN_SMILES'])
 
             _db_required_num = _ring_info_dct['DB_NUM_REQUIRED']
             _remain_db_num = usr_db_num - _db_required_num
@@ -92,29 +167,37 @@ class IsoProstanOx(object):
                     if _ring_info_dct['OCP'] == 0 and _ring_info_dct['OAP'] == 1:
                         _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
                                          _ring_info_dct['MAIN_SMILES'] + '/C=C\\C' * _db_seg[1] + usr_db_post_smi)
-                        _c_count = _ring_lpp_smi.count('C')
-                        print(_ring_info_dct)
-                        _abbr = self.get_isop_abbr(_ring_info_dct, usr_c=_c_count, usr_db=_remain_db_num)
-                        usr_lpp_lst.append(_ring_lpp_smi)
+
+                        _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct, _remain_db_num,
+                                                                          _db_seg[0], usr_db_pre_smi, reverse=False)
+                        usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
                     elif _ring_info_dct['OCP'] == 1 and _ring_info_dct['OAP'] == 0:
                         _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
                                          _ring_info_dct['MAIN_SMILES'] + usr_db_post_smi)
-                        usr_lpp_lst.append(_ring_lpp_smi)
+                        _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct, _remain_db_num,
+                                                                          _db_seg[0], usr_db_pre_smi, reverse=False)
+                        usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
 
                     _rev_smi = _ring_info_dct['REVERSE_SMILES']
                     if isinstance(_rev_smi, str):
                         # blank 'REVERSE_SMILES' gives np.nan which is float
                         if _rev_smi not in no_rev_lst:
                             if _ring_info_dct['OCP'] == 0 and _ring_info_dct['OAP'] == 1:
-                                _rev_ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
-                                                     _ring_info_dct['REVERSE_SMILES']
-                                                     + '/C=C\\C' * _db_seg[1]+ usr_db_post_smi)
+                                _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
+                                                 _ring_info_dct['REVERSE_SMILES']
+                                                 + '/C=C\\C' * _db_seg[1] + usr_db_post_smi)
 
-                                usr_lpp_lst.append(_rev_ring_lpp_smi)
+                                _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
+                                                                                  _remain_db_num, _db_seg[0],
+                                                                                  usr_db_pre_smi, reverse=True)
+                                usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
                             elif _ring_info_dct['OCP'] == 1 and _ring_info_dct['OAP'] == 0:
-                                _rev_ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
-                                                     _ring_info_dct['REVERSE_SMILES'] + usr_db_post_smi)
-                                usr_lpp_lst.append(_rev_ring_lpp_smi)
+                                _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
+                                                 _ring_info_dct['REVERSE_SMILES'] + usr_db_post_smi)
+                                _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
+                                                                                  _remain_db_num, _db_seg[0],
+                                                                                  usr_db_pre_smi, reverse=True)
+                                usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
                         else:
                             pass
                     else:
@@ -122,9 +205,9 @@ class IsoProstanOx(object):
 
         # ox_isop_lpp_lst = [usr_db_pre_smi + _lpp_smi + usr_db_post_smi for _lpp_smi in usr_lpp_lst]
 
-        print(usr_lpp_lst)
+        print(usr_lpp_dct.keys())
 
-        return usr_lpp_lst
+        return usr_lpp_dct
 
 
 if __name__ == '__main__':
@@ -163,22 +246,38 @@ if __name__ == '__main__':
 
     ox_isop = IsoProstanOx(epa_db_info_dct, isop_cfg)
 
-    got_lpp_lst = ox_isop.get_isop_lpp()
+    got_lpp_dct = ox_isop.get_isop_lpp()
 
     lpp_mol_lst = []
 
     sdf_writer = Chem.SDWriter(save_sdf)
 
-    for _isop_lpp in got_lpp_lst:
+    '''
+    'FULL_SMILES': isop_smi,
+                            'FA_CHECKER': isop_checker,
+                            'FA_ABBR': isop_abbr, 'FA_TYPE': isop_typ_str, 'FA_JSON': isop_json,
+                            'FRAG_SMILES': '[""]'
+    '''
+
+    for _isop_lpp_abbr in got_lpp_dct.keys():
+        _isop_lpp_info_dct = got_lpp_dct[_isop_lpp_abbr]
+        _isop_lpp_smi = _isop_lpp_info_dct['FULL_SMILES']
         try:
-            _mol = Chem.MolFromSmiles(_isop_lpp)
+            _mol = Chem.MolFromSmiles(_isop_lpp_smi)
 
             AllChem.Compute2DCoords(_mol)
+            _mol.SetProp('_Name', _isop_lpp_info_dct['FA_ABBR'])
+            _mol.SetProp('Description', _isop_lpp_info_dct['FA_ABBR'])
+            _mol.SetProp('LM_ID', _isop_lpp_info_dct['FA_ABBR'])
+            _mol.SetProp('ID', _isop_lpp_info_dct['FA_ABBR'])
+            _mol.SetProp('FA_JSON', _isop_lpp_info_dct['FA_JSON'])
+            _mol.SetProp('FA_ABBR', _isop_lpp_info_dct['FA_ABBR'])
+            _mol.SetProp('SMILES', _isop_lpp_info_dct['FULL_SMILES'])
             sdf_writer.write(_mol)
             lpp_mol_lst.append(_mol)
         except:
             error_rgx = re.compile(r'//')
-            error_checker = error_rgx.sub(r'', _isop_lpp)
+            error_checker = error_rgx.sub(r'', _isop_lpp_smi)
             # print(error_checker)
             try:
                 _mol = Chem.MolFromSmiles(error_checker)
@@ -186,9 +285,9 @@ if __name__ == '__main__':
                 lpp_mol_lst.append(_mol)
                 print('corrected and pass')
             except:
-                print('not working for --> ', _isop_lpp)
+                print('not working for --> ', _isop_lpp_smi)
 
-            # pass
+                # pass
 
     print(len(lpp_mol_lst))
     img = Draw.MolsToGridImage(lpp_mol_lst, molsPerRow=6, subImgSize=(200, 200))

@@ -24,7 +24,12 @@ class AbbrGenerator(object):
 
         # usr_code = 'P-18:0[0xDB,0xOH,1xKETO]<CHO@C0,COOH@C0>{OAP:1,OCP:0}'
 
-        lpp_code_rgx = re.compile(r'(?P<fa>\d{1,2}[:]\d|[OPop]-\d{1,2}[:]\d)([\[])(?P<mod>.*)([\]][<])'
+        # only normal FA and O- P-
+        # lpp_code_rgx = re.compile(r'(?P<fa>\d{1,2}[:]\d|[OPop]-\d{1,2}[:]\d)([\[])(?P<mod>.*)([\]][<])'
+        #                           r'(?P<end>.*)([>][{])(?P<typ>.*)([}])')
+
+        # Also for IsoP
+        lpp_code_rgx = re.compile(r'(?P<fa>\d{1,2}[:]\d|.*-\d{1,2}[:]\d)([\[])(?P<mod>.*)([\]][<])'
                                   r'(?P<end>.*)([>][{])(?P<typ>.*)([}])')
 
         mod_rgx = re.compile(r'[1-9]x\w{2,13}')  # filter out 0 mods, support to hydroperoxyl (12 letters)

@@ -237,24 +237,16 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # print(mod_sum_t_df.columns.tolist())
                 # mod_sum_df.to_csv('oxDB_t.csv')
 
-            if 3 <= db_count:
+            elif 3 <= db_count:
                 isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
                 ox_isop = IsoProstanOx(fa_dct, isop_cfg)
 
-                _isop_lpp_lst = ox_isop.get_isop_lpp()
+                _isop_lpp_dct = ox_isop.get_isop_lpp()
 
-                for _isop in _isop_lpp_lst:
+                _isop_df = pd.DataFrame(_isop_lpp_dct)
 
-                    _idx = str(_isop_lpp_lst.index(_isop))
-
-                    _isop_dct = {'SMILES': _isop, 'OAP': 1, 'OCP': 0, 'DB': 0,
-                                 'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 1,
-                                 'FULL_SMILES': 'O', 'C_NUM': 20,
-                                 'FA_CHECKER': '20:4[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:1,OCP:0}',
-                                 'FA_ABBR': 'ISOP', 'FA_TYPE': 'OAP', 'FA_JSON': '', 'FRAG_SMILES': '[""]'}
-                    _isop_df = pd.DataFrame(_isop_dct, index=[_idx])
-                    mod_sum_df = mod_sum_df.append(_isop_df)
-                    print('mod_sum_df', mod_sum_df.shape)
+                mod_sum_df = mod_sum_df.append(_isop_df.transpose())
+                # print('mod_sum_df', mod_sum_df.shape)
 
             if fa_dct['DB_LINK_type'] == 'O-':
                 _unmod_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
