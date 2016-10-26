@@ -98,7 +98,7 @@ class IsoProstanOx(object):
         isop_abbr, isop_typ_str = abbr_gen.decode(isop_checker)
 
         isop_json = ('{left}"C": {C_COUNT}, "KETO": {KETO_COUNT}, "OH": {OH_COUNT}, '
-                     '"OAP": {OAP_COUNT}, "OCP": {OCP_COUNT}, "IsoP":{RING_TYPE}{DB_COUNT}'
+                     '"OAP": {OAP_COUNT}, "OCP": {OCP_COUNT}, "IsoP":"{RING_TYPE}{DB_COUNT},"'
                      '"COOH": {COOH_COUNT}, "DB": {DB_COUNT}, "LINK_TYPE": "", "CHO": {CHO_COUNT}{right}'
                      .format(RING_TYPE=isop_info_dct['RING_TYPE'],
                              C_COUNT=c_count,

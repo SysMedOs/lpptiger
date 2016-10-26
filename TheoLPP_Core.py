@@ -37,7 +37,7 @@ save_spectra = 0
 # save_msp = '%s_all2_max_1keto_1lessDB_FRAG.msp' % ''.join(pl_class_use_lst)
 save_sdf = '%s_ISOP.sdf' % ''.join(pl_class_use_lst)
 save_msp = '%s_ISOP.msp' % ''.join(pl_class_use_lst)
-score_xlsx = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_df.xlsx'
+score_xlsx = './lpplibs/ion_scores_df.xlsx'
 sdf_writer = Chem.SDWriter(save_sdf)
 msp_obj = open(save_msp, mode='w')
 sdf_dct = {}

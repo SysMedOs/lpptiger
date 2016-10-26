@@ -16,9 +16,6 @@ from AbbrGenerator import AbbrGenerator
 
 from ISOPoxTheo import IsoProstanOx
 
-# from rdkit import Chem
-# from rdkit.Chem import Draw
-
 
 class TheoDB_Oxidizer:
     def __init__(self):
@@ -32,11 +29,6 @@ class TheoDB_Oxidizer:
 
 # construct a decorator
 def bulk_oxidizer(theodb_oxidizer_cls):
-    """
-
-    :param theodb_cls:
-    :return:
-    """
 
     def _bulk_oxidizer(ox_func):
         def __bulk_oxidizer(usr_fa_dct, usr_mod_table):
@@ -55,11 +47,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             mod_info_df = theodb_oxidizer_cls.mod_sum(usr_mod_table)
             mod_typ_lst = mod_info_df.columns.tolist()
             mod_sum_df = pd.DataFrame()
-            # print(mod_info_df.index.tolist())
             _def_frags_dct = {}
             for _mod_key in mod_typ_lst:
-                # _mod_smi = fa_dct['DB_pre_part'] + mod_info_df.loc['FRAG', _mod_key]
-                # _mod_smi_lst = [_mod_smi]
+
                 if _mod_key not in ['aldehyde', 'aldehyde_short', 'carboxylic_acid', 'carboxylic_acid_short']:
                     _def_frags_dct[_mod_key] = ''.join([fa_dct['DB_pre_part'] +
                                                         mod_info_df.loc['FRAG', _mod_key] +
@@ -83,11 +73,11 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
             # mod_info_df['FRAG_SMILES'] = ''
             
-            if 0 < db_count <= 2:
+            if db_count > 0:
 
                 # start oxidation
                 for db_i in range(1, db_count + 1):
-                    # print(db_i)
+
                     for _mod in mod_typ_lst:
                         _tmp_mod_lst = mod_sum_df.columns.tolist()
                         if len(_tmp_mod_lst) <= len(mod_typ_lst) and db_i == 1:
@@ -107,36 +97,27 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                             else:
                                 _mod_one_json = ''.join(['["', mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]'])
                                 mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
-                            # print(mod_sum_df)
+
                         else:
                             for _tmp_mod in _tmp_mod_lst:
                                 _tmp_mod = str(_tmp_mod)
-                                # print('_tmp_mod', _tmp_mod, _tmp_mod_lst)
                                 __tmp_mod_lst = _tmp_mod.split('-')
-                                # print('_tmp_mod_lst', _tmp_mod_lst[-2], _tmp_mod_lst)
+
                                 if int(__tmp_mod_lst[-2]) == db_i - 1:
                                     _ocp_checker = mod_sum_df.loc['OCP', _tmp_mod]
                                     if _ocp_checker == 0:
                                         _new_mod = ''.join([_tmp_mod, '-', str(db_i), '-', _mod])
-                                        # print(_new_mod)
                                         # this order is important for the SMILES generated
                                         # mod_sum_df.loc[:, _new_mod] = mod_sum_df[_tmp_mod] + mod_info_df[_mod]
                                         _tmp_mod_df = pd.DataFrame(mod_sum_df[_tmp_mod] + mod_info_df[_mod],
                                                                    columns=[_new_mod])
-                                        # print(_tmp_mod, _new_mod)
-                                        # print('_tmp_mod_df', _tmp_mod_df.index.tolist())
-                                        # print(mod_sum_df.columns.tolist())
-                                        # print(mod_sum_df.loc['SMILES', _tmp_mod])
+
                                         _tmp_mod_smiles = (fa_dct['DB_pre_part'] +
                                                            mod_sum_df.loc['SMILES', _tmp_mod] +
                                                            mod_info_df.loc['FRAG', _mod] + ocp_end_part)
-                                        # print('pre_mod_smiles0', fa_dct['DB_pre_part'])
-                                        # print('pre_mod_smiles', mod_sum_df.loc['SMILES', _tmp_mod])
-                                        # print('pre_mod_smiles2', mod_info_df.loc['FRAG', _mod])
-                                        # print('_tmp_mod_smiles', _tmp_mod_smiles)
+
                                         _tmp_frags_lst = json.loads(mod_sum_df.loc['FRAG_SMILES', _tmp_mod])
-                                        # print('_tmp_frags_lst', _tmp_frags_lst)
-                                        # print('_tmp_mod_smiles', _tmp_mod_smiles)
+
 
                                         # Add one more cleavage site for OH
                                         if _tmp_mod_smiles[-7:] == 'C(O))=O':
@@ -153,15 +134,10 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                         else:
                                             _tmp_frags_lst.append(_tmp_mod_smiles)
 
-                                        # print(_tmp_frags_lst)
                                         _tmp_mod_df.loc['FRAG_SMILES', _new_mod] = json.dumps(_tmp_frags_lst)
-                                        # _tmp_mod_df['FRAG_SMILES'] = (_tmp_mod_df['FRAG_SMILES'] + '|' +
-                                        #                               fa_dct['DB_pre_part'] +
-                                        #                               _tmp_mod_df['SMILES'] + _tmp_mod_df['FRAGS'])
+
                                         mod_sum_df.loc[:, _new_mod] = _tmp_mod_df
-                                        # print('_tmp_mod_df', _tmp_mod_df.columns.tolist())
-                                        # print('_tmp_mod_df', _tmp_mod_df)
-                                        # print('mod_sum_df', mod_sum_df.columns.tolist())
+
 
                                     else:
                                         # print('OCP', _ocp_checker, _tmp_mod)
@@ -171,6 +147,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df = mod_sum_df.transpose()
                 # no more than one keto & max reduce 1 DB
                 _min_DB = db_count - 1
+                # modification type and number control
                 mod_sum_df = mod_sum_df[(mod_sum_df.KETO < 2) & (mod_sum_df.DB >= _min_DB)]
                 mod_sum_df['MOD_NUM'] = mod_sum_df['OAP'] + mod_sum_df['OCP']
     
@@ -237,7 +214,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # print(mod_sum_t_df.columns.tolist())
                 # mod_sum_df.to_csv('oxDB_t.csv')
 
-            elif 3 <= db_count:
+            if 3 <= db_count:
                 isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
                 ox_isop = IsoProstanOx(fa_dct, isop_cfg)
 
