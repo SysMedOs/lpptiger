@@ -45,7 +45,8 @@ class TheoDB_Oxidizer:
 def bulk_oxidizer(theodb_oxidizer_cls):
 
     def _bulk_oxidizer(ox_func):
-        def __bulk_oxidizer(usr_fa_dct, usr_mod_table, isop_cfg, isopabbr_cfg, oxlevel):
+        def __bulk_oxidizer(usr_fa_dct, usr_mod_table, isop_cfg, isopabbr_cfg,
+                            oxlevel, oxmax, prostane_mode, prostane_ox_mode):
 
             """
 
@@ -246,7 +247,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # print(mod_sum_t_df.columns.tolist())
                 # mod_sum_df.to_csv('oxDB_t.csv')
 
-            if 3 <= db_count:
+            if 3 <= db_count and prostane_mode == 1:
                 # isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
                 ox_isop = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
 

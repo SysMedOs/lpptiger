@@ -48,6 +48,9 @@ def theolpp(usr_params):
     pl_class_use_lst = [pl_class]
     ox_level = usr_params['ox_level']
     ox_max = usr_params['ox_max']
+
+    prostane_mode = usr_params['prostane_mode']
+    prostane_ox_mode = usr_params['ox_prostane_mode']
     save_sdf = usr_params['sdf_path']
     save_spectra = usr_params['msp_mode']
     save_msp = usr_params['msp_path']
@@ -55,28 +58,6 @@ def theolpp(usr_params):
 
     pl_df = pd.read_excel(pl_table, sheetname=usr_params['lipid_tab'])
     fa_df = pd.read_csv(fa_table, index_col=0)
-
-    # pl_table = r'./lpplibs/DW_PL.xlsx'
-    # fa_table = r'./lpplibs/FA_list.csv'
-    # mod_table = r'./lpplibs/ModConfig.csv'
-    #
-    # isop_cfg = r'./lpplibs/IsoP_ModConfig.csv'
-    # isopabbr_cfg = r'./lpplibs/IsoP_AbbrConfig.csv'
-    #
-    # # pl_class_use_lst = ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']
-    # pl_class_use_lst = ['PC']
-    # pl_class = pl_class_use_lst[0]
-    # ox_level = 1
-    # save_spectra = 1
-    #
-    # save_sdf = '%s_DW_lv1.sdf' % ''.join(pl_class_use_lst)
-    # save_msp = '%s_DW_lv1.msp' % ''.join(pl_class_use_lst)
-    #
-    # score_xlsx = './TheoFragPatterns_csv/ion_scores_df.xlsx'
-    #
-    # pl_df = pd.read_excel(pl_table, sheetname=0)
-    # fa_df = pd.read_csv(fa_table, index_col=0)
-    # max_o = 3
 
     print(pl_df.head())
 
@@ -123,14 +104,16 @@ def theolpp(usr_params):
                 sn1_mod_sum_df = fa_lpp_df_dct[_pl_sn1_abbr]
             else:
                 sn1_link_dct = fa_link_filter(_pl_sn1_smiles)
-                sn1_mod_sum_df = oxidizer(sn1_link_dct, mod_table, isop_cfg, isopabbr_cfg, ox_level)
+                sn1_mod_sum_df = oxidizer(sn1_link_dct, mod_table, isop_cfg, isopabbr_cfg,
+                                          ox_level, ox_max, prostane_mode, prostane_ox_mode)
                 fa_lpp_df_dct[_pl_sn1_abbr] = sn1_mod_sum_df.copy()
 
             if _pl_sn2_abbr in fa_lpp_df_dct.keys():
                 sn2_mod_sum_df = fa_lpp_df_dct[_pl_sn2_abbr]
             else:
                 sn2_link_dct = fa_link_filter(_pl_sn2_smiles)
-                sn2_mod_sum_df = oxidizer(sn2_link_dct, mod_table, isop_cfg, isopabbr_cfg, ox_level)
+                sn2_mod_sum_df = oxidizer(sn2_link_dct, mod_table, isop_cfg, isopabbr_cfg,
+                                          ox_level, ox_max, prostane_mode, prostane_ox_mode)
                 fa_lpp_df_dct[_pl_sn2_abbr] = sn2_mod_sum_df.copy()
 
             for (_sn1_idx, _sn1_row) in sn1_mod_sum_df.iterrows():

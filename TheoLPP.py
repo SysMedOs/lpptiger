@@ -218,7 +218,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
         lipid_tab = self.ui.exceltab_cb.currentText()
         lipid_class = self.ui.pl_class_cb.currentText()
-        lipid_class = lipid_class[-3:-1]
+        lipid_class = lipid_class[-3:-1]  # get PL abbr
 
         sdf_path = self.ui.save_sdf_le.text()
         msp_path = self.ui.save_msp_le.text()
