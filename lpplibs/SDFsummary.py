@@ -7,6 +7,7 @@
 from __future__ import print_function
 
 import json
+import os
 
 import pandas as pd
 import numpy as np
@@ -15,6 +16,8 @@ from rdkit import Chem
 
 
 def sdf2xlsx(usr_sdf, save_path):
+
+    usr_sdf = str(os.path.abspath(usr_sdf))
 
     mol_suppl = Chem.SDMolSupplier(usr_sdf)
 

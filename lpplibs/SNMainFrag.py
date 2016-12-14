@@ -21,19 +21,18 @@ class SNMainFrag(object):
     def __init__(self, pl_class, frag_score_list):
         self.pl_type = pl_class
         print(self.pl_type)
-        # try:
-        pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
+        try:
+            pl_frag_df = pd.read_excel(frag_score_list, sheetname=pl_class)
 
-        # pl_frag_df = pd.DataFrame()
-        pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
-        pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
-        pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
-        pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
-        pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
-        self.pl_frag_df = pl_frag_df
-        print('self.pl_frag_df', self.pl_frag_df.shape)
-        # except:
-        #     pass
+            pl_frag_df = pl_frag_df[pl_frag_df['PL_CLASS'] == self.pl_type]
+            pl_frag_df['sn2_FA'] = pl_frag_df['sn2_FA'].astype('int')
+            pl_frag_df['sn2_DB'] = pl_frag_df['sn2_DB'].astype('int')
+            pl_frag_df['OH'] = pl_frag_df['OH'].astype('int')
+            pl_frag_df['KETO'] = pl_frag_df['KETO'].astype('int')
+            self.pl_frag_df = pl_frag_df
+            print('self.pl_frag_df', self.pl_frag_df.shape)
+        except:
+            pass
 
         self.charge_elem_dct = {'[M+H]+': {'H': 1}, '[M+Na]+': {'Na': 1},
                                 '[M+K]+': {'Na': 1}, '[M+NH4]+': {'H': 4, 'N': 1},

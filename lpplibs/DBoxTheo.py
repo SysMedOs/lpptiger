@@ -22,18 +22,41 @@ class TheoDB_Oxidizer:
         print("Start to oxidize C=C -->")
 
     @staticmethod
-    def mod_sum(usr_mod_table):
+    def mod_sum(usr_mod_table, usr_oxlevel):
+        """
+
+        :param str usr_mod_table:
+        :return: the DataFrame of modification information
+        :rtype: pd.DataFrame
+        """
         mod_info_df = pd.read_csv(usr_mod_table, index_col=0, dtype={'OAP': np.int32})
+        mod_info_df_t = mod_info_df.transpose()
+        mod_info_df.loc['OXIDATIONLEVEL', :] = mod_info_df.loc['OXIDATIONLEVEL', :].astype(int)
+        # print('mod_info_df_t')
+        # print(mod_info_df_t)
+        mod_info_df_t = mod_info_df_t[mod_info_df_t['OXIDATIONLEVEL'] < usr_oxlevel+1]
+        mod_info_df = mod_info_df_t.transpose()
+        # print('mod_info_df')
         # print(mod_info_df)
         return mod_info_df
+
 
 # construct a decorator
 def bulk_oxidizer(theodb_oxidizer_cls):
 
     def _bulk_oxidizer(ox_func):
-        def __bulk_oxidizer(usr_fa_dct, usr_mod_table):
+        def __bulk_oxidizer(usr_fa_dct, usr_mod_table, isop_cfg, isopabbr_cfg, oxlevel):
 
-            nam_fields_last = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH']
+            """
+
+            :param dict usr_fa_dct:
+            :param str usr_mod_table:
+            :param str isop_cfg:
+            :param str isopabbr_cfg:
+            :return:
+            """
+
+            nam_fields_last = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH', 'OOH', 'EPOXY']
 
             fa_dct = ox_func(usr_fa_dct)
             # print('fa_dct', fa_dct)
@@ -44,7 +67,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             else:
                 ocp_end_part = ')=O'
 
-            mod_info_df = theodb_oxidizer_cls.mod_sum(usr_mod_table)
+            mod_info_df = theodb_oxidizer_cls.mod_sum(usr_mod_table, oxlevel)
             mod_typ_lst = mod_info_df.columns.tolist()
             mod_sum_df = pd.DataFrame()
             _def_frags_dct = {}
@@ -71,6 +94,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             mod_info_df.loc['KETO', :] = mod_info_df.loc['KETO', :].astype(int)
             mod_info_df.loc['CHO', :] = mod_info_df.loc['CHO', :].astype(int)
             mod_info_df.loc['COOH', :] = mod_info_df.loc['COOH', :].astype(int)
+            mod_info_df.loc['OOH', :] = mod_info_df.loc['OOH', :].astype(int)
+            mod_info_df.loc['EPOXY', :] = mod_info_df.loc['EPOXY', :].astype(int)
             # mod_info_df['FRAG_SMILES'] = ''
             
             if db_count > 0:
@@ -117,7 +142,6 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                                            mod_info_df.loc['FRAG', _mod] + ocp_end_part)
 
                                         _tmp_frags_lst = json.loads(mod_sum_df.loc['FRAG_SMILES', _tmp_mod])
-
 
                                         # Add one more cleavage site for OH
                                         if _tmp_mod_smiles[-7:] == 'C(O))=O':
@@ -185,7 +209,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
                                                    + mod_sum_df['DB'] + '[' + mod_sum_df['DB'] + 'xDB,'
                                                    + mod_sum_df['OH'] + 'xOH,'
-                                                   + mod_sum_df['KETO'] + 'xKETO]<CHO@C'
+                                                   + mod_sum_df['KETO'] + 'xKETO,'
+                                                   + mod_sum_df['OOH'] + 'xOOH,'
+                                                   + mod_sum_df['EPOXY'] + 'xEPOXY]<CHO@C'
                                                    + mod_sum_df['CHO'] + ',COOH@C'
                                                    + mod_sum_df['COOH'] + '>{OAP:'
                                                    + mod_sum_df['OAP'] + ',OCP:'
@@ -204,10 +230,16 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                     _fa_row['FA_TYPE'] = _fa_typ
 
                     # force all numbers to int, important for json coding!
-                    _fa_row['FA_JSON'] = json.dumps({'LINK_TYPE': fa_dct['DB_LINK_type'], 'C': int(_fa_row['C_NUM']),
-                                                     'DB': int(_fa_row['DB']), 'OH': int(_fa_row['OH']),
-                                                     'KETO': int(_fa_row['KETO']), 'CHO': int(_fa_row['CHO']),
-                                                     'COOH': int(_fa_row['COOH']), 'OAP': int(_fa_row['OAP']),
+                    _fa_row['FA_JSON'] = json.dumps({'LINK_TYPE': fa_dct['DB_LINK_type'],
+                                                     'C': int(_fa_row['C_NUM']),
+                                                     'DB': int(_fa_row['DB']),
+                                                     'OH': int(_fa_row['OH']),
+                                                     'KETO': int(_fa_row['KETO']),
+                                                     'OOH': int(_fa_row['KETO']),
+                                                     'EPOXY': int(_fa_row['KETO']),
+                                                     'CHO': int(_fa_row['CHO']),
+                                                     'COOH': int(_fa_row['COOH']),
+                                                     'OAP': int(_fa_row['OAP']),
                                                      'OCP': int(_fa_row['OCP'])})
                     # print(_fa_row['FA_JSON'])
                 # mod_sum_t_df = mod_sum_df.transpose()
@@ -215,8 +247,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # mod_sum_df.to_csv('oxDB_t.csv')
 
             if 3 <= db_count:
-                isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
-                ox_isop = IsoProstanOx(fa_dct, isop_cfg)
+                # isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
+                ox_isop = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
 
                 _isop_lpp_dct = ox_isop.get_isop_lpp()
 
@@ -234,11 +266,11 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             else:
                 _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
 
-            unmod_json = ('{"C": %i, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
+            unmod_json = ('{"C": %i, "KETO": 0, "OH": 0, "OOH": 0, "KETO": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
                           '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
 
             unmod_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
-                         'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
+                         'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                          'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
                          'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
                          'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json,
@@ -246,11 +278,11 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             unmod_df = pd.DataFrame(unmod_dct, index=['0-no_oxidation'])
 
-            lyso_json = ('{"C": 0, "KETO": 0, "OH": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
+            lyso_json = ('{"C": 0, "KETO": 0, "OH": 0, "OOH": 0, "KETO": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
                          '"LINK_TYPE": "LYSO", "CHO": 0}')
 
             lyso_dct = {'SMILES': 'O', 'OAP': 0, 'OCP': 0, 'DB': 0,
-                        'OH': 0, 'KETO': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
+                        'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                         'FULL_SMILES': 'O', 'C_NUM': 0,
                         'FA_CHECKER': '0:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}',
                         'FA_ABBR': '0:0', 'FA_TYPE': 'LYSO', 'FA_JSON': lyso_json, 'FRAG_SMILES': '[""]'}
@@ -269,6 +301,12 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
 @bulk_oxidizer(TheoDB_Oxidizer)
 def oxidizer(fa_link_dct):
+
+    """
+
+    :param dict fa_link_dct: output from def fa_link_filter
+    :return:
+    """
 
     # fa_link_dct = {'FULL_smiles': usr_fa_smiles,
     #                'PRE_str': pre_ester_link_str,
@@ -341,6 +379,12 @@ def oxidizer(fa_link_dct):
 
 
 def fa_link_filter(usr_fa_smiles):
+
+    """
+    Find the P- / O- connections of sn1 / sn2 residues
+    :param str usr_fa_smiles: the smiles code of sn1 / sn2 fatty acid
+    :return dict fa_link_dct: the dictionary of P- / O- information
+    """
 
     pre_ester_link_str = r'OC('
     pre_o_link_str = r'OCC'
