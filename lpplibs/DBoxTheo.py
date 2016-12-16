@@ -50,10 +50,14 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             """
 
-            :param dict usr_fa_dct:
-            :param str usr_mod_table:
-            :param str isop_cfg:
-            :param str isopabbr_cfg:
+            :param usr_fa_dct:
+            :param usr_mod_table:
+            :param isop_cfg:
+            :param isopabbr_cfg:
+            :param oxlevel:
+            :param oxmax:
+            :param prostane_mode:
+            :param prostane_ox_mode:
             :return:
             """
 
@@ -178,9 +182,11 @@ def bulk_oxidizer(theodb_oxidizer_cls):
     
                 # filter the OCP and OAP. OAP should be full length
                 mod_ocp_sum_df = mod_sum_df.query('OCP == 1')
-                # OAP should have all DB, thus MOD_NUM == db_count
-                mod_oap_sum_df = mod_sum_df.query('OCP == 0 and MOD_NUM == %d' % db_count)
-    
+                mod_ocp_sum_df = mod_ocp_sum_df.query('MOD_NUM <= %d' % oxmax)
+                # OAP should have all DB, thus MOD_NUM <= db_count
+                mod_oap_sum_df = mod_sum_df.query('OCP == 0 and MOD_NUM <= %d' % db_count)
+                mod_oap_sum_df = mod_oap_sum_df.query('MOD_NUM <= %d' % oxmax)
+
                 # the end of smiles is different for OCP
                 mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
                 mod_ocp_sum_df.loc[mod_ocp_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +

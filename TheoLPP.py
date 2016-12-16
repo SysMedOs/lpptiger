@@ -46,12 +46,19 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         # hide the msp part
         self.ui.label_14.hide()
         self.ui.exceltab_cb.hide()
+        # self.ui.label_12.hide()
+        # self.ui.prostane_ox_yes_rb.hide()
+        # self.ui.prostane_ox_no_rb.hide()
         QtCore.QObject.connect(self.ui.spectra_yes_rb, QtCore.SIGNAL("clicked()"), self.set_spec_t)
         QtCore.QObject.connect(self.ui.spectra_no_rb, QtCore.SIGNAL("clicked()"), self.set_spec_f)
+        QtCore.QObject.connect(self.ui.prostane_yes_rb, QtCore.SIGNAL("clicked()"), self.set_prostane_t)
+        QtCore.QObject.connect(self.ui.prostane_no_rb, QtCore.SIGNAL("clicked()"), self.set_prostane_f)
         QtCore.QObject.connect(self.ui.load_lipid_pb, QtCore.SIGNAL("clicked()"), self.load_lipid_list)
         QtCore.QObject.connect(self.ui.save_sdf_pb, QtCore.SIGNAL("clicked()"), self.save_sdf)
         QtCore.QObject.connect(self.ui.save_msp_pb, QtCore.SIGNAL("clicked()"), self.save_msp)
         QtCore.QObject.connect(self.ui.run_theolpp_pb, QtCore.SIGNAL("clicked()"), self.run_theolpp)
+        QtCore.QObject.connect(self.ui.max_ox_spb, QtCore.SIGNAL("valueChanged(int)"), self.set_ox_max)
+
 
         # slots for tab b
         QtCore.QObject.connect(self.ui.mod_lst__pb, QtCore.SIGNAL("clicked()"), self.set_general_mod)
@@ -93,6 +100,20 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.save_msp_le.hide()
         self.ui.save_msp_pb.hide()
         self.ui.save_msp_lb.hide()
+
+    def set_prostane_t(self):
+        self.ui.label_12.show()
+        self.ui.prostane_ox_yes_rb.show()
+        self.ui.prostane_ox_no_rb.show()
+
+    def set_prostane_f(self):
+        self.ui.label_12.hide()
+        self.ui.prostane_ox_yes_rb.hide()
+        self.ui.prostane_ox_no_rb.hide()
+
+    def set_ox_max(self):
+        _ox_max = self.ui.max_ox_spb.value()
+        self.ui.max_keto_spb.setMaximum(_ox_max)
 
     def set_general_mod(self):
         self.ui.mod_lst_le.clear()
@@ -194,7 +215,20 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         elif self.ui.ox_level3_rb.isChecked():
             ox_level = 3
 
+        oap_mode, ocp_mode, lyso_oap_mode, lyso_ocp_mode = 0, 0, 0, 0
+        if self.ui.oap_chb.isChecked():
+            oap_mode = 1
+        if self.ui.ocp_chb.isChecked():
+            ocp_mode = 1
+        if self.ui.lyso_oap_chb.isChecked():
+            lyso_oap_mode = 1
+        if self.ui.lyso_ocp_chb.isChecked():
+            lyso_ocp_mode = 1
+
         ox_max = self.ui.max_ox_spb.value()
+        keto_max = self.ui.max_keto_spb.value()
+        ooh_max = self.ui.max_ooh_spb.value()
+        epoxy_max = self.ui.max_epoxy_spb.value()
 
         prostane_mode = 0
         if self.ui.prostane_yes_rb.isChecked():
@@ -228,7 +262,10 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         prostane_abbr_path = self.ui.prostane_abbr_lst_le.text()
         frag_pattern_path = self.ui.frag_pattern_le.text()
 
-        param_dct = {'lipid_class': lipid_class, 'ox_level': ox_level, 'ox_max': ox_max,
+        param_dct = {'lipid_class': lipid_class, 'ox_level': ox_level,
+                     'oap_mode': oap_mode, 'ocp_mode': ocp_mode,
+                     'lyso_oap_mode': lyso_oap_mode, 'lyso_ocp_mode': lyso_ocp_mode,
+                     'ox_max': ox_max, 'keto_max': keto_max, 'ooh_max': ooh_max, 'epoxy_max': epoxy_max,
                      'lipid_lst_path': lipid_lst_path, 'lipid_tab': lipid_tab,
                      'prostane_mode': prostane_mode, 'ox_prostane_mode': ox_prostane_mode,
                      'sdf_path': sdf_path, 'msp_mode': msp_mode, 'msp_path': msp_path,
@@ -236,7 +273,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
                      'prostane_abbr_path': prostane_abbr_path, 'frag_pattern_path': frag_pattern_path}
 
         # print(param_dct)
-        # print(sdf_path[:-4] + '.xlsx')
         theolpp(param_dct)
         self.ui.run_status_te.append(u'Finished!')
 

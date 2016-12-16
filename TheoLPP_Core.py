@@ -70,7 +70,6 @@ def theolpp(usr_params):
 
     frag_gen = SNMainFrag(pl_class, score_xlsx)
 
-
     c_lst = []
 
     fa_lpp_df_dct = {}
