@@ -273,7 +273,9 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
                      'prostane_abbr_path': prostane_abbr_path, 'frag_pattern_path': frag_pattern_path}
 
         # print(param_dct)
-        theolpp(param_dct)
+        info_1, info_2 = theolpp(param_dct)
+        self.ui.run_status_te.append(info_1)
+        self.ui.run_status_te.append(info_2)
         self.ui.run_status_te.append(u'Finished!')
 
 

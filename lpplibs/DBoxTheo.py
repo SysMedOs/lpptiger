@@ -46,7 +46,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
     def _bulk_oxidizer(ox_func):
         def __bulk_oxidizer(usr_fa_dct, usr_mod_table, isop_cfg, isopabbr_cfg,
-                            oxlevel, oxmax, prostane_mode, prostane_ox_mode):
+                            oxlevel, ox_param_dct, prostane_mode, prostane_ox_mode):
 
             """
 
@@ -55,11 +55,16 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             :param isop_cfg:
             :param isopabbr_cfg:
             :param oxlevel:
-            :param oxmax:
+            :param ox_param_dct: ox_param_dct = {'MAX_MOD': int, 'MAX_KETO': int, 'MAX_OOH': int, 'MAX_EPOXY': int}
             :param prostane_mode:
             :param prostane_ox_mode:
             :return:
             """
+
+            max_mod = ox_param_dct['MAX_MOD']
+            max_keto = ox_param_dct['MAX_KETO']
+            max_ooh = ox_param_dct['MAX_OOH']
+            max_epoxy = ox_param_dct['MAX_EPOXY']
 
             nam_fields_last = ['OAP', 'OCP', 'DB', 'OH', 'KETO', 'CHO', 'COOH', 'OOH', 'EPOXY']
 
@@ -182,10 +187,10 @@ def bulk_oxidizer(theodb_oxidizer_cls):
     
                 # filter the OCP and OAP. OAP should be full length
                 mod_ocp_sum_df = mod_sum_df.query('OCP == 1')
-                mod_ocp_sum_df = mod_ocp_sum_df.query('MOD_NUM <= %d' % oxmax)
+                mod_ocp_sum_df = mod_ocp_sum_df.query('MOD_NUM <= %d' % max_mod)
                 # OAP should have all DB, thus MOD_NUM <= db_count
                 mod_oap_sum_df = mod_sum_df.query('OCP == 0 and MOD_NUM <= %d' % db_count)
-                mod_oap_sum_df = mod_oap_sum_df.query('MOD_NUM <= %d' % oxmax)
+                mod_oap_sum_df = mod_oap_sum_df.query('MOD_NUM <= %d' % max_mod)
 
                 # the end of smiles is different for OCP
                 mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
@@ -199,6 +204,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_oap_sum_df.is_copy = False
     
                 mod_sum_df = mod_ocp_sum_df.append(mod_oap_sum_df)
+                # select the LPP according to user settings of max modification types
+                mod_max_ctrl_code = 'KETO <= %i and OOH<= %i and EPOXY <= %i' % (max_keto, max_ooh, max_epoxy)
+                mod_sum_df = mod_sum_df.query(mod_max_ctrl_code)
                 _full_smiles_lst = mod_sum_df['FULL_SMILES'].tolist()
                 _c_num_lst = []
                 for _smiles in _full_smiles_lst:

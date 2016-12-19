@@ -26,7 +26,10 @@ from lpplibs import SDFsummary
 
 def theolpp(usr_params):
     """
-    param_dct = {'lipid_class': lipid_class, 'ox_level': ox_level, 'ox_max': ox_max,
+    param_dct = {'lipid_class': lipid_class, 'ox_level': ox_level,
+                 'oap_mode': oap_mode, 'ocp_mode': ocp_mode,
+                 'lyso_oap_mode': lyso_oap_mode, 'lyso_ocp_mode': lyso_ocp_mode,
+                 'ox_max': ox_max, 'keto_max': keto_max, 'ooh_max': ooh_max, 'epoxy_max': epoxy_max,
                  'lipid_lst_path': lipid_lst_path, 'lipid_tab': lipid_tab,
                  'prostane_mode': prostane_mode, 'ox_prostane_mode': ox_prostane_mode,
                  'sdf_path': sdf_path, 'msp_mode': msp_mode, 'msp_path': msp_path,
@@ -47,7 +50,16 @@ def theolpp(usr_params):
     pl_class = usr_params['lipid_class']
     pl_class_use_lst = [pl_class]
     ox_level = usr_params['ox_level']
+
+    oap_mode = usr_params['oap_mode']
+    ocp_mode = usr_params['ocp_mode']
+    lyso_oap_mode = usr_params['lyso_oap_mode']
+    lyso_ocp_mode = usr_params['lyso_ocp_mode']
+
     ox_max = usr_params['ox_max']
+    keto_max = usr_params['keto_max']
+    ooh_max = usr_params['ooh_max']
+    epoxy_max = usr_params['epoxy_max']
 
     prostane_mode = usr_params['prostane_mode']
     prostane_ox_mode = usr_params['ox_prostane_mode']
@@ -58,8 +70,20 @@ def theolpp(usr_params):
 
     pl_df = pd.read_excel(pl_table, sheetname=usr_params['lipid_tab'])
     fa_df = pd.read_csv(fa_table, index_col=0)
-
     print(pl_df.head())
+
+    # Select export species OAP, OCP, Lyso OAP, Lyso OCP
+    ban_lst = ['LYSOLYSO']
+    if oap_mode == 0:
+        ban_lst.extend(['UNMODOAP', 'OAPUNMOD', 'OAPOAP'])
+    if ocp_mode == 0:
+        ban_lst.extend(['UNMODOCP', 'OCPUNMOD', 'OCPOCP'])
+    if lyso_oap_mode == 0:
+        ban_lst.extend(['LYSOOAP', 'OAPLYSO'])
+    if lyso_ocp_mode == 0:
+        ban_lst.extend(['LYSOOCP', 'OCPLYSO'])
+
+    ox_param_dct = {'MAX_MOD': ox_max, 'MAX_KETO': keto_max, 'MAX_OOH': ooh_max, 'MAX_EPOXY': epoxy_max}
 
     sdf_writer = Chem.SDWriter(open(save_sdf, mode='w'))
     msp_obj = open(save_msp, mode='w')
@@ -104,7 +128,7 @@ def theolpp(usr_params):
             else:
                 sn1_link_dct = fa_link_filter(_pl_sn1_smiles)
                 sn1_mod_sum_df = oxidizer(sn1_link_dct, mod_table, isop_cfg, isopabbr_cfg,
-                                          ox_level, ox_max, prostane_mode, prostane_ox_mode)
+                                          ox_level, ox_param_dct, prostane_mode, prostane_ox_mode)
                 fa_lpp_df_dct[_pl_sn1_abbr] = sn1_mod_sum_df.copy()
 
             if _pl_sn2_abbr in fa_lpp_df_dct.keys():
@@ -112,7 +136,7 @@ def theolpp(usr_params):
             else:
                 sn2_link_dct = fa_link_filter(_pl_sn2_smiles)
                 sn2_mod_sum_df = oxidizer(sn2_link_dct, mod_table, isop_cfg, isopabbr_cfg,
-                                          ox_level, ox_max, prostane_mode, prostane_ox_mode)
+                                          ox_level, ox_param_dct, prostane_mode, prostane_ox_mode)
                 fa_lpp_df_dct[_pl_sn2_abbr] = sn2_mod_sum_df.copy()
 
             for (_sn1_idx, _sn1_row) in sn1_mod_sum_df.iterrows():
@@ -135,9 +159,7 @@ def theolpp(usr_params):
                     _oap_ocp_lst = [_sn1_typ_str, _sn2_typ_str]
                     _lpp_typ = ''.join(_oap_ocp_lst)
 
-                    # only export OAP & OCP
-                    # if _lpp_typ not in ['LYSOLYSO', 'UNMODUNMOD']:
-                    if _lpp_typ not in ['LYSOLYSO']:
+                    if _lpp_typ not in ban_lst:
                         _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, sn1=_sn1_mod_smiles, sn2=_sn2_mod_smiles)
                         _lpp_id_str = str(''.join([_pl_hg_abbr, '(', _sn1_abbr_str, '/', _sn2_abbr_str, ')']))
 
@@ -211,41 +233,43 @@ def theolpp(usr_params):
     # write to sdf
     print('==>Start to generate SDF ==>')
     print('!! %i structures in total !!' % len(sdf_dct.keys()))
-    for _k_lpp in sdf_dct.keys():
 
-        _lpp_dct = sdf_dct[_k_lpp]
+    if save_spectra == 1:
+        for _k_lpp in sdf_dct.keys():
+            _lpp_dct = sdf_dct[_k_lpp]
+            if len(json.loads(_lpp_dct['MSP_JSON']).keys()) > 0:
+                _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
+                # print(_lpp_smiles)
+                _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
+                AllChem.Compute2DCoords(_lpp_mol)
+                _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
+                _lpp_mass = Descriptors.MolWt(_lpp_mol)
+                _lpp_exactmass = rdMolDescriptors.CalcExactMolWt(_lpp_mol)
+                _lpp_formula = rdMolDescriptors.CalcMolFormula(_lpp_mol)
+                _lpp_mol.SetProp('EXACT_MASS', '%.6f' % _lpp_exactmass)
+                _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
+                _lpp_mol.SetProp('FORMULA', _lpp_formula)
 
-        if save_spectra == 1 and len(json.loads(_lpp_dct['MSP_JSON']).keys()) > 0:
-            _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
-            # print(_lpp_smiles)
-            _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
-            AllChem.Compute2DCoords(_lpp_mol)
-            _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
-            _lpp_mass = Descriptors.MolWt(_lpp_mol)
-            _lpp_exactmass = rdMolDescriptors.CalcExactMolWt(_lpp_mol)
-            _lpp_formula = rdMolDescriptors.CalcMolFormula(_lpp_mol)
-            _lpp_mol.SetProp('EXACT_MASS', '%.6f' % _lpp_exactmass)
-            _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
-            _lpp_mol.SetProp('FORMULA', _lpp_formula)
+                if str(_lpp_dct['LPP_CLASS']) == 'PC':
+                    _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+FA-H]-')
+                    _lpp_neg_precursor_info = '{"[M+FA-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
 
-            if str(_lpp_dct['LPP_CLASS']) == 'PC':
-                _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+FA-H]-')
-                _lpp_neg_precursor_info = '{"[M+FA-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+                else:
+                    _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M-H]-')
+                    _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
 
-            else:
-                _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M-H]-')
-                _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+                _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
+                _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
 
-            _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
-            _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
+                for _k in _lpp_dct.keys():
+                    _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
 
-            for _k in _lpp_dct.keys():
-                _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
+                sdf_writer.write(_lpp_mol)
+                MSPcreator.to_msp(msp_obj, _lpp_dct)
 
-            sdf_writer.write(_lpp_mol)
-            MSPcreator.to_msp(msp_obj, _lpp_dct)
-
-        elif save_spectra == 0:
+    elif save_spectra == 0:
+        for _k_lpp in sdf_dct.keys():
+            _lpp_dct = sdf_dct[_k_lpp]
             _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
             # print(_lpp_smiles)
             _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
@@ -280,6 +304,8 @@ def theolpp(usr_params):
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
 
     t_spent = time.clock() - t_start
-    print('==>==>%i of LPP generated ==> ==> ' % len(sdf_dct.keys()))
-    print('==>==>==> %i of phospholipids processed in %.3fs ==> ==> ==> Finished !!!!!!' % (len(c_lst), t_spent))
+    info_updater_1 = '=>%i of LPP generated ==> ' % len(sdf_dct.keys())
+    info_updater_2 = '=>==> %i of phospholipids processed in %.3fs ==> ==> Finished !!!!!!' % (len(c_lst), t_spent)
+
+    return info_updater_1, info_updater_2
 
