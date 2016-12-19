@@ -5,12 +5,37 @@
 # For more info please contact: zhixu.ni@uni-leipzig.de
 #
 
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
 import re
 import pandas as pd
 from rdkit import Chem
 
 from lpplibs.ExactMassCalc import Elem2Mass
 from lpplibs.FormulaCalc import FormulaCalc
+
 
 class AbbrFrag(object):
 
@@ -21,7 +46,7 @@ class AbbrFrag(object):
         self.ox_dct = {}
         self.ox_dct['CH3'] = {'C': 1, 'H': 3}
         self.ox_dct['CH3COOH'] = {'C': 2, 'H': 4, 'O': 2}
-        self.ox_dct['keto'] = {'H': -2, 'O': 1}
+        self.ox_dct['KETO'] = {'H': -2, 'O': 1}
         self.ox_dct['C=O'] = {'H': -2, 'O': 1}
         self.ox_dct['OH'] = {'O': 1}
         self.ox_dct['CHO'] = {'H': -2, 'O': 1}
@@ -40,7 +65,6 @@ class AbbrFrag(object):
         self.glycerol_dct = {'C': 3, 'H': 8, 'O': 3}
         self.fa_dct = {'C': 1, 'H': 2, 'O': 2}
         self.water_dct = {'H': 2, 'O': 1}
-
 
     def get_mz(self, ion_df):
 
@@ -67,10 +91,11 @@ class AbbrFrag(object):
         # [M+FA-H]-
         m_fa_formula_txt = formula_obj.merge_dct(m_formula_txt, {'C': 1, 'H': 1, 'O': 2})
         m_fa_mz = mzcalc.get_mass(m_fa_formula_txt)
-        print m_formula_txt, m_mz
+
         _pr_dct = {'M': (m_formula_txt, m_mz),
-                  '[M-H]-': (m_h_formula_txt, m_h_mz),
-                  '[M+FA-H]-': (m_fa_formula_txt, m_fa_mz)}
+                   '[M-H]-': (m_h_formula_txt, m_h_mz),
+                   '[M+FA-H]-': (m_fa_formula_txt, m_fa_mz)}
+        # print m_formula_txt, m_mz
 
         for _ion_idx in ion_df.index.tolist():
 
@@ -89,14 +114,14 @@ class AbbrFrag(object):
                 if ion_df.loc[_ion_idx]['ion_name'] == '[sn1-H]-':
                     sn1_frag_formula_txt = formula_obj.merge_dct(sn1_formula_txt, {'H': -1})
                     sn1_mz = mzcalc.get_mass(sn1_frag_formula_txt)
-                    print sn1_formula_txt, sn1_mz
+                    print(sn1_formula_txt, sn1_mz)
                     _frag_info = '%f %i \"%s\"\n' % (sn1_mz, ion_df.loc[_ion_idx]['ion_i'], '[sn1-H]-')
                     mz_lst.append(_frag_info)
 
                 if ion_df.loc[_ion_idx]['ion_name'] == '[sn2-H]-':
                     sn2_frag_formula_txt = formula_obj.merge_dct(sn2_formula_txt, {'H': -1})
                     sn2_mz = mzcalc.get_mass(sn2_frag_formula_txt)
-                    print sn2_formula_txt, sn2_mz
+                    print(sn2_formula_txt, sn2_mz)
                     _frag_info = '%f %i \"%s\"\n' % (sn2_mz, ion_df.loc[_ion_idx]['ion_i'], '[sn2-H]-')
                     mz_lst.append(_frag_info)
 
@@ -114,7 +139,7 @@ class AbbrFrag(object):
                     if _sn2_w_checker == 1:
                         sn2_frag_formula_txt = formula_obj.merge_dct(sn2_formula_txt, {'H': -3, 'O': -1})
                         sn2_mz = mzcalc.get_mass(sn2_frag_formula_txt)
-                        print sn2_formula_txt, sn2_mz
+                        print(sn2_formula_txt, sn2_mz)
                         _frag_info = '%f %i \"%s\"\n' % (sn2_mz, ion_df.loc[_ion_idx]['ion_i'], '[sn2-H2O-H]-')
                         mz_lst.append(_frag_info)
 
@@ -123,7 +148,7 @@ class AbbrFrag(object):
 
                     sn2_frag_formula_txt = formula_obj.merge_dct(sn2_formula_txt, {'H': 1, 'C': 1})
                     sn2_mz = mzcalc.get_mass(sn2_frag_formula_txt)
-                    print sn2_formula_txt, sn2_mz
+                    print(sn2_formula_txt, sn2_mz)
                     _frag_info = '%f %i \"%s\"\n' % (sn2_mz, ion_df.loc[_ion_idx]['ion_i'], '[sn2+CH2-H]-')
                     mz_lst.append(_frag_info)
                 # for OCP -COOH only
@@ -131,7 +156,7 @@ class AbbrFrag(object):
 
                     sn2_frag_formula_txt = formula_obj.merge_dct(sn2_formula_txt, {'H': -3, 'C': -1, 'O': -3})
                     sn2_mz = mzcalc.get_mass(sn2_frag_formula_txt)
-                    print sn2_formula_txt, sn2_mz
+                    print(sn2_formula_txt, sn2_mz)
                     _frag_info = '%f %i \"%s\"\n' % (sn2_mz, ion_df.loc[_ion_idx]['ion_i'], '[sn2-CH2O3-H]-')
                     mz_lst.append(_frag_info)
 
@@ -139,53 +164,53 @@ class AbbrFrag(object):
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-H]-' and self.lpp_type in ['OCP-alde', 'OCP-acid', 'OAP']:
                     _frag_formula_txt = formula_obj.merge_dct(pr_formula_txt, {'H': 0})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-H]-')
                     mz_lst.append(_frag_info)
 
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-CH3COOH-H]-' and self.lpp_type in ['OCP-alde', 'OAP']:
                     _frag_formula_txt = formula_obj.merge_dct(pr_formula_txt, {'C': -2, 'H': -4, 'O': -2})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-CH3COOH-H]-')
                     mz_lst.append(_frag_info)
 
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-PCsHG-H]-' and self.lpp_type in ['OCP-acid']:
                     _frag_formula_txt = formula_obj.merge_dct(pr_formula_txt, {'C': -3, 'H': -9, 'N': -1})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-PCsHG-H]-')
                     mz_lst.append(_frag_info)
 
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-sn2+H2O-H]-':
                     _frag_formula_txt = formula_obj.merge_dct(sn1_lyso_formula_txt, {'C': 0, 'H': -1})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-sn2+H2O-H]-')
                     mz_lst.append(_frag_info)
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-sn2-CH3+H2O-H]-':
                     _frag_formula_txt = formula_obj.merge_dct(sn1_lyso_formula_txt, {'C': -1, 'H': -3})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-sn2-CH3+H2O-H]-')
                     mz_lst.append(_frag_info)
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-sn2-CH3-H]-':
                     _frag_formula_txt = formula_obj.merge_dct(sn1_lyso_formula_txt, {'C': -1, 'H': -5, 'O': -1})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-sn2-CH3-H]-')
                     mz_lst.append(_frag_info)
 
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-sn1-CH3+H2O-H]-':
                     _frag_formula_txt = formula_obj.merge_dct(sn2_lyso_formula_txt, {'C': -1, 'H': -3})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-sn1-CH3+H2O-H]-')
                     mz_lst.append(_frag_info)
                 if ion_df.loc[_ion_idx]['ion_name'] == '[M-sn1-CH3-H]-':
                     _frag_formula_txt = formula_obj.merge_dct(sn2_lyso_formula_txt, {'C': -1, 'H': -5, 'O': -1})
                     _mz = mzcalc.get_mass(_frag_formula_txt)
-                    print _frag_formula_txt, _mz
+                    print(_frag_formula_txt, _mz)
                     _frag_info = '%f %i \"%s\"\n' % (_mz, ion_df.loc[_ion_idx]['ion_i'], '[M-sn1-CH3-H]-')
                     mz_lst.append(_frag_info)
 
@@ -195,13 +220,13 @@ class AbbrFrag(object):
 
     def parse(self):
 
-        oxpl_re = re.compile(r'(oxPC)([(])(.*)([/])(.*)([)])')
+        oxpl_re = re.compile(r'(PC)([(])(.*)([/])(.*)([)])')
 
         _match = oxpl_re.match(self.lpp_abbr)
         if _match:
             _sn_lst = _match.groups()
             sn_lst = [_sn_lst[0], _sn_lst[2], _sn_lst[4]]
-            print '_sn_lst', _sn_lst
+            print('_sn_lst', _sn_lst)
 
             sn1_dct, sn1_hydro_checker = self.parse_sn(_sn_lst[2])
             try:
@@ -209,7 +234,7 @@ class AbbrFrag(object):
             except:
                 sn2_dct, sn2_hydro_checker = self.parse_sn(_sn_lst[2])
 
-            print sn1_dct, sn2_dct, sn1_hydro_checker, sn2_hydro_checker
+            print(sn1_dct, sn2_dct, sn1_hydro_checker, sn2_hydro_checker)
 
             return sn1_dct, sn2_dct, sn1_hydro_checker, sn2_hydro_checker
 
@@ -223,12 +248,12 @@ class AbbrFrag(object):
             alde_match = alde_re.match(sn_abbr)
             acid_match = acid_re.match(sn_abbr)
             if alde_match:
-                print 'CHO'
+                print('CHO')
                 sn_elem_dct = {'C': 0, 'H': -4, 'O': 3}
                 _sn_abbr_lst = alde_match.groups()
                 _sn_abbr = ''.join([_sn_abbr_lst[0], _sn_abbr_lst[2]])
             elif acid_match:
-                print 'COOH'
+                print('COOH')
                 sn_elem_dct = {'C': 0, 'H': -4, 'O': 4}
                 _sn_abbr_lst = acid_match.groups()
                 _sn_abbr = ''.join([_sn_abbr_lst[0], _sn_abbr_lst[2]])
@@ -236,55 +261,110 @@ class AbbrFrag(object):
                 sn_elem_dct = {'C': 0, 'H': -2, 'O': 2}
                 _sn_abbr = sn_abbr
 
-            print '_sn_abbr', _sn_abbr, sn_abbr
+            print('_sn_abbr', _sn_abbr, sn_abbr)
 
             sn_unox_re = re.compile(r'(\d{1,2})([:])(\d)')
-            sn_ox_re = re.compile(r'(\d{1,2})([:])(\d)([\[\(])(.*)([\)\]])')
+            sn_ox_re = re.compile(r'(\d{1,2})([:])(\d)([\[\(<])(.*)([\)\]>])')
+            sn_o_ox_re = re.compile(r'(O-\d{1,2})([:])(\d)([\[\(<])(.*)([\)\]>])')
+            sn_p_ox_re = re.compile(r'(P-\d{1,2})([:])(\d)([\[\(<])(.*)([\)\]>])')
             ox_re = re.compile(r'(\d)(x)(.{0,10})')
 
             _match_sn_unox = sn_unox_re.match(_sn_abbr)
             _match_sn_ox = sn_ox_re.match(_sn_abbr)
+            _match_sn_o_ox = sn_o_ox_re.match(_sn_abbr)
+            _match_sn_p_ox = sn_p_ox_re.match(_sn_abbr)
 
             _hydro_checker = 0
 
             if _match_sn_unox and not _match_sn_ox:
                 _sn_lst = _match_sn_unox.groups()
                 _re_sn = ''.join(_sn_lst)
-                print '_sn_lst_unox', _sn_lst, _re_sn
+                print('_sn_lst_unox', _sn_lst, _re_sn)
                 if _re_sn == _sn_abbr:
                     sn_elem_dct['C'] = int(_sn_lst[0])
-                    sn_elem_dct['H'] += int(_sn_lst[0]) * 2 + 2 - 2 * int(_sn_lst[2])
-                    print sn_abbr, _sn_lst, sn_elem_dct
+                    sn_elem_dct['H'] += int(_sn_lst[0]) * 2 - 2 * int(_sn_lst[2])
+                    print(sn_abbr, _sn_lst, sn_elem_dct)
                     return sn_elem_dct, _hydro_checker
 
             if _match_sn_ox:
                 _sn_lst = _match_sn_ox.groups()
-                print '_sn_lst_ox', _sn_lst, sn_elem_dct
+                print('_sn_lst_ox', _sn_lst, sn_elem_dct)
                 sn_elem_dct['C'] = int(_sn_lst[0])
-                sn_elem_dct['H'] += int(_sn_lst[0]) * 2 + 2 - 2 * int(_sn_lst[2])
+                sn_elem_dct['H'] += int(_sn_lst[0]) * 2 - 2 * int(_sn_lst[2])
                 _ox_info = _sn_lst[4]
                 _ox_info_lst = _ox_info.split(',')
-                print '_ox_info_lst', _ox_info_lst
+                print('_ox_info_lst', _ox_info_lst)
                 for _ox in _ox_info_lst:
                     _match_ox = ox_re.match(_ox)
                     if _match_ox:
                         _ox_lst = _match_ox.groups()
-                        print '_ox_lst', _ox_lst
+                        print('_ox_lst', _ox_lst)
                         if _ox_lst[2] in self.ox_dct.keys():
                             if _ox_lst[2] == 'OH':
                                 _hydro_checker += 1
                             _ox_count = int(_ox_lst[0])
                             _ox_dct = self.ox_dct[_ox_lst[2]]
-                            print '_ox_dct', _ox_dct
+                            print('_ox_dct', _ox_dct)
                             for _elem in ['C', 'H', 'O']:
                                 if _elem in _ox_dct.keys():
                                     _ox_add = _ox_count * _ox_dct[_elem]
                                     sn_elem_dct[_elem] += _ox_add
+            if _match_sn_o_ox:
+                _sn_lst = _match_sn_o_ox.groups()
+                print('_sn_lst_ox', _sn_lst, sn_elem_dct)
+                sn_elem_dct['O'] = 1
+                _num_c = _sn_lst[0].split('-')[1]
+                sn_elem_dct['C'] = int(_num_c)
+                sn_elem_dct['H'] += int(_num_c) * 2 + 2 - 2 * int(_sn_lst[2])
+                _ox_info = _sn_lst[4]
+                _ox_info_lst = _ox_info.split(',')
+                print('_ox_info_lst', _ox_info_lst)
+                for _ox in _ox_info_lst:
+                    _match_ox = ox_re.match(_ox)
+                    if _match_ox:
+                        _ox_lst = _match_ox.groups()
+                        print('_ox_lst', _ox_lst)
+                        if _ox_lst[2] in self.ox_dct.keys():
+                            if _ox_lst[2] == 'OH':
+                                _hydro_checker += 1
+                            _ox_count = int(_ox_lst[0])
+                            _ox_dct = self.ox_dct[_ox_lst[2]]
+                            print('_ox_dct', _ox_dct)
+                            for _elem in ['C', 'H', 'O']:
+                                if _elem in _ox_dct.keys():
+                                    _ox_add = _ox_count * _ox_dct[_elem]
+                                    sn_elem_dct[_elem] += _ox_add
+            if _match_sn_p_ox:
+                _sn_lst = _match_sn_p_ox.groups()
+                print('_sn_lst_ox', _sn_lst, sn_elem_dct)
+                sn_elem_dct['O'] = 1
+                _num_c = _sn_lst[0].split('-')[1]
+                sn_elem_dct['C'] = int(_num_c)
+                sn_elem_dct['H'] += int(_num_c) * 2 - 2 * int(_sn_lst[2])
+                _ox_info = _sn_lst[4]
+                _ox_info_lst = _ox_info.split(',')
+                print('_ox_info_lst', _ox_info_lst)
+                for _ox in _ox_info_lst:
+                    _match_ox = ox_re.match(_ox)
+                    if _match_ox:
+                        _ox_lst = _match_ox.groups()
+                        print('_ox_lst', _ox_lst)
+                        if _ox_lst[2] in self.ox_dct.keys():
+                            if _ox_lst[2] == 'OH':
+                                _hydro_checker += 1
+                            _ox_count = int(_ox_lst[0])
+                            _ox_dct = self.ox_dct[_ox_lst[2]]
+                            print('_ox_dct', _ox_dct)
+                            for _elem in ['C', 'H', 'O']:
+                                if _elem in _ox_dct.keys():
+                                    _ox_add = _ox_count * _ox_dct[_elem]
+                                    sn_elem_dct[_elem] += _ox_add
+
                 return sn_elem_dct, _hydro_checker
 
-sdf_file = 'oxPAPC_OH_KETO_sameDB.sdf'
-msp_file = 'oxPAPC_OH_KETO_sameDB_2104.msp'
-f_obj = file(msp_file, 'w')
+sdf_file = r'SDFs\new_method_sdf_PC_max_1keto_1lessDB.sdf'
+msp_file = r'new_method_sdf_PC_max_1keto_1lessDB.msp'
+f_obj = open(msp_file, 'w')
 f_obj.write('')
 f_obj.close()
 
@@ -292,7 +372,7 @@ suppl = Chem.SDMolSupplier(sdf_file)
 
 alde_re = re.compile(r'.*CHO.*')
 acid_re = re.compile(r'.*COOH.*')
-keto_re = re.compile(r'.*xketo.*')
+keto_re = re.compile(r'.*xKETO.*')
 hydro_re = re.compile(r'.*xOH.*')
 
 for m in suppl:
@@ -307,33 +387,33 @@ for m in suppl:
     if alde_re.match(_id):
         _charge_lst = ['[M+FA-H]-']
         # _charge_lst = ['[M-H]-']
-        _frag_pattern = 'ion_scores_PLPC_OCP_CHO_neg.csv'
+        _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OCP_CHO_neg.csv'
         _lpp_type = 'OCP-alde'
     elif acid_re.match(_id):
         _charge_lst = ['[M-H]-']
-        _frag_pattern = 'ion_scores_PLPC_OCP_COOH_neg.csv'
+        _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OCP_COOH_neg.csv'
         _lpp_type = 'OCP-acid'
     else:
         # _charge_lst = ['[M+FA-H]-']
         if hydro_re.match(_id) and keto_re.match(_id):
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_keto_OH_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_keto_OH_neg.csv'
             _lpp_type = 'OAP'
         elif hydro_re.match(_id) and not keto_re.match(_id):
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_OH_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_OH_neg.csv'
             _lpp_type = 'OAP'
         elif keto_re.match(_id) and not hydro_re.match(_id):
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_keto_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_keto_neg.csv'
             _lpp_type = 'OAP'
         else:
             _charge_lst = ['[M+FA-H]-']
             # _charge_lst = ['[M-H]-']
-            _frag_pattern = 'ion_scores_PLPC_OAP_keto_neg.csv'
+            _frag_pattern = r'D:\theolpp\TheoFragPatterns_csv\ion_scores_PLPC_OAP_keto_neg.csv'
             _lpp_type = 'OAP'
 
     if _frag_pattern != '':
@@ -376,7 +456,6 @@ for m in suppl:
                 _info_lst.extend(mz_lst)
                 # _info_lst.append('\n')
                 msp_obj.writelines(_info_lst)
-
 
             # except TypeError:
             #     print 'skip!!!--->', _id
