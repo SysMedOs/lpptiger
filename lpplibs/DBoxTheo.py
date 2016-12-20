@@ -205,8 +205,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
     
                 mod_sum_df = mod_ocp_sum_df.append(mod_oap_sum_df)
                 # select the LPP according to user settings of max modification types
-                mod_max_ctrl_code = 'KETO <= %i and OOH<= %i and EPOXY <= %i' % (max_keto, max_ooh, max_epoxy)
+                mod_max_ctrl_code = 'KETO <= %i and OOH<= %i' % (max_keto, max_ooh)
                 mod_sum_df = mod_sum_df.query(mod_max_ctrl_code)
+                mod_sum_df = mod_sum_df.query('EPOXY <= %i' % max_epoxy)
                 _full_smiles_lst = mod_sum_df['FULL_SMILES'].tolist()
                 _c_num_lst = []
                 for _smiles in _full_smiles_lst:

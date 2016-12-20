@@ -35,7 +35,7 @@ def theolpp(usr_params):
                  'sdf_path': sdf_path, 'msp_mode': msp_mode, 'msp_path': msp_path,
                  'mod_lst_path': mod_lst_path, 'fa_lst_path': fa_lst_path, 'prostane_mod_path': prostane_mod_path,
                  'prostane_abbr_path': prostane_abbr_path, 'frag_pattern_path': frag_pattern_path}
-    :param params:
+    :param usr_params:
     :return:
     """
 
@@ -86,7 +86,10 @@ def theolpp(usr_params):
     ox_param_dct = {'MAX_MOD': ox_max, 'MAX_KETO': keto_max, 'MAX_OOH': ooh_max, 'MAX_EPOXY': epoxy_max}
 
     sdf_writer = Chem.SDWriter(open(save_sdf, mode='w'))
-    msp_obj = open(save_msp, mode='w')
+    if save_spectra == 1 and len(save_msp) > 0:
+        msp_obj = open(save_msp, mode='w')
+    else:
+        msp_obj = None
     sdf_dct = {}
 
     parser = PLParser()
@@ -265,7 +268,8 @@ def theolpp(usr_params):
                     _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
 
                 sdf_writer.write(_lpp_mol)
-                MSPcreator.to_msp(msp_obj, _lpp_dct)
+                if save_spectra == 1 and len(save_msp) > 0:
+                    MSPcreator.to_msp(msp_obj, _lpp_dct)
 
     elif save_spectra == 0:
         for _k_lpp in sdf_dct.keys():
@@ -299,7 +303,8 @@ def theolpp(usr_params):
             sdf_writer.write(_lpp_mol)
 
     sdf_writer.close()
-    msp_obj.close()
+    if save_spectra == 1 and len(save_msp) > 0:
+        msp_obj.close()
 
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
 

@@ -59,7 +59,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         QtCore.QObject.connect(self.ui.run_theolpp_pb, QtCore.SIGNAL("clicked()"), self.run_theolpp)
         QtCore.QObject.connect(self.ui.max_ox_spb, QtCore.SIGNAL("valueChanged(int)"), self.set_ox_max)
 
-
         # slots for tab b
         QtCore.QObject.connect(self.ui.mod_lst__pb, QtCore.SIGNAL("clicked()"), self.set_general_mod)
         QtCore.QObject.connect(self.ui.fa_lst_pb, QtCore.SIGNAL("clicked()"), self.set_fa_white_lst)
@@ -272,7 +271,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
                      'mod_lst_path': mod_lst_path, 'fa_lst_path': fa_lst_path, 'prostane_mod_path': prostane_mod_path,
                      'prostane_abbr_path': prostane_abbr_path, 'frag_pattern_path': frag_pattern_path}
 
-        # print(param_dct)
+        print(param_dct)
         info_1, info_2 = theolpp(param_dct)
         self.ui.run_status_te.append(info_1)
         self.ui.run_status_te.append(info_2)
