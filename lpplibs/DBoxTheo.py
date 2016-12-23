@@ -71,6 +71,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             fa_dct = ox_func(usr_fa_dct)
             # print('fa_dct', fa_dct)
             db_count = fa_dct['DB_count']
+            fa_c_count = fa_dct['DB_C_count']
             # O- & P- link sn, the SMILES are different
             if fa_dct['DB_LINK_type'] in ['O-', 'P-']:
                 ocp_end_part = ''
@@ -172,7 +173,6 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
                                         mod_sum_df.loc[:, _new_mod] = _tmp_mod_df
 
-
                                     else:
                                         # print('OCP', _ocp_checker, _tmp_mod)
                                         pass
@@ -180,17 +180,17 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                     pass
                 mod_sum_df = mod_sum_df.transpose()
                 # no more than one keto & max reduce 1 DB
-                _min_DB = db_count - 1
+                # _min_DB = db_count - 1
                 # modification type and number control
-                mod_sum_df = mod_sum_df[(mod_sum_df.KETO < 2) & (mod_sum_df.DB >= _min_DB)]
+                # mod_sum_df = mod_sum_df[(mod_sum_df.KETO < max_keto) & (mod_sum_df.DB >= _min_DB)]
                 mod_sum_df['MOD_NUM'] = mod_sum_df['OAP'] + mod_sum_df['OCP']
     
                 # filter the OCP and OAP. OAP should be full length
                 mod_ocp_sum_df = mod_sum_df.query('OCP == 1')
-                mod_ocp_sum_df = mod_ocp_sum_df.query('MOD_NUM <= %d' % max_mod)
+                mod_ocp_sum_df = mod_ocp_sum_df.query('0 < MOD_NUM <= %d' % max_mod)
                 # OAP should have all DB, thus MOD_NUM <= db_count
                 mod_oap_sum_df = mod_sum_df.query('OCP == 0 and MOD_NUM <= %d' % db_count)
-                mod_oap_sum_df = mod_oap_sum_df.query('MOD_NUM <= %d' % max_mod)
+                mod_oap_sum_df = mod_oap_sum_df.query('0 < MOD_NUM <= %d' % max_mod)
 
                 # the end of smiles is different for OCP
                 mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
@@ -214,12 +214,15 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                     _c_num_lst.append(_smiles.count('C'))
                 mod_sum_df.loc[:, 'C_NUM'] = _c_num_lst
                 mod_sum_df.is_copy = False
-    
+
+                # OAP should stay the same carbon number
+                _n_ocp_mod_sum_df = mod_sum_df.query('OCP == 1')
+                _n_oap_mod_sum_df = mod_sum_df.query('OAP == 1 and C_NUM == %d' % fa_c_count)
+                mod_sum_df = _n_ocp_mod_sum_df.append(_n_oap_mod_sum_df)
+
                 # mod_sum_df.to_csv('oxDB.csv')
                 nam_fields_last.append('C_NUM')
                 mod_sum_df[nam_fields_last] = mod_sum_df[nam_fields_last].astype(str)
-
-                # mod_sum_df['FRAG_SMILES'] = mod_sum_df['FRAG_SMILES'] + fa_dct['DB_post_part']
 
                 # here CHO@C & COOH@C is 1 or 0 for T/F
                 mod_sum_df.loc[:, 'FA_CHECKER'] = (fa_dct['DB_LINK_type'] + mod_sum_df['C_NUM'] + ':'
@@ -251,8 +254,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                                      'DB': int(_fa_row['DB']),
                                                      'OH': int(_fa_row['OH']),
                                                      'KETO': int(_fa_row['KETO']),
-                                                     'OOH': int(_fa_row['KETO']),
-                                                     'EPOXY': int(_fa_row['KETO']),
+                                                     'OOH': int(_fa_row['OOH']),
+                                                     'EPOXY': int(_fa_row['EPOXY']),
                                                      'CHO': int(_fa_row['CHO']),
                                                      'COOH': int(_fa_row['COOH']),
                                                      'OAP': int(_fa_row['OAP']),
@@ -282,8 +285,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             else:
                 _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
 
-            unmod_json = ('{"C": %i, "KETO": 0, "OH": 0, "OOH": 0, "KETO": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
-                          '"LINK_TYPE": "%s", "CHO": 0}' % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
+            unmod_json = ('{"C": %i, "DB": 0, "CHO": 0, "EPOXY": 0, "OAP": 0, "OCP": 0, "COOH": 0, '
+                          '"KETO": 0, "OH": 0, "OOH": 0, "LINK_TYPE": "%s"}'
+                          % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
 
             unmod_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
                          'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
@@ -294,8 +298,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             unmod_df = pd.DataFrame(unmod_dct, index=['0-no_oxidation'])
 
-            lyso_json = ('{"C": 0, "KETO": 0, "OH": 0, "OOH": 0, "KETO": 0, "OAP": 0, "OCP": 0, "COOH": 0, "DB": 0, '
-                         '"LINK_TYPE": "LYSO", "CHO": 0}')
+            lyso_json = ('{"C": 0, "DB": 0, "CHO": 0, "EPOXY": 0, "OAP": 0, "OCP": 0, "COOH": 0, '
+                         '"KETO": 0, "OH": 0, "OOH": 0, "LINK_TYPE": "LYSO"}')
 
             lyso_dct = {'SMILES': 'O', 'OAP': 0, 'OCP': 0, 'DB': 0,
                         'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,

@@ -82,6 +82,8 @@ def theolpp(usr_params):
         ban_lst.extend(['LYSOOAP', 'OAPLYSO'])
     if lyso_ocp_mode == 0:
         ban_lst.extend(['LYSOOCP', 'OCPLYSO'])
+    if ox_level == 1:
+        ban_lst.extend(['OAPOAP', 'OCPOCP', 'OAPOCP', 'OCPOAP'])
 
     ox_param_dct = {'MAX_MOD': ox_max, 'MAX_KETO': keto_max, 'MAX_OOH': ooh_max, 'MAX_EPOXY': epoxy_max}
 

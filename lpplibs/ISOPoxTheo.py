@@ -69,56 +69,73 @@ class IsoProstanOx(object):
             ring_type = isop_info_dct['RING_TYPE']
             class_type = isop_info_dct['CLASS_TYPE']
 
-            # for IsoP-[ABCDEFGHIJ] and IsoK[DE]
-            # if len(ring_type_lst) == 2:
-            abbr_formatter = ('{ISOP_SERIES}-{RING_TYPE}{SERIES_DB_COUNT}-{ISOP_ABBR}{ISOX}-'
-                              '{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,'
-                              '{OH_COUNT}xOH,{KETO_COUNT}xKETO]'
-                              '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
-                              .format(ISOP_SERIES=usr_series,
-                                      RING_TYPE=ring_type,
+            # for [ABCDEFGHIJ]-IsoP and [DE]-IsoK
+            if class_type in ['P', 'K']:
+                abbr_formatter = ('{ISOP_SERIES}-{RING_TYPE}{SERIES_DB_COUNT}-{ISOP_ABBR}{ISOX}-'
+                                  '{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,'
+                                  '{OH_COUNT}xOH,{KETO_COUNT}xKETO,{OOH_COUNT}xOOH]'
+                                  '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
+                                  .format(ISOP_SERIES=usr_series,
+                                          RING_TYPE=ring_type,
+                                          SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
+                                          ISOP_ABBR=isop_abbr,
+                                          ISOX=class_type,
+                                          C_COUNT=usr_c,
+                                          DB_COUNT=usr_db+isop_info_dct['DB'],
+                                          OH_COUNT=isop_info_dct['OH'],
+                                          KETO_COUNT=isop_info_dct['KETO'],
+                                          OOH_COUNT=isop_info_dct['OOH'],
+                                          CHO_COUNT=isop_info_dct['CHO'],
+                                          COOH_COUNT=isop_info_dct['COOH'],
+                                          left='{',
+                                          OAP_COUNT=isop_info_dct['OAP'],
+                                          OCP_COUNT=isop_info_dct['OCP'],
+                                          right='}'
+                                          )
+                                  )
+                abbr_short = ('{RING_TYPE}{SERIES_DB_COUNT}-{ISOP_ABBR}{ISOX}'
+                              .format(RING_TYPE=ring_type,
                                       SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
                                       ISOP_ABBR=isop_abbr,
                                       ISOX=class_type,
-                                      C_COUNT=usr_c,
-                                      DB_COUNT=usr_db+isop_info_dct['DB'],
-                                      OH_COUNT=isop_info_dct['OH'],
-                                      KETO_COUNT=isop_info_dct['KETO'],
-                                      CHO_COUNT=isop_info_dct['CHO'],
-                                      COOH_COUNT=isop_info_dct['COOH'],
-                                      left='{',
-                                      OAP_COUNT=isop_info_dct['OAP'],
-                                      OCP_COUNT=isop_info_dct['OCP'],
-                                      right='}'
+                                      )
+                              )
+
+            # for TxA, TxB
+            else:
+                abbr_formatter = ('{ISOP_SERIES}-{ISOP_ABBR}{ISOX}{SERIES_DB_COUNT}-'
+                                  '{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,'
+                                  '{OH_COUNT}xOH,{KETO_COUNT}xKETO]'
+                                  '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
+                                  .format(ISOP_SERIES=usr_series,
+                                          RING_TYPE=ring_type,
+                                          SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
+                                          ISOP_ABBR=isop_abbr,
+                                          ISOX=class_type,
+                                          C_COUNT=usr_c,
+                                          DB_COUNT=usr_db+isop_info_dct['DB'],
+                                          OH_COUNT=isop_info_dct['OH'],
+                                          KETO_COUNT=isop_info_dct['KETO'],
+                                          CHO_COUNT=isop_info_dct['CHO'],
+                                          COOH_COUNT=isop_info_dct['COOH'],
+                                          left='{',
+                                          OAP_COUNT=isop_info_dct['OAP'],
+                                          OCP_COUNT=isop_info_dct['OCP'],
+                                          right='}'
+                                          )
+                                  )
+                abbr_short = ('{ISOP_ABBR}{ISOX}{SERIES_DB_COUNT}'
+                              .format(SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
+                                      ISOP_ABBR=isop_abbr,
+                                      ISOX=class_type,
                                       )
                               )
         else:
             print(usr_c, usr_db+isop_info_dct['DB'], self.db_info_dct['DB_count'], 'not listed')
             abbr_formatter = ''
-            # # For IsoTxA and IsoTxB
-            # else:
-            #     abbr_formatter = ('{ISOP_SERIES}-{ISOP_ABBR}{RING_TYPE}{SERIES_DB_COUNT}-'
-            #                       '{C_COUNT}:{DB_COUNT}[{DB_COUNT}xDB,'
-            #                       '{OH_COUNT}xOH,{KETO_COUNT}xKETO]'
-            #                       '<CHO@C{CHO_COUNT},COOH@{COOH_COUNT}>{left}OAP:{OAP_COUNT},OCP:{OCP_COUNT}{right}'
-            #                       .format(ISOP_SERIES=usr_series,
-            #
-            #                               RING_TYPE=isop_info_dct['RING_TYPE'],
-            #                               SERIES_DB_COUNT=usr_db+isop_info_dct['DB'],
-            #                               C_COUNT=usr_c,
-            #                               DB_COUNT=usr_db,
-            #                               OH_COUNT=isop_info_dct['OH'],
-            #                               KETO_COUNT=isop_info_dct['KETO'],
-            #                               CHO_COUNT=isop_info_dct['CHO'],
-            #                               COOH_COUNT=isop_info_dct['COOH'],
-            #                               left='{',
-            #                               OAP_COUNT=isop_info_dct['OAP'],
-            #                               OCP_COUNT=isop_info_dct['OCP'],
-            #                               right='}'
-            #                               )
-            #                       )
+            abbr_short = ''
 
-        return abbr_formatter
+        return abbr_formatter, abbr_short
 
     def get_info_dct(self, isop_smi, isop_info_dct, usr_db, usr_pre_db_count, usr_pre_smi, reverse=False):
 
@@ -126,17 +143,20 @@ class IsoProstanOx(object):
 
         c_count = isop_smi.count('C')
 
-        isop_checker = self.get_isop_checker(isop_info_dct, usr_c=c_count, usr_db=usr_db, usr_series=isop_series)
+        isop_checker, abbr_short = self.get_isop_checker(isop_info_dct, usr_c=c_count,
+                                                         usr_db=usr_db, usr_series=isop_series)
         abbr_gen = AbbrGenerator()
         isop_abbr, isop_typ_str = abbr_gen.decode(isop_checker)
 
-        isop_json = ('{left}"C": {C_COUNT}, "KETO": {KETO_COUNT}, "OH": {OH_COUNT}, '
-                     '"OAP": {OAP_COUNT}, "OCP": {OCP_COUNT}, "IsoP":"{RING_TYPE}{DB_COUNT}",'
-                     '"COOH": {COOH_COUNT}, "DB": {DB_COUNT}, "LINK_TYPE": "", "CHO": {CHO_COUNT}{right}'
-                     .format(RING_TYPE=isop_info_dct['RING_TYPE'],
+        isop_json = ('{left}"C": {C_COUNT}, "DB": {DB_COUNT}, "CHO": {CHO_COUNT}, "EPOXY": 0, '
+                     '"OAP": {OAP_COUNT}, "OCP": {OCP_COUNT}, "COOH": {COOH_COUNT}, '
+                     '"KETO": {KETO_COUNT}, "OH": {OH_COUNT}, "OOH": {OOH_COUNT}, '
+                     '"LINK_TYPE": ""{right}, "Prostane":"{PROSTANE_TYPE}"'
+                     .format(PROSTANE_TYPE=abbr_short,
                              C_COUNT=c_count,
                              DB_COUNT=usr_db,
                              OH_COUNT=isop_info_dct['OH'],
+                             OOH_COUNT=isop_info_dct['OOH'],
                              KETO_COUNT=isop_info_dct['KETO'],
                              CHO_COUNT=isop_info_dct['CHO'],
                              COOH_COUNT=isop_info_dct['COOH'],
@@ -149,8 +169,8 @@ class IsoProstanOx(object):
 
         isop_lpp_sum_dct = {'SMILES': isop_smi, 'C_NUM': c_count, 'DB': usr_db,
                             'OAP': isop_info_dct['OAP'], 'OCP': isop_info_dct['OCP'],
-                            'OH': isop_info_dct['OH'], 'KETO': isop_info_dct['KETO'],
-                            'CHO': isop_info_dct['CHO'], 'COOH': isop_info_dct['COOH'],
+                            'OH': isop_info_dct['OH'], 'KETO': isop_info_dct['KETO'], 'OOH': isop_info_dct['OOH'],
+                            'CHO': isop_info_dct['CHO'], 'COOH': isop_info_dct['COOH'], 'EPOXY': 0,
                             'MOD_NUM': 1,
                             'FULL_SMILES': isop_smi,
                             'FA_CHECKER': isop_checker,
