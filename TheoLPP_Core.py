@@ -83,7 +83,7 @@ def theolpp(usr_params):
     if lyso_ocp_mode == 0:
         ban_lst.extend(['LYSOOCP', 'OCPLYSO'])
     if ox_level == 1:
-        ban_lst.extend(['OAPOAP', 'OCPOCP', 'OAPOCP', 'OCPOAP'])
+        ban_lst.extend(['OAPOAP', 'OCPOCP', 'OAPOCP', 'OCPOAP', 'OAPUNMOD', 'OCPUNMOD'])
 
     ox_param_dct = {'MAX_MOD': ox_max, 'MAX_KETO': keto_max, 'MAX_OOH': ooh_max, 'MAX_EPOXY': epoxy_max}
 
@@ -236,7 +236,7 @@ def theolpp(usr_params):
     print(sum_theo_lpp_pl.shape)
 
     # write to sdf
-    print('==>Start to generate SDF ==>')
+    print('==>Start to generate SDF ==> MSP mode = %i' % save_spectra)
     print('!! %i structures in total !!' % len(sdf_dct.keys()))
 
     if save_spectra == 1:

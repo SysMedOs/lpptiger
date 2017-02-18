@@ -9,6 +9,125 @@ from __future__ import print_function
 import re
 import json
 
+import  pandas as pd
+
+
+def fa_abbr_encode(fa_dct, mod_info_t_df, fa_ox_df, mode=0):
+
+    fa_link_typ = fa_dct['DB_LINK_type']
+    db_count = fa_dct['DB_count']
+    db_start_count = fa_dct['DB_start']
+
+    db_pre_part = fa_dct['DB_pre_part']
+    db_post_part = fa_dct['DB_post_part']
+
+    db_count_i_lst = range(1, db_count + 1)
+    db_count_s_lst = [str(db_x) for db_x in db_count_i_lst]
+
+    mod_smiles_lst = mod_info_t_df['SMILES'].tolist()
+    mod_dct = {}
+    for _idx, _mod_r in mod_info_t_df.iterrows():
+        # after .t and reset_index, the mod name became column named 'index'
+        mod_dct[_mod_r['SMILES']] = _idx
+
+    fa_ox_df['FULL_SMILES'] = db_pre_part + fa_ox_df[db_count_s_lst].sum(axis=1) + db_post_part
+
+    fa_ox_df['ABBR'] = ''
+    left_dct_str = '{'
+    right_dct_str = '}'
+
+    for _idx, fa_r in fa_ox_df.iterrows():
+        _db_counter = 0
+        _oh_counter = 0
+        _ooh_counter = 0
+        _keto_counter = 0
+        _epoxy_counter = 0
+        _cho_counter = 0
+        _cooh_counter = 0
+        _oap_counter = 0
+        _ocp_counter = 0
+        _fa_smi = fa_r['FULL_SMILES']
+        _c_counter = _fa_smi.count('C')
+        for db_s in db_count_s_lst:
+            db_smi = fa_r[db_s]
+            print(db_smi)
+            if db_smi in mod_smiles_lst:
+                mod_idx = mod_dct[db_smi]
+                _db_counter += mod_info_t_df.get_value(mod_idx, 'DB')
+                _oh_counter += mod_info_t_df.get_value(mod_idx, 'OH')
+                _ooh_counter += mod_info_t_df.get_value(mod_idx, 'OOH')
+                _keto_counter += mod_info_t_df.get_value(mod_idx, 'KETO')
+                _epoxy_counter += mod_info_t_df.get_value(mod_idx, 'EPOXY')
+                _cho_counter += mod_info_t_df.get_value(mod_idx, 'CHO')
+                _cooh_counter += mod_info_t_df.get_value(mod_idx, 'COOH')
+                _oap_counter += mod_info_t_df.get_value(mod_idx, 'OAP')
+                _ocp_counter += mod_info_t_df.get_value(mod_idx, 'OCP')
+            elif db_smi == 'C/C=C/':
+                _db_counter += 1
+        print(_fa_smi)
+        print(_db_counter, _oh_counter, _ooh_counter, _keto_counter)
+        if mode == 0:
+            if _ocp_counter == 0:
+                _fa_abbr_str = ('{LINK_TYPE}{NUM_C}:{NUM_DB}'
+                                '[{NUM_DB}xDB,{NUM_OH}xOH,{NUM_KETO}xKETO,{NUM_OOH}xOOH,{NUM_EPOXY}xEPOXY]'
+                                .format(LINK_TYPE=fa_link_typ,
+                                        NUM_C=_c_counter,
+                                        NUM_DB=_db_counter,
+                                        NUM_OH=_oh_counter,
+                                        NUM_KETO=_keto_counter,
+                                        NUM_OOH=_ooh_counter,
+                                        NUM_EPOXY=_epoxy_counter
+                                        )
+                                )
+                fa_ox_df.set_value(_idx, 'ABBR', _fa_abbr_str)
+            elif _ocp_counter == 1:
+                if _cho_counter == 1 and _cooh_counter == 0:
+                    _fa_abbr_str = ('{LINK_TYPE}{NUM_C}:{NUM_DB}'
+                                    '[{NUM_DB}xDB,{NUM_OH}xOH,{NUM_KETO}xKETO,{NUM_OOH}xOOH,{NUM_EPOXY}xEPOXY]'
+                                    '<CHO@C{NUM_C}>'
+                                    .format(LINK_TYPE=fa_link_typ,
+                                            NUM_C=_c_counter,
+                                            NUM_DB=_db_counter,
+                                            NUM_OH=_oh_counter,
+                                            NUM_KETO=_keto_counter,
+                                            NUM_OOH=_ooh_counter,
+                                            NUM_EPOXY=_epoxy_counter
+                                            )
+                                    )
+                    fa_ox_df.set_value(_idx, 'ABBR', _fa_abbr_str)
+                if _cho_counter == 0 and _cooh_counter == 1:
+                    _fa_abbr_str = ('{LINK_TYPE}{NUM_C}:{NUM_DB}'
+                                    '[{NUM_DB}xDB,{NUM_OH}xOH,{NUM_KETO}xKETO,{NUM_OOH}xOOH,{NUM_EPOXY}xEPOXY]'
+                                    '<COOH@C{NUM_C}>'
+                                    .format(LINK_TYPE=fa_link_typ,
+                                            NUM_C=_c_counter,
+                                            NUM_DB=_db_counter,
+                                            NUM_OH=_oh_counter,
+                                            NUM_KETO=_keto_counter,
+                                            NUM_OOH=_ooh_counter,
+                                            NUM_EPOXY=_epoxy_counter
+                                            )
+                                    )
+                    fa_ox_df.set_value(_idx, 'ABBR', _fa_abbr_str)
+            else:
+                pass
+        else:
+            # todo zhixu.ni@uni-leipzig.de: add exact position of modification sites e.g. 12:1[1xDB{7},1xOH{9}]
+
+            _fa_abbr_str = ('{LINK_TYPE}{NUM_C}:{NUM_DB}'
+                            '[{NUM_DB}xDB,{NUM_OH}xOH,{NUM_KETO}xKETO,{NUM_OOH}xOOH,{NUM_EPOXY}xEPOXY]'
+                            .format(LINK_TYPE=fa_link_typ,
+                                    NUM_C=_c_counter,
+                                    NUM_DB=_db_counter,
+                                    NUM_OH=_oh_counter,
+                                    NUM_KETO=_keto_counter,
+                                    NUM_OOH=_ooh_counter,
+                                    NUM_EPOXY=_epoxy_counter
+                                    )
+                            )
+            fa_ox_df.set_value(_idx, 'ABBR', _fa_abbr_str)
+
+    return fa_ox_df
 
 class AbbrGenerator(object):
 

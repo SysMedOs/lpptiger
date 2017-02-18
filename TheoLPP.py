@@ -241,10 +241,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
         elif self.ui.prostane_ox_no_rb.isChecked():
             ox_prostane_mode = 0
 
-        msp_mode = 0
-        if self.ui.prostane_ox_yes_rb.isChecked():
+        msp_mode = 1  # by default save msp is checked
+        if self.ui.spectra_yes_rb.isChecked():
             msp_mode = 1
-        elif self.ui.prostane_ox_no_rb.isChecked():
+
+        elif self.ui.spectra_no_rb.isChecked():
             msp_mode = 0
 
         lipid_lst_path = self.ui.load_lipid_le.text()

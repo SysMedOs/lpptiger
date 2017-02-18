@@ -12,7 +12,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from AbbrGenerator import AbbrGenerator
+from AbbrGenerator import AbbrGenerator, fa_abbr_encode
 
 from ISOPoxTheo import IsoProstanOx
 
@@ -39,6 +39,132 @@ class TheoDB_Oxidizer:
         # print('mod_info_df')
         # print(mod_info_df)
         return mod_info_df
+
+
+def oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0):
+    max_mod = ox_param_dct['MAX_MOD']
+    max_keto = ox_param_dct['MAX_KETO']
+    max_ooh = ox_param_dct['MAX_OOH']
+    max_epoxy = ox_param_dct['MAX_EPOXY']
+
+    db_count = fa_dct['DB_count']
+    db_start_count = fa_dct['DB_start']
+
+    db_count_i_lst = range(1, db_count + 1)
+    db_count_s_lst = [str(db_x) for db_x in db_count_i_lst]
+    unmod_lst = ['C/C=C/'] * db_count
+
+    _unmod_dct = {}
+    for _db_s in db_count_s_lst:
+        _unmod_dct[_db_s] = 'C/C=C/'
+        # _unmod_dct['MOD_' + _db_s] = ''.join([_db_s, '-', 'no_oxidation', '|'])
+        _unmod_dct['MOD_' + _db_s] = ''
+    _unmod_dct['MOD_COUNT'] = 0
+    _unmod_dct['MOD_LIST'] = ''
+    _mod_df = pd.DataFrame(_unmod_dct, index=[0])
+
+    # get only the number of modifications
+    if mod_mode == 0:
+
+        oap_info_t_df = mod_info_df.transpose()
+        oap_info_t_df = oap_info_t_df.reset_index()
+        oap_info_t_df = oap_info_t_df.query('OAP > 0')
+        print('oap_info_t_df', oap_info_t_df)
+        mod_dct = {'OH': [], 'KETO': [], 'OOH': [], 'EPOXY': []}
+        mod_idx_dct = {}
+        for _idx, _mod_r in oap_info_t_df.iterrows():
+            # after .t and reset_index, the mod name became column named 'index'
+            mod_idx_dct[_mod_r['index']] = _idx
+            for _k in mod_dct.keys():
+                if _mod_r[_k] > 0:
+                    _tmp_lst = mod_dct[_k]
+                    _tmp_lst.append(_idx)
+                    mod_dct[_k] = _tmp_lst
+
+        oap_info_t_df['MAX_NUM'] = 0
+        for _idx, _oap_row in oap_info_t_df.iterrows():
+            if _oap_row['OH'] == 1:
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_mod)
+                print('OH', oap_info_t_df)
+            if _oap_row['KETO'] == 1:
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_keto)
+            if _oap_row['OOH'] == 1:
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_ooh)
+            if _oap_row['EPOXY'] == 1:
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_epoxy)
+        print(oap_info_t_df)
+        oap_info_t_df = oap_info_t_df.query('MAX_NUM > 0')
+        print(oap_info_t_df)
+
+        _tmp_oap_info_t_df = oap_info_t_df.copy()
+        _tmp_db_mod_lst = []
+        for db_i in db_count_i_lst:
+            print('Now working on db number:', db_i)
+            print(_tmp_oap_info_t_df.shape)
+            _tmp_num_mod = _tmp_oap_info_t_df.shape[1]
+            db_str = str(db_i)
+            db_idx = db_i - 1
+
+            # check if there is any mod left
+            if _tmp_num_mod > 0:
+
+                _rest_mod_df = _mod_df.query('MOD_COUNT == %i' % db_idx)
+
+                for _mod_idx, mod_r in _rest_mod_df.iterrows():
+                    if isinstance(mod_r['MOD_LIST'], str):
+                        mod_lst = mod_r['MOD_LIST'].split('|')
+                        print('mod_lst', mod_lst)
+                        if len(mod_lst) == 0:
+                            pass
+                        else:
+                            for _used_mod in mod_lst:
+                                if len(_used_mod) > 0:
+                                    pr_mod = _used_mod.split('-')
+                                    _used_mod_name = pr_mod[1]
+                                    print('_used_mod_name', _used_mod_name)
+                                    _used_idx = mod_idx_dct[_used_mod_name]
+                                    print('_used_idx', _used_idx)
+                                    _tmp_max = _tmp_oap_info_t_df.get_value(_used_idx, 'MAX_NUM')
+                                    _tmp_oap_info_t_df.set_value(_used_idx, 'MAX_NUM', _tmp_max - 1)
+                            _tmp_oap_info_t_df = _tmp_oap_info_t_df.query('MAX_NUM > 0')
+                    _tmp_mod_lst = _tmp_oap_info_t_df['SMILES'].tolist()
+                    _tmp_mod_typ_lst = _tmp_oap_info_t_df['index'].tolist()
+                    print(_tmp_mod_lst)
+                    _tmp_mod_df = pd.DataFrame()
+                    _tmp_mod_df[db_str] = _tmp_mod_lst
+                    _tmp_db_mod = 'MOD_' + db_str
+                    _tmp_db_mod_lst.append(_tmp_db_mod)
+                    _tmp_mod_df[_tmp_db_mod] = _tmp_mod_typ_lst
+                    _tmp_mod_df[_tmp_db_mod] = db_str + '-' + _tmp_mod_df[_tmp_db_mod] + '|'
+
+                    # populate all possible mod
+                    for db_s in db_count_s_lst:
+                        if db_s == db_str:
+                            pass
+                        else:
+                            # put rest part of db unchanged
+                            _tmp_mod_df[db_s] = mod_r[db_s]
+                    _tmp_mod_df['MOD_COUNT'] = db_i
+                    _tmp_mod_df['MOD_LIST'] = _rest_mod_df['MOD_LIST'] + _tmp_mod_df[_tmp_db_mod]
+                    _mod_df = _mod_df.append(_tmp_mod_df)
+                    print(_mod_df)
+
+                # update the remaining number of oxidation sites
+                # _tmp_oap_info_t_df['MAX_NUM'] -= 1
+                # _tmp_oap_info_t_df = _tmp_oap_info_t_df.query('MAX_NUM > 0')
+                # print(_tmp_oap_info_t_df.shape)
+
+    # get the exact position of each modification
+    else:
+        pass
+
+    _mod_df = _mod_df.reset_index(drop=True)
+    mod_df = fa_abbr_encode(fa_dct, oap_info_t_df, _mod_df, mode=0)
+
+    print(mod_df)
+    print(mod_df)
+
+    return mod_df
 
 
 # construct a decorator
@@ -111,8 +237,12 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             
             if db_count > 0:
 
+                # mod_df = oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0)
+                # print(mod_df)
+
+                db_range_lst = range(1, db_count + 1)
                 # start oxidation
-                for db_i in range(1, db_count + 1):
+                for db_i in db_range_lst:
 
                     for _mod in mod_typ_lst:
                         _tmp_mod_lst = mod_sum_df.columns.tolist()
@@ -120,25 +250,25 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                             _mod_one = ''.join([str(db_i), '-', _mod])
                             mod_sum_df[_mod_one] = mod_info_df[_mod]
                             # add one more cleavage site for the first -OH bond
-                            if mod_sum_df.loc['FRAG_SMILES', _mod_one][-7:] == 'C(O))=O':
-                                _mod_one_lst = ['["', mod_sum_df.loc['FRAG_SMILES', _mod_one][:-7], ocp_end_part, '","',
-                                                mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]']
-                                _mod_one_json = ''.join(_mod_one_lst)
-                                mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
-                            elif mod_sum_df.loc['FRAG_SMILES', _mod_one][-4:] == 'C(O)':
-                                _mod_one_lst = ['["', mod_sum_df.loc['FRAG_SMILES', _mod_one][:-4], '","',
-                                                mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]']
-                                _mod_one_json = ''.join(_mod_one_lst)
-                                mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
-                            else:
-                                _mod_one_json = ''.join(['["', mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]'])
-                                mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
+                            # if mod_sum_df.loc['FRAG_SMILES', _mod_one][-7:] == 'C(O))=O':
+                            #     _mod_one_lst = ['["', mod_sum_df.loc['FRAG_SMILES', _mod_one][:-7], ocp_end_part,
+                            #                     '","', mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]']
+                            #     _mod_one_json = ''.join(_mod_one_lst)
+                            #     mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
+                            # elif mod_sum_df.loc['FRAG_SMILES', _mod_one][-4:] == 'C(O)':
+                            #     _mod_one_lst = ['["', mod_sum_df.loc['FRAG_SMILES', _mod_one][:-4], '","',
+                            #                     mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]']
+                            #     _mod_one_json = ''.join(_mod_one_lst)
+                            #     mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
+                            # else:
+                            #     _mod_one_json = ''.join(['["', mod_sum_df.loc['FRAG_SMILES', _mod_one], '"]'])
+                            #     mod_sum_df.loc['FRAG_SMILES', _mod_one] = _mod_one_json
 
                         else:
                             for _tmp_mod in _tmp_mod_lst:
                                 _tmp_mod = str(_tmp_mod)
                                 __tmp_mod_lst = _tmp_mod.split('-')
-
+                                # accelerate the speed by processing first few C=C for MODs
                                 if int(__tmp_mod_lst[-2]) == db_i - 1:
                                     _ocp_checker = mod_sum_df.loc['OCP', _tmp_mod]
                                     if _ocp_checker == 0:
@@ -148,28 +278,28 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                         _tmp_mod_df = pd.DataFrame(mod_sum_df[_tmp_mod] + mod_info_df[_mod],
                                                                    columns=[_new_mod])
 
-                                        _tmp_mod_smiles = (fa_dct['DB_pre_part'] +
-                                                           mod_sum_df.loc['SMILES', _tmp_mod] +
-                                                           mod_info_df.loc['FRAG', _mod] + ocp_end_part)
+                                        # _tmp_mod_smiles = (fa_dct['DB_pre_part'] +
+                                        #                    mod_sum_df.loc['SMILES', _tmp_mod] +
+                                        #                    mod_info_df.loc['FRAG', _mod] + ocp_end_part)
+                                        #
+                                        # _tmp_frags_lst = json.loads(mod_sum_df.loc['FRAG_SMILES', _tmp_mod])
 
-                                        _tmp_frags_lst = json.loads(mod_sum_df.loc['FRAG_SMILES', _tmp_mod])
+                                        # # Add one more cleavage site for OH
+                                        # if _tmp_mod_smiles[-7:] == 'C(O))=O':
+                                        #     _tmp_frags_lst.append(''.join([_tmp_mod_smiles[:-7], ocp_end_part]))
+                                        # elif _tmp_mod_smiles[-4:] == 'C(O)':
+                                        #     _tmp_frags_lst.append(_tmp_mod_smiles[:-4])
 
-                                        # Add one more cleavage site for OH
-                                        if _tmp_mod_smiles[-7:] == 'C(O))=O':
-                                            _tmp_frags_lst.append(''.join([_tmp_mod_smiles[:-7], ocp_end_part]))
-                                        elif _tmp_mod_smiles[-4:] == 'C(O)':
-                                            _tmp_frags_lst.append(_tmp_mod_smiles[:-4])
-
-                                        # Filter out full length OCPs
-                                        if db_i == db_count:
-                                            if _tmp_mod_smiles[-4:] == 'C)=O':
-                                                _tmp_frags_lst.append(_tmp_mod_smiles)
-                                            elif _tmp_mod_smiles[-1:] == 'C':
-                                                _tmp_frags_lst.append(_tmp_mod_smiles)
-                                        else:
-                                            _tmp_frags_lst.append(_tmp_mod_smiles)
-
-                                        _tmp_mod_df.loc['FRAG_SMILES', _new_mod] = json.dumps(_tmp_frags_lst)
+                                        # # Filter out full length OCPs
+                                        # if db_i == db_count:
+                                        #     if _tmp_mod_smiles[-4:] == 'C)=O':
+                                        #         _tmp_frags_lst.append(_tmp_mod_smiles)
+                                        #     elif _tmp_mod_smiles[-1:] == 'C':
+                                        #         _tmp_frags_lst.append(_tmp_mod_smiles)
+                                        # else:
+                                        #     _tmp_frags_lst.append(_tmp_mod_smiles)
+                                        #
+                                        # _tmp_mod_df.loc['FRAG_SMILES', _new_mod] = json.dumps(_tmp_frags_lst)
 
                                         mod_sum_df.loc[:, _new_mod] = _tmp_mod_df
 
@@ -277,22 +407,24 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # print('mod_sum_df', mod_sum_df.shape)
 
             if fa_dct['DB_LINK_type'] == 'O-':
-                _unmod_fa_abbr = 'O-%i:0' % fa_dct['DB_C_count']
+                _unmod_fa_abbr = 'O-%i:%i' % (fa_dct['DB_C_count'], db_count)
             elif fa_dct['DB_LINK_type'] == 'P-':
-                _unmod_fa_abbr = 'P-%i:0' % fa_dct['DB_C_count']
+                _unmod_fa_abbr = 'P-%i:%i' % (fa_dct['DB_C_count'], db_count)
             elif fa_dct['DB_LINK_type'] == '':
-                _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+                _unmod_fa_abbr = '%i:%i' % (fa_dct['DB_C_count'], db_count)
             else:
-                _unmod_fa_abbr = '%i:0' % fa_dct['DB_C_count']
+                _unmod_fa_abbr = '%i:%i' % (fa_dct['DB_C_count'], db_count)
 
-            unmod_json = ('{"C": %i, "DB": 0, "CHO": 0, "EPOXY": 0, "OAP": 0, "OCP": 0, "COOH": 0, '
+            unmod_json = ('{"C": %i, "DB": %i, "CHO": 0, "EPOXY": 0, "OAP": 0, "OCP": 0, "COOH": 0, '
                           '"KETO": 0, "OH": 0, "OOH": 0, "LINK_TYPE": "%s"}'
-                          % (fa_dct['DB_C_count'], fa_dct['DB_LINK_type']))
+                          % (fa_dct['DB_C_count'], db_count, fa_dct['DB_LINK_type']))
 
-            unmod_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': 0,
+            unmod_dct = {'SMILES': fa_dct['DB_full_fa'], 'OAP': 0, 'OCP': 0, 'DB': db_count,
                          'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                          'FULL_SMILES': fa_dct['DB_full_fa'], 'C_NUM': fa_dct['DB_C_count'],
-                         'FA_CHECKER': '%i:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}' % fa_dct['DB_C_count'],
+                         'FA_CHECKER': ('%i:%i[%ixDB,0xOH,0xKETO,0xOOH,0xEPOXY]'
+                                        '<CHO@C0,COOH@C0>{OAP:0,OCP:0}'
+                                        % (fa_dct['DB_C_count'], db_count, db_count)),
                          'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json,
                          'FRAG_SMILES': '[""]'}
 
@@ -304,7 +436,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             lyso_dct = {'SMILES': 'O', 'OAP': 0, 'OCP': 0, 'DB': 0,
                         'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
                         'FULL_SMILES': 'O', 'C_NUM': 0,
-                        'FA_CHECKER': '0:0[0xDB,0xOH,0xKETO]<CHO@C0,COOH@C0>{OAP:0,OCP:0}',
+                        'FA_CHECKER': '0:0[0xDB,0xOH,0xKETO,0xOOH,0xEPOXY]<CHO@C0,COOH@C0>{OAP:0,OCP:0}',
                         'FA_ABBR': '0:0', 'FA_TYPE': 'LYSO', 'FA_JSON': lyso_json, 'FRAG_SMILES': '[""]'}
 
             _lyso_df = pd.DataFrame(lyso_dct, index=['0-lyso'])
@@ -350,7 +482,7 @@ def oxidizer(fa_link_dct):
     # Construct regular expression for DB
     # if use FA: 'OC(CCCCCCC/C=C\C/C=C\C/C=C\C/C=C\CCCCC)=O'
     # get ('CCCCCC', 'C/C=C\\C/C=C\\C/C=C\\C/C=C\\', 'C/C=C\\', 'CCCC')
-    fa_main_rgx = re.compile(r'(C*)(([/]C[=]C\\C){1,8})(C*)')
+    fa_main_rgx = re.compile(r'(C*)((C[/]C[=]C\\){1,8})(C*)')
 
     fa_checker = re.match(fa_rgx, _usr_fa_smiles)
     if fa_checker:
@@ -362,7 +494,7 @@ def oxidizer(fa_link_dct):
 
             if len(pre_db_lst) >= 3:
                 db_str = pre_db_lst[1]
-                db_counter = db_str.count('/C=C\C')
+                db_counter = db_str.count('C/C=C\\')
                 # print('db_str', db_str, 'db_counter', db_counter)
 
                 db_info_dct['DB_count'] = db_counter
