@@ -4,11 +4,11 @@
 # A suitable license will be chosen before the official release of oxLPPdb.
 # For more info please contact: zhixu.ni@uni-leipzig.de
 
+from __future__ import print_function
+
 import re
-import pandas as pd
-from rdkit import Chem
-from rdkit.Chem import AllChem, Draw
-from PLparser import FAabbr, GPabbr
+
+from temp.PLparser import FAabbr
 
 
 class FAox(FAabbr):
@@ -22,13 +22,13 @@ class FAox(FAabbr):
         if fa_smiles_checker:
             fa_slimes_elem = fa_smiles_checker.groups()
             fa_smiles_main = fa_slimes_elem[1]
-            print 'fa_smiles_main', fa_smiles_main
+            print('fa_smiles_main', fa_smiles_main)
             fa_db_retxt = re.compile(r'/C=C\\')
 
             fa_seg_lst = fa_db_retxt.split(fa_smiles_main)
             tmp_smiles_lst = []
             if len(fa_seg_lst) > 1:
-                print 'fa_seg_lst', fa_seg_lst
+                print('fa_seg_lst', fa_seg_lst)
                 tmp_seg_txt = ''
                 tmp_seg_ox1_txt = ''
                 tmp_seg_ox2_txt = ''
@@ -61,9 +61,9 @@ class FAox(FAabbr):
                             #     tmp_seg_ox2_txt += 'C(O)C' + tmp_seg
                             #     tmp_smiles_lst.append((tmp_seg_ox2_txt, hydro_counter_2))
             else:
-                print 'No DB of this FA!'
+                print('No DB of this FA!')
 
-            print 'tmp_smiles_lst', tmp_smiles_lst
+            print('tmp_smiles_lst', tmp_smiles_lst)
 
             smiles_lst = []
             subtxt_lst = []
@@ -169,7 +169,7 @@ class FAox(FAabbr):
                                 pass
                             if other_ox[2] == 'C=O':
                                 tmp_hydro = int(tmp_d_lst[5])
-                                print tmp_hydro, 'tmp_d_lst', tmp_d_lst
+                                print(tmp_hydro, 'tmp_d_lst', tmp_d_lst)
                                 if tmp_d_lst[6] == 'x OH)[CHO @C' and tmp_hydro > 1:
                                     tmp_d_lst[5] = str(tmp_db - 1)
                                     tmp_d_lst[6] = 'x OH, ' + str(other_ox_keto) + 'x C=O)[CHO @C'
@@ -185,7 +185,7 @@ class FAox(FAabbr):
                                 # else:
                                 #     if
                                 #     tmp_d_lst[4] = '(' + str(other_ox_keto) + 'x C=O)'
-                            print 'tmp_d_lst_ED', tmp_d_lst
+                            print('tmp_d_lst_ED', tmp_d_lst)
                             tmp_d = ''.join(tmp_d_lst)
                             subtxt_lst.insert(tmp_main_idx, tmp_d)
                             # idx_shift += 1
@@ -221,12 +221,12 @@ class FAox(FAabbr):
                         if tmp_seg == 'C/C=C\\':
                             tmp_idx = tmp_seg_lst.index(tmp_seg)
                             tmp_seg_lst[tmp_idx] = 'DB processed'
-                            print tmp_idx
+                            print(tmp_idx)
                             current_oxadd_lst = oxadd_seg_lst[:]
                             tmp_hydro_counter += 1
                             for tmp_oxadd_lst in current_oxadd_lst[-1]:
-                                print tmp_idx, 'tmp_oxadd_lst', tmp_oxadd_lst
-                                print 'get DB'
+                                print(tmp_idx, 'tmp_oxadd_lst', tmp_oxadd_lst)
+                                print('get DB')
                                 new_oxadd_lst = []
 
                                 # +16 OH and +18 water addition
@@ -237,16 +237,16 @@ class FAox(FAabbr):
                                     tmp_hydro_txt = '(' + str(tmp_hydro_counter) + 'x OH)'
 
                                     _tmp_main_fa_txt = ''.join(_tmp_oxadd_lst)
-                                    print _tmp_main_fa_txt
+                                    print(_tmp_main_fa_txt)
                                     _tmp_seg_lst = _fa_db2_retxt.split(_tmp_main_fa_txt)
                                     _db_count = _tmp_seg_lst.count('C=C')
                                     _tmp_seg_lst = _fa_hydro_retxt.split(_tmp_main_fa_txt)
                                     _hydro_count = _tmp_seg_lst.count('C(O)')
-                                    print 'hydro1', _tmp_seg_lst
+                                    print('hydro1', _tmp_seg_lst)
                                     _tmp_seg_lst = _fa_keto_retxt.split(_tmp_main_fa_txt)
                                     _keto_count = _tmp_seg_lst.count('C(=O)')
-                                    print 'keto1', _tmp_seg_lst
-                                    print 'Count1', _db_count, _hydro_count, _keto_count
+                                    print('keto1', _tmp_seg_lst)
+                                    print('Count1', _db_count, _hydro_count, _keto_count)
                                     _tmp_hydro_txt = ''
                                     if _hydro_count >0 and _keto_count > 0:
                                         _tmp_hydro_txt = ('(' + str(_hydro_count) + 'x OH, ' +
@@ -261,9 +261,9 @@ class FAox(FAabbr):
                                                     str(_db_count) + _tmp_hydro_txt)
                                     smiles_lst.append(tmp_s_fa_txt)
                                     subtxt_lst.append(tmp_d_fa_txt)
-                                    print tmp_idx, tmp_hydro_counter, 'oxadd_seg_lst', oxadd_seg_lst
+                                    print(tmp_idx, tmp_hydro_counter, 'oxadd_seg_lst', oxadd_seg_lst)
                                     if _tmp_oxadd_lst in new_oxadd_lst:
-                                        print 'pass'
+                                        print('pass')
                                     else:
                                         new_oxadd_lst.append(_tmp_oxadd_lst)
 
@@ -285,17 +285,17 @@ class FAox(FAabbr):
                                         _tmp_oxadd_lst[tmp_idx] = oxadd
 
                                         _tmp_main_fa_txt = ''.join(_tmp_oxadd_lst)
-                                        print _tmp_main_fa_txt
+                                        print(_tmp_main_fa_txt)
 
                                         _tmp_seg_lst = _fa_db2_retxt.split(_tmp_main_fa_txt)
                                         _db_count = _tmp_seg_lst.count('C=C')
                                         _tmp_seg_lst = _fa_hydro_retxt.split(_tmp_main_fa_txt)
                                         _hydro_count = _tmp_seg_lst.count('C(O)')
-                                        print 'hydro', _tmp_seg_lst
+                                        print('hydro', _tmp_seg_lst)
                                         _tmp_seg_lst = _fa_keto_retxt.split(_tmp_main_fa_txt)
                                         _keto_count = _tmp_seg_lst.count('C(=O)')
-                                        print 'keto', _tmp_seg_lst
-                                        print 'Count', _db_count, _hydro_count, _keto_count
+                                        print('keto', _tmp_seg_lst)
+                                        print('Count', _db_count, _hydro_count, _keto_count)
                                         _tmp_hydro_txt = ''
                                         if _hydro_count > 0 and _keto_count > 0:
                                             _tmp_hydro_txt = ('(' + str(_hydro_count) + 'x OH, ' +
@@ -305,16 +305,16 @@ class FAox(FAabbr):
                                         if _hydro_count == 0 and _keto_count > 0:
                                             _tmp_hydro_txt = ('(' + str(_keto_count) + 'x C=O)')
 
-                                        print '_tmp_hydro_txt', _tmp_hydro_txt
+                                        print('_tmp_hydro_txt', _tmp_hydro_txt)
 
                                         tmp_s_fa_txt = 'OC(' + _tmp_main_fa_txt + ')=O'
                                         tmp_d_fa_txt = (_prefix + full_count_c + ':' +
                                                         str(_db_count) + _tmp_hydro_txt)
                                         smiles_lst.append(tmp_s_fa_txt)
                                         subtxt_lst.append(tmp_d_fa_txt)
-                                        print tmp_idx, tmp_hydro_counter, 'oxadd_seg_lst', oxadd_seg_lst
+                                        print(tmp_idx, tmp_hydro_counter, 'oxadd_seg_lst', oxadd_seg_lst)
                                         if _tmp_oxadd_lst in new_oxadd_lst:
-                                            print 'pass'
+                                            print('pass')
                                         else:
                                             new_oxadd_lst.append(_tmp_oxadd_lst)
                                     oxadd_seg_lst.append(new_oxadd_lst)
@@ -368,7 +368,6 @@ class FAox(FAabbr):
                                             #                  str(list(tmp_s_fa2_txt).count('=') - 1) + tmp2_hydro_txt)
                                             # smiles_lst.append(tmp_s_fa2_txt)
                                             # subtxt_lst.append(tmp_d_fa2_txt)
-
 
                                         # tmp_hydro_counter = tmp_hydro_counter2
 

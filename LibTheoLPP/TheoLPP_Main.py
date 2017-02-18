@@ -18,7 +18,7 @@ from TheoLPP_UI import Ui_MainWindow
 from TheoLPP_Core import theolpp
 
 
-class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
+class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
@@ -283,6 +283,6 @@ if __name__ == '__main__':
     import sys
 
     app = QtGui.QApplication(sys.argv)
-    window = MainWindow()
+    window = TheoLPP_Main()
     window.show()
     sys.exit(app.exec_())

@@ -15,13 +15,13 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
 
-from lpplibs.PLParser import PLParser
-from lpplibs.DBoxTheo import fa_link_filter, oxidizer
-from lpplibs import MergeBackLPP
-from lpplibs.SNMainFrag import SNMainFrag
-from lpplibs.AbbrGenerator import AbbrGenerator
-from lpplibs import MSPcreator
-from lpplibs import SDFsummary
+from LibTheoLPP.PLParser import PLParser
+from LibTheoLPP.DBoxTheo import fa_link_filter, oxidizer
+from LibTheoLPP import MergeBackLPP
+from LibTheoLPP.SNMainFrag import SNMainFrag
+from LibTheoLPP.AbbrGenerator import AbbrGenerator
+from LibTheoLPP import MSPcreator
+from LibTheoLPP import SDFsummary
 
 
 def theolpp(usr_params):
@@ -148,6 +148,7 @@ def theolpp(usr_params):
                 _sn1_mod_smiles = _sn1_row['FULL_SMILES']
                 _sn1_abbr_str = _sn1_row['FA_ABBR']
                 _sn1_typ_str = _sn1_row['FA_TYPE']
+                _sn1_formula_str = _sn1_row['FA_FORMULA']
                 # _sn1_json = _sn1_row['FA_JSON']
                 # print(_sn1_row)
                 # _sn1_abbr_str, _sn1_typ_str = abbr_gen.decode(_sn1_row['FA_CHECKER'])
@@ -156,6 +157,7 @@ def theolpp(usr_params):
                     _sn2_mod_smiles = _sn2_row['FULL_SMILES']
                     _sn2_abbr_str = _sn2_row['FA_ABBR']
                     _sn2_typ_str = _sn2_row['FA_TYPE']
+                    _sn2_formula_str = _sn2_row['FA_FORMULA']
                     # _sn2_abbr_str, _sn2_typ_str = abbr_gen.decode(_sn2_row['FA_CHECKER'])
                     # print(_sn2_row)
 
@@ -196,6 +198,7 @@ def theolpp(usr_params):
                                          'SN1_SMILES': _sn1_mod_smiles, 'SN2_SMILES': _sn2_mod_smiles,
                                          'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str,
                                          'SN1_JSON': _sn1_row['FA_JSON'], 'SN2_JSON': _sn2_row['FA_JSON'],
+                                         'SN1_FORMULA': _sn1_formula_str, 'SN2_FORMULA': _sn2_formula_str,
                                          'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json}
                         if save_spectra == 1:
                             _lpp_info_dct['MSP_JSON'] = frag_gen.calc_frags(_lpp_info_dct)
@@ -255,9 +258,11 @@ def theolpp(usr_params):
                 _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
                 _lpp_mol.SetProp('FORMULA', _lpp_formula)
 
-                if str(_lpp_dct['LPP_CLASS']) == 'PC':
-                    _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+FA-H]-')
-                    _lpp_neg_precursor_info = '{"[M+FA-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+                _lpp_sn2_smi = _lpp_dct['SN2_SMILES']
+
+                if str(_lpp_dct['LPP_CLASS']) == 'PC' and _lpp_sn2_smi[-9:] != r'C(O)=O)=O':
+                    _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+HCOO]-')
+                    _lpp_neg_precursor_info = '{"[M+HCOO]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
 
                 else:
                     _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M-H]-')
@@ -309,6 +314,7 @@ def theolpp(usr_params):
         msp_obj.close()
 
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
+    SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
 
     t_spent = time.clock() - t_start
     info_updater_1 = '=>%i of LPP generated ==> ' % len(sdf_dct.keys())

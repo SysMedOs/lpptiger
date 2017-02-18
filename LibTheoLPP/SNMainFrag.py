@@ -153,7 +153,7 @@ class SNMainFrag(object):
                     print('>>> sn1 mod & sn2 unmod >>>')
 
                 for _ion_typ in frag_type_lst:
-                    if _ion_typ in ['[M-H]-', '[M+FA-H]-', '[sn1-H]-', '[sn2-H]-']:
+                    if _ion_typ in ['[M-H]-', '[M+HCOO]-', '[sn1-H]-', '[sn2-H]-']:
                         pass
                     else:
                         # print(_score_se.loc[_ion_typ])
@@ -374,7 +374,8 @@ class SNMainFrag(object):
                    '-C3H9N': {'C': -3, 'H': -9, 'N': -1},
                    '-C3H5NO2': {'C': -3, 'O': -2, 'H': -5, 'N': -1},
                    '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
-                   '-CH2': {'C': -1, 'H': -2}}
+                   '-CH2': {'C': -1, 'H': -2},
+                   '-CH3': {'C': -1, 'H': -3}}
 
         # get the formula as dict
         if elem_dct is None:
@@ -417,7 +418,7 @@ class SNMainFrag(object):
             chk3 = re.compile(r'.*[-]CO2.*')
             chk4 = re.compile(r'.*[-]C3H9N.*')
             chk5 = re.compile(r'.*[-]CH3COOH.*')
-            chk6 = re.compile(r'.*[-]CH2.*')
+            chk6 = re.compile(r'.*[-]CH3.*')
             chk7 = re.compile(r'.*[-]C3H5NO2.*')
 
             chk9 = re.compile(r'.*[+]FA.*')
@@ -452,7 +453,7 @@ class SNMainFrag(object):
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             if chk6.match(mod):
-                _mod_elem_dct = mod_dct['-CH2']
+                _mod_elem_dct = mod_dct['-CH3']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             if chk7.match(mod):

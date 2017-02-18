@@ -172,6 +172,7 @@ class DBEox(object):
 
         return ox_dbe_lst
 
+
 class LastFAseg(object):
 
     def __init__(self, usr_smiles):

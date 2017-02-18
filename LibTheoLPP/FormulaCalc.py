@@ -69,7 +69,7 @@ class FormulaCalc(object):
                     else:
                         formula_sum_dct[_elem] = _p_dct[_elem]
 
-            print formula_sum_dct
+            print(formula_sum_dct)
 
             merged_idx_lst = []
             # Add Na and K to the sort list
@@ -174,7 +174,7 @@ class FormulaCalc(object):
             else:
                 pass
 
-        print 'formula_reduced_str', formula_reduced_str
+        print('formula_reduced_str', formula_reduced_str)
 
         return formula_reduced_str
 

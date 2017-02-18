@@ -8,7 +8,7 @@ from rdkit import Chem
 
 import pandas as pd
 
-from lpplibs.ExactMassCalc import Elem2Mass
+from LibTheoLPP.ExactMassCalc import Elem2Mass
 
 mzcalc = Elem2Mass()
 

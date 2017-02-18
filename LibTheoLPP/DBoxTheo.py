@@ -15,6 +15,7 @@ import pandas as pd
 from AbbrGenerator import AbbrGenerator, fa_abbr_encode
 
 from ISOPoxTheo import IsoProstanOx
+from SMILESparser import SMILESparser
 
 
 class TheoDB_Oxidizer:
@@ -186,6 +187,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             :param prostane_ox_mode:
             :return:
             """
+
+            smi2formula = SMILESparser()
 
             max_mod = ox_param_dct['MAX_MOD']
             max_keto = ox_param_dct['MAX_KETO']
@@ -369,6 +372,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df['FA_ABBR'] = ''
                 mod_sum_df['FA_TYPE'] = ''
                 mod_sum_df['FA_JSON'] = ''
+                mod_sum_df['FA_FORMULA'] = ''
 
                 for (_fa_idx, _fa_row) in mod_sum_df.iterrows():
                     _fa_code = str(_fa_row['FA_CHECKER'])
@@ -377,6 +381,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                     # print('_fa_code', _fa_code)
                     # print(_fa_typ, ' | ', _fa_abbr)
                     _fa_row['FA_TYPE'] = _fa_typ
+                    _fa_row['FA_FORMULA'] = smi2formula.smiles2formula(_fa_row['FULL_SMILES'], charge='M')
 
                     # force all numbers to int, important for json coding!
                     _fa_row['FA_JSON'] = json.dumps({'LINK_TYPE': fa_dct['DB_LINK_type'],
@@ -390,13 +395,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                                      'COOH': int(_fa_row['COOH']),
                                                      'OAP': int(_fa_row['OAP']),
                                                      'OCP': int(_fa_row['OCP'])})
-                    # print(_fa_row['FA_JSON'])
-                # mod_sum_t_df = mod_sum_df.transpose()
-                # print(mod_sum_t_df.columns.tolist())
-                # mod_sum_df.to_csv('oxDB_t.csv')
 
             if 3 <= db_count and prostane_mode == 1:
-                # isop_cfg = r'D:\theolpp\lpplibs\IsoP_ModConfig.csv'
+                # isop_cfg = r'D:\theolpp\LibTheoLPP\IsoP_ModConfig.csv'
                 ox_isop = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
 
                 _isop_lpp_dct = ox_isop.get_isop_lpp()
@@ -425,8 +426,8 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                          'FA_CHECKER': ('%i:%i[%ixDB,0xOH,0xKETO,0xOOH,0xEPOXY]'
                                         '<CHO@C0,COOH@C0>{OAP:0,OCP:0}'
                                         % (fa_dct['DB_C_count'], db_count, db_count)),
-                         'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json,
-                         'FRAG_SMILES': '[""]'}
+                         'FA_ABBR': _unmod_fa_abbr, 'FA_TYPE': 'UNMOD', 'FA_JSON': unmod_json, 'FRAG_SMILES': '[""]',
+                         'FA_FORMULA': smi2formula.smiles2formula(fa_dct['DB_full_fa'], charge='M')}
 
             unmod_df = pd.DataFrame(unmod_dct, index=['0-no_oxidation'])
 
@@ -435,7 +436,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             lyso_dct = {'SMILES': 'O', 'OAP': 0, 'OCP': 0, 'DB': 0,
                         'OH': 0, 'KETO': 0, 'OOH': 0, 'EPOXY': 0, 'CHO': 0, 'COOH': 0, 'MOD_NUM': 0,
-                        'FULL_SMILES': 'O', 'C_NUM': 0,
+                        'FULL_SMILES': 'O', 'C_NUM': 0, 'FA_FORMULA': 'H2O',
                         'FA_CHECKER': '0:0[0xDB,0xOH,0xKETO,0xOOH,0xEPOXY]<CHO@C0,COOH@C0>{OAP:0,OCP:0}',
                         'FA_ABBR': '0:0', 'FA_TYPE': 'LYSO', 'FA_JSON': lyso_json, 'FRAG_SMILES': '[""]'}
 

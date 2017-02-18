@@ -28,5 +28,3 @@ def to_msp(output_obj, lpp_info_dct):
     ion_lst.append('\n')
 
     output_obj.writelines('\n'.join(ion_lst))
-
-
