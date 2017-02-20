@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 Zhixu Ni, AG Bioanalytik,BBZ,University of Leipzig.
+# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of oxLPPdb.
-# For more info please contact: zhixu.ni@uni-leipzig.de
+# A suitable license will be chosen before the official release of TheoLPP.
+# For more info please contact:
+#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 
 from __future__ import division
 import re
@@ -202,6 +204,71 @@ class MZcalc(object):
             mono_mz += elem_dct[_elem] * self.periodic_table_dct[_elem][0][0]
 
         return mono_mz
+
+    def get_charged_elem(self, elem_dct, charge='[M-H]-'):
+
+        if charge == '[M-H]-':
+            elem_dct['H'] += -1
+        elif charge == '[M+HCOO]-' or charge == '[M+FA-H]-':
+            elem_dct['H'] += 1
+            elem_dct['C'] += 1
+            elem_dct['O'] += 2
+        elif charge == '[M+CH3COO]-':
+            elem_dct['H'] += 3
+            elem_dct['C'] += 2
+            elem_dct['O'] += 2
+        elif charge == '[M+H]+':
+            elem_dct['H'] += 1
+        elif charge == '[M+NH4]+':
+            elem_dct['N'] += 1
+            elem_dct['H'] += 4
+
+        return elem_dct
+
+    def get_formula(self, elem_dct, charge=''):
+
+        elem_dct = self.get_charged_elem(elem_dct, charge=charge)
+
+        formula_str = 'C{C}H{H}'.format(C=elem_dct['C'], H=elem_dct['H'])
+
+        if 'N' in elem_dct.keys():
+            if elem_dct['N'] == 1:
+                formula_str += 'N'
+            elif elem_dct['N'] > 1:
+                formula_str += 'N%i' % elem_dct['N']
+
+        if 'O' in elem_dct.keys():
+            if elem_dct['O'] == 1:
+                formula_str += 'O'
+            elif elem_dct['O'] > 1:
+                formula_str += 'O%i' % elem_dct['O']
+
+        if 'P' in elem_dct.keys():
+            if elem_dct['P'] == 1:
+                formula_str += 'P'
+            elif elem_dct['P'] > 1:
+                formula_str += 'P%i' % elem_dct['P']
+
+        if 'Na' in elem_dct.keys():
+            if elem_dct['Na'] == 1:
+                formula_str += 'Na'
+            elif elem_dct['Na'] > 1:
+                formula_str += 'Na%i' % elem_dct['Na']
+
+        if 'K' in elem_dct.keys():
+            if elem_dct['K'] == 1:
+                formula_str += 'K'
+            elif elem_dct['K'] > 1:
+                formula_str += 'K%i' % elem_dct['K']
+
+        if charge in ['neutral', 'Neutral', '', None]:
+            pass
+        elif charge in ['[M-H]-', '[M+HCOO]-']:
+            formula_str += '-'
+        elif charge in ['[M+H]+', '[M+NH4]+']:
+            formula_str += '+'
+
+        return formula_str, elem_dct
 
 # molecule='C42H72D9O8P1N1'
 # CHG_lst = '1pos;1neg;2POS'

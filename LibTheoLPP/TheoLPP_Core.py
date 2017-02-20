@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 Zhixu Ni, AG Bioanalytik, BBZ, University of Leipzig.
+# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of oxLPPdb.
-# For more info please contact: zhixu.ni@uni-leipzig.de
+# A suitable license will be chosen before the official release of TheoLPP.
+# For more info please contact:
+#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 
 from __future__ import print_function
 import time
@@ -22,6 +24,7 @@ from LibTheoLPP.SNMainFrag import SNMainFrag
 from LibTheoLPP.AbbrGenerator import AbbrGenerator
 from LibTheoLPP import MSPcreator
 from LibTheoLPP import SDFsummary
+from LibTheoLPP.ExactMassCalc import MZcalc
 
 
 def theolpp(usr_params):
@@ -242,6 +245,8 @@ def theolpp(usr_params):
     print('==>Start to generate SDF ==> MSP mode = %i' % save_spectra)
     print('!! %i structures in total !!' % len(sdf_dct.keys()))
 
+    mzcalc = MZcalc()
+
     if save_spectra == 1:
         for _k_lpp in sdf_dct.keys():
             _lpp_dct = sdf_dct[_k_lpp]
@@ -257,16 +262,21 @@ def theolpp(usr_params):
                 _lpp_mol.SetProp('EXACT_MASS', '%.6f' % _lpp_exactmass)
                 _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
                 _lpp_mol.SetProp('FORMULA', _lpp_formula)
-
                 _lpp_sn2_smi = _lpp_dct['SN2_SMILES']
 
                 if str(_lpp_dct['LPP_CLASS']) == 'PC' and _lpp_sn2_smi[-9:] != r'C(O)=O)=O':
-                    _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+HCOO]-')
-                    _lpp_neg_precursor_info = '{"[M+HCOO]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+                    _lpp_neg_precursor_elem = mzcalc.get_elements(_lpp_formula)
+                    _lpp_neg_precursor_formula = mzcalc.get_formula(_lpp_neg_precursor_elem, charge='[M+HCOO]-')
+                    _lpp_neg_precursor_mz = mzcalc.get_mono_mz(_lpp_formula, charge='[M+HCOO]-')
+                    _lpp_neg_precursor_info = '{"[M+HCOO]-": ["%s", %f]}' % (_lpp_neg_precursor_formula[0],
+                                                                             _lpp_neg_precursor_mz)
 
                 else:
-                    _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M-H]-')
-                    _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+                    _lpp_neg_precursor_elem = mzcalc.get_elements(_lpp_formula)
+                    _lpp_neg_precursor_formula = mzcalc.get_formula(_lpp_neg_precursor_elem, charge='[M-H]-')
+                    _lpp_neg_precursor_mz = mzcalc.get_mono_mz(_lpp_formula, charge='[M-H]-')
+                    _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_neg_precursor_formula[0],
+                                                                          _lpp_neg_precursor_mz)
 
                 _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
                 _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
@@ -292,14 +302,21 @@ def theolpp(usr_params):
             _lpp_mol.SetProp('EXACT_MASS', '%.6f' % _lpp_exactmass)
             _lpp_mol.SetProp('NOMINAL_MASS', '%.3f' % _lpp_mass)
             _lpp_mol.SetProp('FORMULA', _lpp_formula)
+            _lpp_sn2_smi = _lpp_dct['SN2_SMILES']
 
-            if str(_lpp_dct['LPP_CLASS']) == 'PC':
-                _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M+FA-H]-')
-                _lpp_neg_precursor_info = '{"[M+FA-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+            if str(_lpp_dct['LPP_CLASS']) == 'PC' and _lpp_sn2_smi[-9:] != r'C(O)=O)=O':
+                _lpp_neg_precursor_elem = mzcalc.get_elements(_lpp_formula)
+                _lpp_neg_precursor_formula = mzcalc.get_formula(_lpp_neg_precursor_elem, charge='[M+HCOO]-')
+                _lpp_neg_precursor_mz = mzcalc.get_mono_mz(_lpp_formula, charge='[M+HCOO]-')
+                _lpp_neg_precursor_info = '{"[M+HCOO]-": ["%s", %f]}' % (_lpp_neg_precursor_formula[0],
+                                                                         _lpp_neg_precursor_mz)
 
             else:
-                _lpp_neg_precursor_mz = frag_gen.formula_to_mz(_lpp_formula, charge='[M-H]-')
-                _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_formula, _lpp_neg_precursor_mz[0])
+                _lpp_neg_precursor_elem = mzcalc.get_elements(_lpp_formula)
+                _lpp_neg_precursor_formula = mzcalc.get_formula(_lpp_neg_precursor_elem, charge='[M-H]-')
+                _lpp_neg_precursor_mz = mzcalc.get_mono_mz(_lpp_formula, charge='[M-H]-')
+                _lpp_neg_precursor_info = '{"[M-H]-": ["%s", %f]}' % (_lpp_neg_precursor_formula[0],
+                                                                      _lpp_neg_precursor_mz)
 
             _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
             _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 Zhixu Ni, AG Bioanalytik, BBZ, University of Leipzig.
+# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of oxLPPdb.
-# For more info please contact: zhixu.ni@uni-leipzig.de
+# A suitable license will be chosen before the official release of TheoLPP.
+# For more info please contact:
+#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 
 from __future__ import print_function
 
@@ -32,21 +34,27 @@ def sdf2xlsx(usr_sdf, save_path):
         _formula = _mol.GetProp('FORMULA')
         _exactmass = _mol.GetProp('EXACT_MASS')
         _pr_info_dct = json.loads(_mol.GetProp('PRECURSOR_JSON'))
+        _msp_json = _mol.GetProp('MSP_JSON')
 
-        _mol_info_dct = {'CLASS': _class, 'FORMULA': _formula, 'EXACT_MASS': _exactmass}
+        _mol_info_dct = {'Abbreviation': _id, 'Class': _class, 'FORMULA_NEUTRAL': _formula,
+                         'EXACT_MASS': _exactmass, 'MSP_JSON': _msp_json}
         for _charge in ['[M-H]-', '[M+HCOO]-']:
             if _charge in _pr_info_dct.keys():
-                _mol_info_dct[_charge] = _pr_info_dct[_charge][1]
+                _mol_info_dct[_charge + '_FORMULA'] = _pr_info_dct[_charge][0]
+                _mol_info_dct[_charge + '_MZ'] = _pr_info_dct[_charge][1]
             else:
-                _mol_info_dct[_charge] = np.NaN
+                _mol_info_dct[_charge + '_FORMULA'] = np.NaN
+                _mol_info_dct[_charge + '_MZ'] = np.NaN
 
         mol_info_dct[_id] = _mol_info_dct
 
     mol_info_df = pd.DataFrame(data=mol_info_dct)
 
     mol_info_df = mol_info_df.transpose()
+    mol_info_df = mol_info_df[['Class', 'Abbreviation', 'FORMULA_NEUTRAL', 'EXACT_MASS',
+                               '[M-H]-_FORMULA', '[M-H]-_MZ', '[M+HCOO]-_FORMULA', '[M+HCOO]-_MZ', 'MSP_JSON']]
     mol_info_df = mol_info_df.sort_values(by='EXACT_MASS')
-    mol_info_df.to_excel(save_path)
+    mol_info_df.to_excel(save_path, index=False)
 
     print('saved!')
 
@@ -63,8 +71,8 @@ def sdf2sum_fa(usr_sdf, save_path):
 
     for _mol in mol_suppl:
 
-        _sn1_info_lst = [_mol.GetProp('SN1_ABBR'), _mol.GetProp('SN1_FORMULA')]
-        _sn2_info_lst = [_mol.GetProp('SN2_ABBR'), _mol.GetProp('SN2_FORMULA')]
+        _sn1_info_lst = [_mol.GetProp('SN1_ABBR'), _mol.GetProp('SN1_FORMULA'), _mol.GetProp('SN1_JSON')]
+        _sn2_info_lst = [_mol.GetProp('SN2_ABBR'), _mol.GetProp('SN2_FORMULA'), _mol.GetProp('SN2_JSON')]
 
         if _sn1_info_lst in fa_info_lst:
             pass
@@ -76,13 +84,31 @@ def sdf2sum_fa(usr_sdf, save_path):
         else:
             fa_info_lst.append(_sn2_info_lst)
 
-    mol_info_df = pd.DataFrame(data=fa_info_lst, columns=['FA_ABBR', 'FORMULA'])
+    mol_info_df = pd.DataFrame(data=fa_info_lst, columns=['FA', 'elem', 'INFO_JSON'])
 
     for i, r in mol_info_df.iterrows():
-        _formula = r['FORMULA']
-        mol_info_df = mol_info_df.set_value(i, 'EXACT_MASS', mzcalc.get_mono_mz(_formula, charge=''))
-        mol_info_df = mol_info_df.set_value(i, '[M-H]-', mzcalc.get_mono_mz(_formula, charge='[M-H]-'))
-    mol_info_df = mol_info_df.sort_values(by='EXACT_MASS')
+        _formula = r['elem']
+        _info_dct = json.loads(r['INFO_JSON'])
+        _link = _info_dct['LINK_TYPE']
+        if _link in ['O', 'O-']:
+            _link = 'O'
+        elif _link in ['P', 'P-']:
+            _link = 'P'
+        else:
+            _link = 'A'
+
+        exact_mz = mzcalc.get_mono_mz(_formula, charge='')
+        frag_mz = mzcalc.get_mono_mz(_formula, charge='[M-H]-')
+
+        mol_info_df = mol_info_df.set_value(i, 'C', _info_dct['C'])
+        mol_info_df = mol_info_df.set_value(i, 'DB', _info_dct['DB'])
+        mol_info_df = mol_info_df.set_value(i, 'Link', _link)
+        mol_info_df = mol_info_df.set_value(i, 'mass', exact_mz)
+        mol_info_df = mol_info_df.set_value(i, '[M-H]-', frag_mz)
+        mol_info_df = mol_info_df.set_value(i, '[M-H2O-H]-', exact_mz - 18.010565)
+        mol_info_df = mol_info_df.set_value(i, 'NL-H2O', exact_mz - 18.010565)
+    mol_info_df = mol_info_df.sort_values(by='mass')
+    mol_info_df = mol_info_df[['FA', 'Link', 'C', 'DB', 'elem', 'mass', '[M-H]-', '[M-H2O-H]-', 'NL-H2O']]
     mol_info_df.to_excel(save_path)
 
     print('saved!')
