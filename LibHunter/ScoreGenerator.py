@@ -9,8 +9,11 @@
 from __future__ import division
 
 import re
+import json
 
+import numpy as np
 import pandas as pd
+from scipy import spatial
 
 
 class ScoreGenerator:
@@ -163,16 +166,11 @@ class ScoreGenerator:
         sn2_fa_c = int(sn2_fa_c)
         sn2_fa_db = int(sn2_fa_db)
 
-        print(sn1_fa_abbr)
-        print(sn2_fa_abbr)
-
         lipid_info_dct = {'TYPE': _pl_typ, 'LINK': bulk_fa_linker,
                           'sum_C': sn1_fa_c + sn2_fa_c, 'sum_DB': sn1_fa_db + sn2_fa_db,
                           'sn1_C': sn1_fa_c, 'sn1_DB': sn1_fa_db, 'sn2_C': sn2_fa_c, 'sn2_DB': sn2_fa_db,
                           'sn1_abbr': sn1_fa_abbr, 'sn2_abbr': sn2_fa_abbr,
                           'LYSO_LINK': lyso_fa_linker_dct}
-
-        print(lipid_info_dct)
 
         return lipid_info_dct
 
@@ -361,8 +359,6 @@ class ScoreGenerator:
 
                 rebuild_pl = ''.join([pl_typ, '(', sn1_abbr, '/', sn2_abbr, ')'])
 
-                print('rebuild_pl', rebuild_pl, '-->', abbr)
-
                 if rebuild_pl == abbr:
                     lipid_abbr_lst = [rebuild_pl]
                     lipid_sn1_lst = [sn1_abbr]
@@ -421,8 +417,8 @@ class ScoreGenerator:
                 lyso_w_ident_df['Type'] = 'LysoW'
                 lyso_w_ident_lst = lyso_w_ident_df.loc[lyso_w_ident_df['Flag'] == 1]['FA'].tolist()
                 lyso_w_i_lst = lyso_w_ident_df.loc[lyso_w_ident_df['Flag'] == 1]['i'].tolist()
-                combine_all_lst = combine_all_lst.append(
-                lyso_w_ident_df[['Proposed_structures', 'FA', 'mz', 'i', 'ppm', 'ppm_abs', 'Flag', 'Type']])
+                combine_all_lst = combine_all_lst.append(lyso_w_ident_df[['Proposed_structures', 'FA', 'mz', 'i',
+                                                                          'ppm', 'ppm_abs', 'Flag', 'Type']])
             except KeyError:
                 lyso_w_ident_lst = []
                 lyso_w_i_lst = []
@@ -500,6 +496,45 @@ class ScoreGenerator:
         match_info_dct = {'MATCH_INFO': match_reporter, 'SCORE_INFO': lipid_abbr_df, 'FA_INFO': fa_ident_df,
                           'LYSO_INFO': lyso_ident_df, 'LYSO_W_INFO': lyso_w_ident_df}
         return match_info_dct
+
+    def get_cosine_score(self, msp_df, ms2_df, ms2_precision=500e-6, ms2_threshold=100, ms2_infopeak_threshold=0.02):
+
+        lib_mz_lst = msp_df['mz'].tolist()
+
+        ms2_basepeak_i = ms2_df['i'].max()
+        ms2_info_i = ms2_basepeak_i * ms2_infopeak_threshold
+        ms2_threshold = max(ms2_threshold, ms2_info_i)
+
+        obs_score_df = pd.DataFrame()
+        for mz in lib_mz_lst:
+            mz_l = mz * (1 - ms2_precision)
+            mz_h = mz * (1 + ms2_precision)
+
+            tmp_df = ms2_df.query('%f <= mz <= %f and i >= %f ' % (mz_l, mz_h, ms2_threshold))
+
+            if tmp_df.shape[0] == 1:
+                obs_score_df = obs_score_df.append(tmp_df)
+            elif tmp_df.shape[0] > 1:
+                tmp_df = tmp_df.sort_values(by='i', ascending=False)
+                obs_score_df = obs_score_df.append(tmp_df.head(1))
+            else:
+                tmp_df = pd.DataFrame(data={'mz': [0.0], 'i': [0.0]})
+                obs_score_df = obs_score_df.append(tmp_df)
+
+        obs_i_max = obs_score_df['i'].max()
+        # calc minus i for plot
+        msp_df.loc[:, 'rev_abs_i'] = msp_df['i'] * -0.001 * obs_i_max
+
+        obs_ar = obs_score_df.as_matrix()
+        lib_ar = np.column_stack((lib_mz_lst, msp_df['i'].tolist()))
+
+        # reduce matrix to 1D array
+        obs_flat = np.hstack(obs_ar.T)
+        lib_flat = np.hstack(lib_ar.T)
+
+        cosine_score = 100 * (1 - spatial.distance.cosine(obs_flat, lib_flat))
+
+        return cosine_score, msp_df
 
     def get_specific_peaks(self, mz_lib, ms2_df, ms2_precision=50e-6, ms2_threshold=10,
                            ms2_hginfo_threshold=0.02, vendor='waters'):

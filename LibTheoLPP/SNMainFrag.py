@@ -106,7 +106,7 @@ class SNMainFrag(object):
                 #     # _frag_dct['[M-H]-'] = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
                 # else:
                 _pr_info = self.calc_mz(_lpp_full_smi, score=int(_score_se.loc['[M-H]-']))
-                if _pr_info[1] > 0:
+                if _pr_info['mz'] > 0:
                     _frag_dct['[M-H]-'] = _pr_info
                 else:
                     pass
@@ -283,9 +283,10 @@ class SNMainFrag(object):
 
         # charged_info = '|'.join([frag_type, _ion_elem])
 
-        ion_info = (round(ion_mz, 4), score, _ion_elem)
+        # ion_info = (round(ion_mz, 4), score, _ion_elem)
+        ion_info_dct = {'mz': round(ion_mz, 4), 'i': score, 'formula': _ion_elem}
 
-        return ion_info
+        return ion_info_dct
 
     def calc_mod_mz(self, origin_info, mod=None, score=0, charge='[M-H]-'):
 
@@ -372,7 +373,7 @@ class SNMainFrag(object):
     def get_mod_elem(self, elem_dct=None, mod=None, lpp_info_dct=None):
 
         mod_dct = {'-H2O': {'H': -2, 'O': -1}, '+H2O': {'H': 2, 'O': 1},
-                   '-CO2': {'C': -1, 'O': -2}, '+FA': {'H': 2, 'C': 1, 'O': 2},
+                   '-CO2': {'C': -1, 'O': -2}, '+HCOO': {'H': 1, 'C': 1, 'O': 2},
                    '-C3H9N': {'C': -3, 'H': -9, 'N': -1},
                    '-C3H5NO2': {'C': -3, 'O': -2, 'H': -5, 'N': -1},
                    '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
@@ -423,7 +424,7 @@ class SNMainFrag(object):
             chk6 = re.compile(r'.*[-]CH3.*')
             chk7 = re.compile(r'.*[-]C3H5NO2.*')
 
-            chk9 = re.compile(r'.*[+]FA.*')
+            chk9 = re.compile(r'.*[+]HCOO.*')
             chk10 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
 
             if chk0.match(mod):
@@ -458,13 +459,14 @@ class SNMainFrag(object):
                 _mod_elem_dct = mod_dct['-CH3']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+                _mod_sum_elem_dct['H'] += 1  # For PC only, will be removed in chk 10
             if chk7.match(mod):
                 _mod_elem_dct = mod_dct['-C3H5NO2']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
 
             if chk9.match(mod):
-                _mod_elem_dct = mod_dct['+FA']
+                _mod_elem_dct = mod_dct['+HCOO']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             if chk10.match(mod):

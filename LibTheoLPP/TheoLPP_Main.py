@@ -32,11 +32,11 @@ class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         # current folder:
         if cwd is not None:
-            print('User LipidHunter folder', cwd)
+            print('User TheoFrag folder', cwd)
             self.theolpp_cwd = cwd
         else:
             auto_cwd = os.getcwd()
-            print('User LipidHunter folder', auto_cwd)
+            print('User TheoFrag folder', auto_cwd)
             self.theolpp_cwd = auto_cwd
 
         # set groups for the radio buttons
@@ -399,14 +399,19 @@ class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_theolpp\output_sdf\PC.sdf')
         self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_theolpp\output_sdf\PC.msp')
         self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
+        # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_theolpp\mzML\131015_POPE_400ng_new_neg_LMQ15.mzML')
         self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_theolpp\output_sdf\hunter_output')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_theolpp\output_sdf\hunter_output\test_pc.xlsx')
-        self.ui.tab_b_rtstart_dspb.setValue(9.0)
+        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_theolpp\output_sdf\hunter_output\test_PC.xlsx')
+        self.ui.tab_b_rtstart_dspb.setValue(9.5)
         self.ui.tab_b_rtend_dspb.setValue(11.0)
         self.ui.tab_b_msppm_spb.setValue(20)
         self.ui.tab_b_ms2ppm_spb.setValue(100)
         self.ui.tab_b_dda_spb.setValue(12)
         self.ui.tab_b_msthreshold_spb.setValue(1000)
+        self.ui.tab_b_score_spb.setValue(44.5)
+        self.ui.tab_b_isotopescore_spb.setValue(85.0)
+        self.ui.tab_b_mzstart_dspb.setValue(692.0)
+        self.ui.tab_b_mzend_dspb.setValue(697.0)
 
         if self.ui.vendor_waters_rb.isChecked():
             usr_vendor = 'waters'

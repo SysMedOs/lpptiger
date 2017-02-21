@@ -23,7 +23,7 @@ import pandas as pd
 
 def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_dct,
                  isotope_score_info_dct, formula_charged, charge,
-                 save_img_as=None, ms1_precision=50e-6, score_mode='Rank mode', isotope_mode=''):
+                 save_img_as=None, ms1_precision=50e-6, msp_info=pd.DataFrame()):
     ms2_pr_mz = mz_se['MS2_PR_mz']
     ms1_obs = mz_se['MS1_obs_mz']
     ms1_xic_mz = mz_se['MS1_XIC_mz']
@@ -270,12 +270,12 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     _lyso_table_df = ident_info_dct['LYSO_INFO']
 
     if _ident_table_df.shape[0] > 0:
-        _ident_table_df = _ident_table_df[['Proposed_structures', 'Score']]
+        _ident_table_df = _ident_table_df[['Proposed_structures', 'Score', 'Cosine_score']]
         ident_col_labels = _ident_table_df.columns.values.tolist()
         ident_row_labels = _ident_table_df.index.tolist()
         ident_table_vals = map(list, _ident_table_df.values)
         # ident_col_width_lst = [0.03 * len(str(x)) for x in ident_col_labels]
-        ident_col_width_lst = [0.3, 0.1]
+        ident_col_width_lst = [0.3, 0.1, 0.1]
         ident_table = ms_pic.table(cellText=ident_table_vals, rowLabels=ident_row_labels,
                                    colWidths=ident_col_width_lst,
                                    colLabels=ident_col_labels, loc='upper right')
@@ -438,12 +438,14 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
             msms_high_pic.text(_nl_mz, _nl_i, _nl_class, fontsize=8, color='green')
 
     # msms spectrum start
-    msms_pic.stem(ms2_df['mz'].tolist(), ms2_df['i'].tolist(), 'black', markerfmt=' ')
+
+    msms_pic.stem(msp_info['mz'].tolist(), msp_info['rev_abs_i'].tolist(), 'red', markerfmt=' ', zorder=1)
+    msms_pic.stem(ms2_df['mz'].tolist(), ms2_df['i'].tolist(), 'black', markerfmt=' ', zorder=10)
     msms_pic.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
     msms_pic.set_xlabel("m/z", fontsize=10, labelpad=-1)
     msms_pic.set_ylabel("Intensity", fontsize=10)
     msms_pic.set_xlim([min(ms2_df['mz'].tolist()) - 1, ms2_pr_mz + 20])
-    msms_pic.set_ylim([0, max(ms2_df['i'].tolist()) * 1.3])
+    msms_pic.set_ylim([min(msp_info['rev_abs_i'].tolist()) * 1.05, max(ms2_df['i'].tolist()) * 1.5])
 
     # set title
     xic_title_str = 'XIC of m/z %.4f | %s @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, abbr_id, lib_mz, ms1_pr_ppm)

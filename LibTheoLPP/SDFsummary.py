@@ -35,9 +35,13 @@ def sdf2xlsx(usr_sdf, save_path):
         _exactmass = _mol.GetProp('EXACT_MASS')
         _pr_info_dct = json.loads(_mol.GetProp('PRECURSOR_JSON'))
         _msp_json = _mol.GetProp('MSP_JSON')
+        _full_smiles = _mol.GetProp('LPP_SMILES')
+        _sn1_smiles = _mol.GetProp('SN1_SMILES')
+        _sn2_smiles = _mol.GetProp('SN2_SMILES')
 
         _mol_info_dct = {'Abbreviation': _id, 'Class': _class, 'FORMULA_NEUTRAL': _formula,
-                         'EXACT_MASS': _exactmass, 'MSP_JSON': _msp_json}
+                         'EXACT_MASS': _exactmass, 'MSP_JSON': _msp_json,
+                         'LPP_SMILES': _full_smiles, 'SN1_SMILES': _sn1_smiles, 'SN2_SMILES': _sn2_smiles}
         for _charge in ['[M-H]-', '[M+HCOO]-']:
             if _charge in _pr_info_dct.keys():
                 _mol_info_dct[_charge + '_FORMULA'] = _pr_info_dct[_charge][0]
@@ -52,7 +56,8 @@ def sdf2xlsx(usr_sdf, save_path):
 
     mol_info_df = mol_info_df.transpose()
     mol_info_df = mol_info_df[['Class', 'Abbreviation', 'FORMULA_NEUTRAL', 'EXACT_MASS',
-                               '[M-H]-_FORMULA', '[M-H]-_MZ', '[M+HCOO]-_FORMULA', '[M+HCOO]-_MZ', 'MSP_JSON']]
+                               '[M-H]-_FORMULA', '[M-H]-_MZ', '[M+HCOO]-_FORMULA', '[M+HCOO]-_MZ', 'MSP_JSON',
+                               'LPP_SMILES', 'SN1_SMILES', 'SN2_SMILES']]
     mol_info_df = mol_info_df.sort_values(by='EXACT_MASS')
     mol_info_df.to_excel(save_path, index=False)
 

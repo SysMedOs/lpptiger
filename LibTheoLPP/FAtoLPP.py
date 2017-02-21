@@ -154,7 +154,7 @@ class FAtoLPP(object):
                     continue
             for _s_rm in rm_lst:
                 s_all_lst.remove(_s_rm)
-                print 'removed outlier: ', _s_rm
+                print('removed outlier: ', _s_rm)
 
             for _s in s_all_lst:
                 try:

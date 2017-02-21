@@ -24,8 +24,8 @@ def to_msp(output_obj, lpp_info_dct):
 
     ion_lst = [_lpp_name, _lpp_id, _lpp_pr_typ, _lpp_pr_mz, _lpp_formula, _lpp_num_peaks]
     for _ion in _lpp_peaks_dct.keys():
-        _ion_name = ''.join(['"', _ion, ' | ',  _lpp_peaks_dct[_ion][2], '"'])
-        _ion_info_txt = ' '.join([str(_lpp_peaks_dct[_ion][0]), str(_lpp_peaks_dct[_ion][1]), _ion_name])
+        _ion_name = ''.join(['"', _ion, ' | ',  _lpp_peaks_dct[_ion]['formula'], '"'])
+        _ion_info_txt = ' '.join([str(_lpp_peaks_dct[_ion]['mz']), str(_lpp_peaks_dct[_ion]['i']), _ion_name])
         ion_lst.append(_ion_info_txt)
     ion_lst.append('\n')
 
