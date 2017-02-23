@@ -255,6 +255,9 @@ def huntlipids(param_dct):
                         usr_ident_info_dct = check_peaks(score_df, fa_ident_df, lyso_ident_df, lyso_w_ident_df,
                                                          score_filter=usr_score_filter)
 
+                        usr_ident_info_dct['MATCHED_FA_INFO'] = match_info_dct['MATCHED_FA_INFO']
+                        usr_ident_info_dct['MATCHED_LYSO_INFO'] = match_info_dct['MATCHED_LYSO_INFO']
+
                         score_df = usr_ident_info_dct['SCORE_INFO']
                         if score_df.shape[0] > 0 and _ms1_pr_i > 0:
                             print ('>>> >>> Check now for bulk identification as %s' % _usr_abbr_bulk)

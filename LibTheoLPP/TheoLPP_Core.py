@@ -18,13 +18,14 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
 from LibTheoLPP import MSPcreator
-from LibTheoLPP import MergeBackLPP
+from LibTheoLPP import LPPmerge
 from LibTheoLPP import SDFsummary
 from LibTheoLPP.AbbrGenerator import AbbrGenerator
-from LibTheoLPP.DBoxTheo import fa_link_filter, oxidizer
+from LibTheoLPP.TheoOxidation import fa_link_filter, oxidizer
 from LibTheoLPP.ExactMassCalc import MZcalc
-from LibTheoLPP.PLParser import PLParser
-from LibTheoLPP.SNMainFrag import SNMainFrag
+from LibTheoLPP.LPPparser import PLParser
+from LibTheoLPP.TheoFrag import TheoFrag
+from LibTheoLPP.FingerprintGenerator import FingerprintGen
 
 
 def theolpp(usr_params):
@@ -100,7 +101,8 @@ def theolpp(usr_params):
     parser = PLParser()
     abbr_gen = AbbrGenerator()
 
-    frag_gen = SNMainFrag(pl_class, score_xlsx)
+    frag_gen = TheoFrag(pl_class, score_xlsx)
+    fingerprint_gen = FingerprintGen('ConfigurationFiles/PL_specific_ion_cfg.xlsx')
 
     c_lst = []
 
@@ -170,7 +172,7 @@ def theolpp(usr_params):
                     _lpp_typ = ''.join(_oap_ocp_lst)
 
                     if _lpp_typ not in ban_lst:
-                        _lpp_smiles = MergeBackLPP.pl_lpp(_pl_hg_abbr, sn1=_sn1_mod_smiles, sn2=_sn2_mod_smiles)
+                        _lpp_smiles = LPPmerge.pl_lpp(_pl_hg_abbr, sn1=_sn1_mod_smiles, sn2=_sn2_mod_smiles)
                         _lpp_id_str = str(''.join([_pl_hg_abbr, '(', _sn1_abbr_str, '/', _sn2_abbr_str, ')']))
 
                         _lpp_sub_class_json = '{"SN1": "%s", "SN2": "%s"}' % (_sn1_typ_str, _sn2_typ_str)
@@ -280,6 +282,12 @@ def theolpp(usr_params):
 
                 _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
                 _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
+                _lpp_dct['EXACT_MASS'] = _lpp_exactmass
+                fp_mz_lst = fingerprint_gen.get_fingerprint(_lpp_dct)
+                print('FINGERPRINT')
+                print(fp_mz_lst)
+                _lpp_dct['FINGERPRINT'] = fp_mz_lst
+                _lpp_mol.SetProp('FINGERPRINT', json.dumps(fp_mz_lst))
 
                 for _k in _lpp_dct.keys():
                     _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPsmi.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -14,7 +14,7 @@ from rdkit import Chem
 from rdkit.Chem import Draw
 
 
-class TheoLPP:
+class LPPsmi:
     def __init__(self):
         print("Start to Merge back LPP-->")
 
@@ -57,7 +57,7 @@ def lpp_merge(theolpp_cls):
     return _lpp_merge
 
 
-@lpp_merge(TheoLPP)
+@lpp_merge(LPPsmi)
 def pl_lpp(usr_hg, sn1=None, sn2=None):
     pl_hg_dct = {'PA': r'OP(O)(OCC(',
                  'PC': r'[O-]P(OCC[N+](C)(C)C)(OCC(',
@@ -81,7 +81,7 @@ def pl_lpp(usr_hg, sn1=None, sn2=None):
         return pl_str
 
 
-@lpp_merge(TheoLPP)
+@lpp_merge(LPPsmi)
 def pl_hg_lpp(usr_hg, sn1=None, sn2=None):
     pl_hg_dct = {'PA': r'OP(O)(O)=O',
                  'PC': r'[O-]P(OCC[N+](C)(C)C)(O)=O',
@@ -105,90 +105,3 @@ def pl_hg_lpp(usr_hg, sn1=None, sn2=None):
         # the following order is important!!
         pl_str = ''.join([pl_hg, sn2, gly_part, sn1, pl_end])
         return pl_str
-
-
-# @lpp_merge(TheoLPP)
-# def pa_lpp(usr_sn1, usr_sn2):
-#     pa_hg = r'OP(O)(OCC([H])('
-#     gly_part = r')C'
-#     # sn1 FA 16:0
-#     # sn1 = r'OC(CCCCCCCCCCCCCCC)=O'
-#     # sn2 FA 18:2 (9Z, 12Z)
-#     # sn2 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
-#     pl_end = r')=O'
-#     # the following order is important!!
-#     pl_str = ''.join([pa_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-# 
-# 
-# @lpp_merge(TheoLPP)
-# def pc_lpp(usr_sn1, usr_sn2):
-#     pc_hg = r'[O-]P(OCC[N+](C)(C)C)(OCC([H])('
-#     gly_part = r')C'
-#     pl_end = r')=O'
-#     pl_str = ''.join([pc_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-# 
-# 
-# @lpp_merge(TheoLPP)
-# def pe_lpp(usr_sn1, usr_sn2):
-#     pe_hg = r'OP(OCCN)(OCC([H])('
-#     gly_part = r')C'
-#     pl_end = r')=O'
-#     pl_str = ''.join([pe_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-# 
-# 
-# @lpp_merge(TheoLPP)
-# def pg_lpp(usr_sn1, usr_sn2):
-#     pg_hg = r'OP(OCC(O)CO)(OCC([H])('
-#     gly_part = r')C'
-#     pl_end = r')=O'
-#     pl_str = ''.join([pg_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-# 
-# 
-# @lpp_merge(TheoLPP)
-# def pi_lpp(usr_sn1, usr_sn2):
-#     # Inositol, IUPAC (1R,2R,3S,4S,5R,6S)-cyclohexane-1,2,3,4,5,6-hexol
-#     # O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O]
-#     pi_hg = r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[O])(OCC([H])('
-#     gly_part = r')C'
-#     pl_end = r')=O'
-#     pl_str = ''.join([pi_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-# 
-# 
-# @lpp_merge(TheoLPP)
-# def pi4p_lpp(usr_sn1, usr_sn2):
-#     # Inositol-4-phospate
-#     # O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O]
-#     pi4p_hg = r'OP(O[C@H]1[C@@H]([C@@H](O)[C@H](OP(O)(O)=O)[C@@H](O)[C@H]1O)[O])(OCC([H])('
-#     gly_part = r')C'
-#     pl_end = r')=O'
-#     pl_str = ''.join([pi4p_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-# 
-# 
-# @lpp_merge(TheoLPP)
-# def ps_lpp(usr_sn1, usr_sn2):
-#     ps_hg = r'OP(OCC(C(O)=O)N)(OCC([H])('
-#     gly_part = r')C'
-#     pl_end = r')=O'
-#     pl_str = ''.join([ps_hg, usr_sn1, gly_part, usr_sn2, pl_end])
-#     return pl_str
-
-
-# sn1 = r'OC(CCCCCCC/C=C\C/C=C\CCCCC)=O'
-# sn2 = r'OC(CCCCCCCCCCCCCCC)=O'
-#
-# # pa_lpp(sn1, sn2)
-# # pc_lpp(sn1, sn2)
-# # pe_lpp(sn1, sn2)
-# # pg_lpp(sn1, sn2)
-# # pi_lpp(sn1, sn2)
-# # pi4p_lpp(sn1, sn2)
-# # ps_lpp(sn1, sn2)
-#
-# x = pc_lpp(sn1, sn2)
-# print('x', x)

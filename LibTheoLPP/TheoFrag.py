@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPsmi.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -16,10 +16,10 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdMolDescriptors
 
-from MergeBackLPP import pl_lpp
+from LPPmerge import pl_lpp
 
 
-class SNMainFrag(object):
+class TheoFrag(object):
     def __init__(self, pl_class, frag_score_list):
         self.pl_type = pl_class
         print(self.pl_type)

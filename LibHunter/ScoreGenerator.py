@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPsmi.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -121,14 +121,11 @@ class ScoreGenerator:
             _pl_typ = 'FA'
             info_fa_typ = abbr
 
-        print(info_fa_typ)
-
         if fa_checker.match(info_fa_typ):
             bulk_fa_linker = 'A-A-'
             lyso_fa_linker_dct = {'A': ''}
             fa_chk = fa_checker.match(info_fa_typ)
             info_fa_lst = fa_chk.groups()
-            print(info_fa_lst)
             sn1_fa_c = info_fa_lst[0]
             sn1_fa_db = info_fa_lst[2]
             sn2_fa_c = info_fa_lst[5]
@@ -301,19 +298,7 @@ class ScoreGenerator:
             lyso_found_dct = {}
             lyso_ident_df = lyso_ident_df.query('i > %f' % ms2_threshold)
             if lipid_type == 'GL':
-                lyso_ident_df['Flag'] = 0
-                for _ident, _inf_g in lyso_ident_df.iterrows():
-                    if lyso_ident_df.loc[_ident, 'Short_name'] in lyso_found_dct.keys():
-                        if _inf_g['ppm_abs'] < lyso_found_dct[_inf_g['Short_name']][1]:
-                            lyso_ident_df.loc[_ident, 'Flag'] = 1
-                            lyso_ident_df.loc[lyso_found_dct[_inf_g['Short_name']][0], 'Flag'] = 0
-                            lyso_found_dct[_inf_g['Short_name']] = [_ident, _inf_g['ppm_abs']]
-                    else:
-                        lyso_ident_df.loc[_ident, 'Flag'] = 1
-                        lyso_found_dct[_inf_g['Short_name']] = [_ident, _inf_g['ppm_abs']]
-                lyso_ident_df = lyso_ident_df.loc[lyso_ident_df['Flag'] == 1][['Proposed_structures', 'FA', 'mz', 'i',
-                                                                               'ppm', 'ppm_abs',
-                                                                               'Flag']].reset_index(drop=True)
+                pass
             else:
                 lyso_ident_df['Flag'] = 1
                 lyso_ident_df = lyso_ident_df.loc[lyso_ident_df['Flag'] == 1][['Proposed_structures', 'FA', 'mz', 'i',
@@ -390,6 +375,10 @@ class ScoreGenerator:
 
         weight_type_lst = ['sn1', 'sn2', '[M-H]-sn1', '[M-H]-sn2',
                            '[M-H]-sn1-H2O', '[M-H]-sn2-H2O']
+
+        matched_fa_df = pd.DataFrame()
+        matched_lyso_df = pd.DataFrame()
+
         weight_dct = {}
         for _type in weight_type_lst:
             lipid_abbr_df[_type] = 0
@@ -435,22 +424,29 @@ class ScoreGenerator:
 
                 if _sn1_abbr in fa_ident_lst:
                     _rank_sn1 = fa_ident_lst.index(_sn1_abbr)
+                    matched_fa_df = matched_fa_df.append(fa_ident_df.iloc[[_rank_sn1]])
                     r_sn1_i = 100 * fa_i_lst[_rank_sn1] / ms2_max_i
                     lipid_abbr_df.set_value(_i_abbr, 'i_sn1', r_sn1_i)
                     if rank_mode is True:
                         lipid_abbr_df.set_value(_i_abbr, 'sn1', weight_dct['sn1'] * (10 - _rank_sn1) / 10)
                     else:
                         lipid_abbr_df.set_value(_i_abbr, 'sn1', weight_dct['sn1'] * r_sn1_i * 0.01)
+                    fa_ident_df.drop(fa_ident_df.index[_rank_sn1], inplace=True)
+
                 if _sn2_abbr in fa_ident_lst:
                     _rank_sn2 = fa_ident_lst.index(_sn2_abbr)
+                    matched_fa_df = matched_fa_df.append(fa_ident_df.iloc[[_rank_sn2]])
                     r_sn2_i = 100 * fa_i_lst[_rank_sn2] / ms2_max_i
                     lipid_abbr_df.set_value(_i_abbr, 'i_sn2', r_sn2_i)
                     if rank_mode is True:
                         lipid_abbr_df.set_value(_i_abbr, 'sn2', weight_dct['sn2'] * (10 - _rank_sn2) / 10)
                     else:
                         lipid_abbr_df.set_value(_i_abbr, 'sn2', weight_dct['sn2'] * r_sn2_i * 0.01)
+                    fa_ident_df.drop(fa_ident_df.index[_rank_sn2], inplace=True)
+
                 if _sn1_abbr in lyso_ident_lst:
                     _rank_l_sn1 = lyso_ident_lst.index(_sn1_abbr)
+                    matched_lyso_df = matched_lyso_df.append(lyso_ident_df.iloc[[_rank_l_sn1]])
                     r_lyso1_i = 100 * lyso_i_lst[_rank_l_sn1] / ms2_max_i
                     lipid_abbr_df.set_value(_i_abbr, 'i_[M-H]-sn1', r_lyso1_i)
                     if rank_mode is True:
@@ -458,8 +454,11 @@ class ScoreGenerator:
                                                 weight_dct['[M-H]-sn1'] * (10 - _rank_l_sn1) / 10)
                     else:
                         lipid_abbr_df.set_value(_i_abbr, '[M-H]-sn1', weight_dct['[M-H]-sn1'] * r_lyso1_i * 0.01)
+                    lyso_ident_df.drop(lyso_ident_df.index[_rank_l_sn1], inplace=True)
+
                 if _sn2_abbr in lyso_ident_lst:
                     _rank_l_sn2 = lyso_ident_lst.index(_sn2_abbr)
+                    matched_lyso_df = matched_lyso_df.append(lyso_ident_df.iloc[[_rank_l_sn2]])
                     r_lyso2_i = 100 * lyso_i_lst[_rank_l_sn2] / ms2_max_i
                     lipid_abbr_df.set_value(_i_abbr, 'i_[M-H]-sn2', r_lyso2_i)
                     if rank_mode is True:
@@ -467,8 +466,11 @@ class ScoreGenerator:
                                                 weight_dct['[M-H]-sn2'] * (10 - _rank_l_sn2) / 10)
                     else:
                         lipid_abbr_df.set_value(_i_abbr, '[M-H]-sn2', weight_dct['[M-H]-sn2'] * r_lyso2_i * 0.01)
+                    lyso_ident_df.drop(lyso_ident_df.index[_rank_l_sn2], inplace=True)
+
                 if _sn1_abbr in lyso_w_ident_lst:
                     _rank_lw_sn1 = lyso_w_ident_lst.index(_sn1_abbr)
+                    matched_lyso_df = matched_lyso_df.append(lyso_w_ident_df.iloc[[_rank_lw_sn1]])
                     r_lyso_w1_i = 100 * lyso_w_i_lst[_rank_lw_sn1] / ms2_max_i
                     lipid_abbr_df.set_value(_i_abbr, 'i_[M-H]-sn1-H2O', r_lyso_w1_i)
                     if rank_mode is True:
@@ -477,8 +479,11 @@ class ScoreGenerator:
                     else:
                         lipid_abbr_df.set_value(_i_abbr, '[M-H]-sn1-H2O',
                                                 weight_dct['[M-H]-sn1-H2O'] * r_lyso_w1_i * 0.01)
+                    lyso_w_ident_df.drop(lyso_w_ident_df.index[_rank_lw_sn1], inplace=True)
+
                 if _sn2_abbr in lyso_w_ident_lst:
                     _rank_lw_sn2 = lyso_w_ident_lst.index(_sn2_abbr)
+                    matched_lyso_df = matched_lyso_df.append(lyso_w_ident_df.iloc[[_rank_lw_sn2]])
                     r_lyso_w2_i = 100 * lyso_w_i_lst[_rank_lw_sn2] / ms2_max_i
                     lipid_abbr_df.set_value(_i_abbr, 'i_[M-H]-sn2-H2O', r_lyso_w2_i)
                     if rank_mode is True:
@@ -487,14 +492,21 @@ class ScoreGenerator:
                     else:
                         lipid_abbr_df.set_value(_i_abbr, '[M-H]-sn2-H2O',
                                                 weight_dct['[M-H]-sn2-H2O'] * r_lyso_w2_i * 0.01)
+                    lyso_w_ident_df.drop(lyso_w_ident_df.index[_rank_lw_sn2], inplace=True)
 
             lipid_abbr_df['Score'] = lipid_abbr_df[weight_type_lst].sum(axis=1, numeric_only=True)
             match_reporter = 1
         else:
             print('!!!!!! NO FA identified =====>--> Skip >>> >>>')
 
+        print('matched_fa_df')
+        print(matched_fa_df)
+        print('matched_lyso_df')
+        print(matched_lyso_df)
+
         match_info_dct = {'MATCH_INFO': match_reporter, 'SCORE_INFO': lipid_abbr_df, 'FA_INFO': fa_ident_df,
-                          'LYSO_INFO': lyso_ident_df, 'LYSO_W_INFO': lyso_w_ident_df}
+                          'LYSO_INFO': lyso_ident_df, 'LYSO_W_INFO': lyso_w_ident_df,
+                          'MATCHED_FA_INFO': matched_fa_df, 'MATCHED_LYSO_INFO': matched_lyso_df}
         return match_info_dct
 
     def get_cosine_score(self, msp_df, ms2_df, ms2_precision=500e-6, ms2_threshold=100, ms2_infopeak_threshold=0.02):

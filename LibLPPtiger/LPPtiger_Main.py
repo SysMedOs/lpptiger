@@ -21,9 +21,8 @@ import xlrd
 from PySide import QtCore, QtGui
 
 from LPPtiger_UI import Ui_MainWindow
-from LPPtiger_Core import theolpp
-
-from LibHunter.SpectraHunter import huntlipids
+from LibHunter.Hunter_Core import huntlipids
+from LibTheoLPP.TheoLPP_Core import theolpp
 
 
 class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
@@ -396,25 +395,25 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
     def b_run_hunter(self):
 
-        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC.xlsx')
-        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FA_SUM.xlsx')
-        self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC.sdf')
-        self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC.msp')
+        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.xlsx')
+        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP_FA_SUM.xlsx')
+        self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
+        self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
         self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
-        # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_theolpp\mzML\131015_POPE_400ng_new_neg_LMQ15.mzML')
+        # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_lpptiger\mzML\131015_PLPC_400ng_new_neg_LMQ15.mzML')
         self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_DHA.xlsx')
-        self.ui.tab_b_rtstart_dspb.setValue(5.0)
-        self.ui.tab_b_rtend_dspb.setValue(31.0)
+        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C9.xlsx')
+        self.ui.tab_b_rtstart_dspb.setValue(9.25)
+        self.ui.tab_b_rtend_dspb.setValue(10.75)
         self.ui.tab_b_msppm_spb.setValue(20)
         self.ui.tab_b_ms2ppm_spb.setValue(100)
         self.ui.tab_b_dda_spb.setValue(12)
-        self.ui.tab_b_msthreshold_spb.setValue(1000)
-        self.ui.tab_b_ms2threshold_spb.setValue(10)
-        self.ui.tab_b_score_spb.setValue(44.5)
+        self.ui.tab_b_msthreshold_spb.setValue(2500)
+        self.ui.tab_b_ms2threshold_spb.setValue(20)
+        self.ui.tab_b_score_spb.setValue(40.5)
         self.ui.tab_b_isotopescore_spb.setValue(85.0)
-        self.ui.tab_b_mzstart_dspb.setValue(500.0)
-        self.ui.tab_b_mzend_dspb.setValue(1000.0)
+        self.ui.tab_b_mzstart_dspb.setValue(660.0)
+        self.ui.tab_b_mzend_dspb.setValue(700.0)
 
         if self.ui.vendor_waters_rb.isChecked():
             usr_vendor = 'waters'
@@ -523,7 +522,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
                             'hunter_start_time': start_time_str, 'Experiment_mode': usr_exp_mode}
 
         param_log_output_path_str = (str(self.ui.tab_b_saveimgfolder_le.text()) +
-                                     '/TheoLPP_Params-Log_%s.txt' % start_time_str
+                                     '/LPPtiger_Params-Log_%s.txt' % start_time_str
                                      )
 
         config = configparser.ConfigParser()

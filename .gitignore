@@ -102,9 +102,7 @@ temp
 *.mgf
 TheoFragPatterns_csv/
 json.txt
-temp/PLclassDict.py
 LibTheoLPP/images/
-*.png
 /Makefile
 /make.bat
 /SDFs/TheoALL/sdf_sn2_extractor.py

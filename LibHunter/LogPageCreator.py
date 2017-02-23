@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPsmi.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -41,7 +41,7 @@ class LogPageCreator(object):
         with open(self.main_page, 'w') as _m_page:
             m_info_lst = ['<html>\n', '<link rel="icon" href="', self.logo, '" type="image/x-icon"/>\n'
                           '<title>LPPtiger_Results ', start_time,
-                          '</title>\n<frameset cols="350,*">\n<frameset rows="390,*">\n',
+                          '</title>\n<frameset cols="390,*">\n<frameset rows="400,*">\n',
                           '<frame src="', _params_lst_page, '" frameborder="0" >\n',
                           '<frame src="', _idx_lst_page, '" frameborder="0" >\n</frameset>\n',
                           '<frame src="', _image_lst_page, '"name ="results_frame">\n</frameset>\n</html>\n'
@@ -70,7 +70,7 @@ class LogPageCreator(object):
                                 th{background-color:#0066B2;color:white; margin:center;}\n
                                 a:link {text-decoration:none} a:hover{text-decoration:underline }\n
                                 ul {font-size:14px; width: 260px;}\n </style>\n
-                                <h3><img src="LPPtiger.ico" height=30/>  TheoLPP</h3><font size="1">\n
+                                <h3><img src="LPPtiger.ico" height=36/>  LPPtiger</h3><font size="1">\n
                                 <hr> <h3>Parameters:</h3>\n<ul>\n
                                 <li>Start time: %s</li>\n<li>Mode: %s %s</li>\n
                                 <li><i>m/z</i> range: %.1f - %.1f <i>m/z</i></li>\n<li>RT range: %.1f - %.1f min</li>\n

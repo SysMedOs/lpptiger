@@ -10,9 +10,11 @@
 
 
 import os
-from PySide import QtGui
-from LibTheoLPP.LPPtiger_Main import LPPtiger_Main
 import sys
+
+from PySide import QtGui
+
+from LibLPPtiger.LPPtiger_Main import LPPtiger_Main
 
 if __name__ == '__main__':
     usr_cwd = os.getcwd()

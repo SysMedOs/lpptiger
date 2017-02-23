@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPsmi.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -16,7 +16,7 @@ import pandas as pd
 
 from LibTheoLPP.AbbrGenerator import AbbrGenerator, fa_abbr_encode
 
-from LibTheoLPP.ISOPoxTheo import IsoProstanOx
+from LibTheoLPP.TheoProstanes import IsoProstanOx
 from LibTheoLPP.SMILESparser import SMILESparser
 
 

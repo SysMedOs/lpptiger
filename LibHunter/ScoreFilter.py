@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPsmi.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -18,7 +18,6 @@ def check_peaks(score_df, fa_ident_df, lyso_ident_df, lyso_w_ident_df, score_fil
         score_df = score_df.sort_values(by='Score', ascending=False)
         score_df = score_df.reset_index(drop=True)
         score_df.index += 1
-        print(score_df)
 
         # format fa info DataFrame
         fa_ident_df = fa_ident_df[['Proposed_structures', 'mz', 'i', 'ppm']].reset_index(drop=True)
@@ -29,7 +28,6 @@ def check_peaks(score_df, fa_ident_df, lyso_ident_df, lyso_w_ident_df, score_fil
             _fa_i_lst.append('%.2e' % float(_fa_se['i']))
         fa_ident_df.loc[:, 'i'] = _fa_i_lst
         fa_ident_df.index += 1
-        print(fa_ident_df)
 
         # merge Lyso and Lyso - H2O
         lyso_ident_df = lyso_ident_df.append(lyso_w_ident_df)
@@ -43,7 +41,7 @@ def check_peaks(score_df, fa_ident_df, lyso_ident_df, lyso_w_ident_df, score_fil
                 _lyso_i_lst.append('%.2e' % float(_lyso_se['i']))
             lyso_ident_df.loc[:, 'i'] = _lyso_i_lst
             lyso_ident_df.index += 1
-            print(lyso_ident_df)
+
         else:
             lyso_ident_df = pd.DataFrame()
 
