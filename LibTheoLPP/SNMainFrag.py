@@ -377,8 +377,10 @@ class SNMainFrag(object):
                    '-C3H9N': {'C': -3, 'H': -9, 'N': -1},
                    '-C3H5NO2': {'C': -3, 'O': -2, 'H': -5, 'N': -1},
                    '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
-                   '-CH2': {'C': -1, 'H': -2},
-                   '-CH3': {'C': -1, 'H': -3}}
+                   '-CH2': {'C': -1, 'H': -2}, '-CH3': {'C': -1, 'H': -3}, '-H': {'H': -1}}
+
+        _sn1_elem = {}
+        _sn2_elem = {}
 
         # get the formula as dict
         if elem_dct is None:
@@ -389,6 +391,11 @@ class SNMainFrag(object):
                 _lpp_full_smi = lpp_info_dct['LPP_SMILES']
                 _sn1_smi = lpp_info_dct['SN1_SMILES']
                 _sn2_smi = lpp_info_dct['SN2_SMILES']
+                _sn1_formula = lpp_info_dct['SN1_FORMULA']
+                _sn2_formula = lpp_info_dct['SN2_FORMULA']
+                _sn1_elem = self.parse_formula(_sn1_formula)
+                _sn2_elem = self.parse_formula(_sn2_formula)
+
                 _lyso_smi = 'O'
                 if re.match(r'\[M-[sS][nN][1].*', mod):
                     _frag_smi = pl_lpp(_lpp_type, sn1=_lyso_smi, sn2=_sn2_smi)
@@ -425,12 +432,21 @@ class SNMainFrag(object):
             chk7 = re.compile(r'.*[-]C3H5NO2.*')
 
             chk9 = re.compile(r'.*[+]HCOO.*')
-            chk10 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
+            # chk10 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
+            chk10 = re.compile(r'.*[-]H[\]][-]')
 
             if chk0.match(mod):
-                _mod_elem_dct = mod_dct['-H2O']
-                for _key in _mod_elem_dct.keys():
-                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+                if re.match(r'.*-[sS][nN]1.*', mod):
+                    _mod_sum_elem_dct['H'] += 2
+                    _mod_sum_elem_dct['O'] += 1
+                    for _key in _sn1_elem.keys():
+                        _mod_sum_elem_dct[_key] -= _sn1_elem[_key]
+
+                if re.match(r'.*-[sS][nN]2.*', mod):
+                    _mod_sum_elem_dct['H'] += 2
+                    _mod_sum_elem_dct['O'] += 1
+                    for _key in _sn2_elem.keys():
+                        _mod_sum_elem_dct[_key] -= _sn2_elem[_key]
 
             if chk1.match(mod):
                 _mod_elem_dct = mod_dct['-H2O']
@@ -470,15 +486,7 @@ class SNMainFrag(object):
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             if chk10.match(mod):
-                m7 = chk10.match(mod)
-                m7_lst = m7.groups()
-                m7_elem = m7_lst[1]
-                _charge = m7_lst[2]
-                _mod_sum_elem_dct = self.parse_formula(formula=m7_elem)
-                # naturalize the formula
-                if _charge in self.charge_elem_dct.keys():
-                    _mod_sum_elem_dct['H'] += -1 * self.charge_elem_dct[_charge]['H']
-                # print('found PE HG ------------------------------------------------------>>>>>>>>>>>>>>>')
+                _mod_sum_elem_dct['H'] += -1
             else:
                 pass
 

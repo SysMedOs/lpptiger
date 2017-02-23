@@ -15,15 +15,15 @@ class LogPageCreator(object):
     def __init__(self, output_folder, start_time, params):
         print(os.getcwd())
         self.output_folder = output_folder
-        self.output_img_folder = output_folder + r'\TheoFrag_Results_Figures_%s' % start_time
-        self.main_page = output_folder + r'\TheoFrag_Results_%s.html' % start_time
-        self.logo = r'TheoFrag_Results_Figures_%s\TheoFrag.ico' % start_time
-        _image_lst_page = r'TheoFrag_Results_Figures_%s\TheoFrag_Results_Figures_list.html' % start_time
-        _params_lst_page = r'TheoFrag_Results_Figures_%s\TheoFrag_Params_list.html' % start_time
-        _idx_lst_page = r'TheoFrag_Results_Figures_%s\TheoFrag_Identification_list.html' % start_time
-        self.image_lst_page = self.output_img_folder + r'\TheoFrag_Results_Figures_list.html'
-        self.params_lst_page = self.output_img_folder + r'\TheoFrag_Params_list.html'
-        self.idx_lst_page = self.output_img_folder + r'\TheoFrag_Identification_list.html'
+        self.output_img_folder = output_folder + r'\LPPtiger_Results_Figures_%s' % start_time
+        self.main_page = output_folder + r'\LPPtiger_Results_%s.html' % start_time
+        self.logo = r'LPPtiger_Results_Figures_%s\LPPtiger.ico' % start_time
+        _image_lst_page = r'LPPtiger_Results_Figures_%s\LPPtiger_Results_Figures_list.html' % start_time
+        _params_lst_page = r'LPPtiger_Results_Figures_%s\LPPtiger_Params_list.html' % start_time
+        _idx_lst_page = r'LPPtiger_Results_Figures_%s\LPPtiger_Identification_list.html' % start_time
+        self.image_lst_page = self.output_img_folder + r'\LPPtiger_Results_Figures_list.html'
+        self.params_lst_page = self.output_img_folder + r'\LPPtiger_Params_list.html'
+        self.idx_lst_page = self.output_img_folder + r'\LPPtiger_Identification_list.html'
 
         self.lipid_type = params['lipid_type']
         hunter_folder = params['hunter_folder']
@@ -40,7 +40,7 @@ class LogPageCreator(object):
 
         with open(self.main_page, 'w') as _m_page:
             m_info_lst = ['<html>\n', '<link rel="icon" href="', self.logo, '" type="image/x-icon"/>\n'
-                          '<title>TheoFrag_Results ', start_time,
+                          '<title>LPPtiger_Results ', start_time,
                           '</title>\n<frameset cols="350,*">\n<frameset rows="390,*">\n',
                           '<frame src="', _params_lst_page, '" frameborder="0" >\n',
                           '<frame src="', _idx_lst_page, '" frameborder="0" >\n</frameset>\n',
@@ -70,13 +70,13 @@ class LogPageCreator(object):
                                 th{background-color:#0066B2;color:white; margin:center;}\n
                                 a:link {text-decoration:none} a:hover{text-decoration:underline }\n
                                 ul {font-size:14px; width: 260px;}\n </style>\n
-                                <h3><img src="TheoFrag.ico" height=30/>  TheoLPP</h3><font size="1">\n
+                                <h3><img src="LPPtiger.ico" height=30/>  TheoLPP</h3><font size="1">\n
                                 <hr> <h3>Parameters:</h3>\n<ul>\n
                                 <li>Start time: %s</li>\n<li>Mode: %s %s</li>\n
                                 <li><i>m/z</i> range: %.1f - %.1f <i>m/z</i></li>\n<li>RT range: %.1f - %.1f min</li>\n
                                 <li>MS1 Threshold: %i</li>\n<li>MS2 Threshold: %i</li>\n
                                 <li>MS1 ppm: %i</li>\n<li>MS2 ppm: %i</li>\n
-                                <li>TheoFrag score > %.1f %s</li>\n<li>Isotope score > %.1f %s</li>\n
+                                <li>LPPtiger score > %.1f %s</li>\n<li>Isotope score > %.1f %s</li>\n
                                 </ul>\n<hr>\n<h3>Lipid identification list:</h3><font size="1">\n<table>\n<thead>\n
                                 <tr style="text-align: center;">\n
                                 <th>ID#</th>\n<th> MS1_obs_mz </th>\n<th>RT(min)</th>\n<th>Discrete</th>\n
@@ -101,7 +101,7 @@ class LogPageCreator(object):
                             </style>\n<table>\n<tbody>
                             ''' % '%')
         try:
-            shutil.copy('%s\TheoFrag.ico' % hunter_folder, self.output_img_folder)
+            shutil.copy('%s\LPPtiger.ico' % hunter_folder, self.output_img_folder)
         except IOError:
             pass
 
@@ -156,11 +156,11 @@ class LogPageCreator(object):
 
             idx_str = ('''
                         <tr>\n
-                        <td><a href ="TheoFrag_Results_Figures_list.html#{id}" target ="results_frame">{id}</td>\n
-                        <td><a href ="TheoFrag_Results_Figures_list.html#{id}" target ="results_frame">{mz}</td>\n
-                        <td><a href ="TheoFrag_Results_Figures_list.html#{id}" target ="results_frame">{rt}</td>\n
-                        <td><a href ="TheoFrag_Results_Figures_list.html#{id}" target ="results_frame">{ident}</td>\n
-                        <td><a href ="TheoFrag_Results_Figures_list.html#{id}" target ="results_frame">{score}</td>\n
+                        <td><a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{id}</td>\n
+                        <td><a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{mz}</td>\n
+                        <td><a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{rt}</td>\n
+                        <td><a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{ident}</td>\n
+                        <td><a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{score}</td>\n
                         </tr>\n
                         '''.format(id=ident_idx, mz='%.4f' % ms1_pr_mz, rt='%.1f' % ms2_rt,
                                    ident=ident_abbr, score=score))

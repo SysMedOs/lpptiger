@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPtiger.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 try:  # python3
     import configparser
@@ -18,13 +20,13 @@ import time
 import xlrd
 from PySide import QtCore, QtGui
 
-from TheoLPP_UI import Ui_MainWindow
-from TheoLPP_Core import theolpp
+from LPPtiger_UI import Ui_MainWindow
+from LPPtiger_Core import theolpp
 
 from LibHunter.SpectraHunter import huntlipids
 
 
-class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
+class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None, cwd=os.getcwd()):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
@@ -32,11 +34,11 @@ class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         # current folder:
         if cwd is not None:
-            print('User TheoFrag folder', cwd)
+            print('User LPPtiger folder', cwd)
             self.theolpp_cwd = cwd
         else:
             auto_cwd = os.getcwd()
-            print('User TheoFrag folder', auto_cwd)
+            print('User LPPtiger folder', auto_cwd)
             self.theolpp_cwd = auto_cwd
 
         # set groups for the radio buttons
@@ -329,7 +331,7 @@ class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
         info_1, info_2 = theolpp(param_dct)
         self.ui.run_status_te.append(info_1)
         self.ui.run_status_te.append(info_2)
-        self.ui.run_status_te.append(u'Finished!')
+        self.ui.run_status_te.append(u'Finished!\n !Please exit LPPtiger before open the .sdf output file!')
 
     def b_load_sum_sdf(self):
         b_load_lipidstable_dialog = QtGui.QFileDialog(self)
@@ -394,24 +396,25 @@ class TheoLPP_Main(QtGui.QMainWindow, Ui_MainWindow):
 
     def b_run_hunter(self):
 
-        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_theolpp\output_sdf\PC.xlsx')
-        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_theolpp\output_sdf\PC_FA_SUM.xlsx')
-        self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_theolpp\output_sdf\PC.sdf')
-        self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_theolpp\output_sdf\PC.msp')
+        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC.xlsx')
+        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FA_SUM.xlsx')
+        self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC.sdf')
+        self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC.msp')
         self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
         # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_theolpp\mzML\131015_POPE_400ng_new_neg_LMQ15.mzML')
-        self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_theolpp\output_sdf\hunter_output')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_theolpp\output_sdf\hunter_output\test_PC.xlsx')
-        self.ui.tab_b_rtstart_dspb.setValue(9.5)
-        self.ui.tab_b_rtend_dspb.setValue(11.0)
+        self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output')
+        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_DHA.xlsx')
+        self.ui.tab_b_rtstart_dspb.setValue(5.0)
+        self.ui.tab_b_rtend_dspb.setValue(31.0)
         self.ui.tab_b_msppm_spb.setValue(20)
         self.ui.tab_b_ms2ppm_spb.setValue(100)
         self.ui.tab_b_dda_spb.setValue(12)
         self.ui.tab_b_msthreshold_spb.setValue(1000)
+        self.ui.tab_b_ms2threshold_spb.setValue(10)
         self.ui.tab_b_score_spb.setValue(44.5)
         self.ui.tab_b_isotopescore_spb.setValue(85.0)
-        self.ui.tab_b_mzstart_dspb.setValue(692.0)
-        self.ui.tab_b_mzend_dspb.setValue(697.0)
+        self.ui.tab_b_mzstart_dspb.setValue(500.0)
+        self.ui.tab_b_mzend_dspb.setValue(1000.0)
 
         if self.ui.vendor_waters_rb.isChecked():
             usr_vendor = 'waters'
@@ -545,6 +548,6 @@ if __name__ == '__main__':
     import sys
 
     app = QtGui.QApplication(sys.argv)
-    window = TheoLPP_Main()
+    window = LPPtiger_Main()
     window.show()
     sys.exit(app.exec_())

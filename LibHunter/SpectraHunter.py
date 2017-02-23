@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPtiger.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 
 from __future__ import division
@@ -104,10 +106,10 @@ def huntlipids(param_dct):
     current_path = os.getcwd()
     if os.path.isdir(output_folder):
         os.chdir(output_folder)
-        if os.path.isdir('TheoFrag_Results_Figures_%s' % hunter_start_time_str):
+        if os.path.isdir('LPPtiger_Results_Figures_%s' % hunter_start_time_str):
             pass
         else:
-            os.mkdir('TheoFrag_Results_Figures_%s' % hunter_start_time_str)
+            os.mkdir('LPPtiger_Results_Figures_%s' % hunter_start_time_str)
     os.chdir(current_path)
 
     log_pager = LogPageCreator(output_folder, hunter_start_time_str, param_dct)
@@ -279,7 +281,7 @@ def huntlipids(param_dct):
                                                 _usr_ms2_scan_id, _save_abbr_bulk)
                                              )
 
-                            img_name = (output_folder + r'\TheoFrag_Results_Figures_%s' % hunter_start_time_str
+                            img_name = (output_folder + r'\LPPtiger_Results_Figures_%s' % hunter_start_time_str
                                         + img_name_core)
 
                             usr_ident_info_dct['SCORE_INFO'].loc[:, 'Cosine_score'] = int(_cosine_score)

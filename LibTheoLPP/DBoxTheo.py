@@ -14,10 +14,10 @@ import json
 import numpy as np
 import pandas as pd
 
-from AbbrGenerator import AbbrGenerator, fa_abbr_encode
+from LibTheoLPP.AbbrGenerator import AbbrGenerator, fa_abbr_encode
 
-from ISOPoxTheo import IsoProstanOx
-from SMILESparser import SMILESparser
+from LibTheoLPP.ISOPoxTheo import IsoProstanOx
+from LibTheoLPP.SMILESparser import SMILESparser
 
 
 class TheoDB_Oxidizer:

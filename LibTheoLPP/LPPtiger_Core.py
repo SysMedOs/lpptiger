@@ -1,30 +1,30 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPtiger.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 from __future__ import print_function
-import time
-import json
 
+import json
+import time
 
 import pandas as pd
-
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
-
-from LibTheoLPP.PLParser import PLParser
-from LibTheoLPP.DBoxTheo import fa_link_filter, oxidizer
-from LibTheoLPP import MergeBackLPP
-from LibTheoLPP.SNMainFrag import SNMainFrag
-from LibTheoLPP.AbbrGenerator import AbbrGenerator
 from LibTheoLPP import MSPcreator
+from LibTheoLPP import MergeBackLPP
 from LibTheoLPP import SDFsummary
+from LibTheoLPP.AbbrGenerator import AbbrGenerator
+from LibTheoLPP.DBoxTheo import fa_link_filter, oxidizer
 from LibTheoLPP.ExactMassCalc import MZcalc
+from LibTheoLPP.PLParser import PLParser
+from LibTheoLPP.SNMainFrag import SNMainFrag
 
 
 def theolpp(usr_params):

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of TheoLPP.
+# A suitable license will be chosen before the official release of LPPtiger.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 from __future__ import division
 import os
@@ -117,7 +119,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     # isotope region | if any peak in M-1.0034
 
     m_pre_theo_box = patches.Rectangle((lib_mz - 1.0034 - ms1_delta, 0), 2 * ms1_delta, ms1_pr_i,
-                                       facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none")
+                                       facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none", zorder=10)
     ms_zoom_pic.add_patch(m_pre_theo_box)
 
     ms_zoom_bp_i = max(ms_zoom_df['i'].tolist())
@@ -132,14 +134,14 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
 
     ms_zoom_pic.stem(ms_zoom_df['mz'].tolist(), ms_zoom_df['i'].tolist(), 'grey', markerfmt=' ')
     markerline, stemlines, baseline = ms_zoom_pic.stem([ms1_pr_mz], [ms1_pr_i],
-                                                       'magenta', markerfmt='D'
+                                                       'magenta', markerfmt='D', zorder=1
                                                        )
     plt.setp(markerline, markerfacecolor='magenta', markeredgecolor='none', markeredgewidth=0,
              markersize=6, alpha=0.8)
     ms_zoom_pic.text(ms1_pr_mz + 0.06, ms1_pr_i, '%.4f' % float(ms1_pr_mz),
                      color='magenta', fontsize=6
                      )
-    markerline, stemlines, baseline = ms_zoom_pic.stem([lib_mz], [ms1_pr_i], '--', markerfmt='o')
+    markerline, stemlines, baseline = ms_zoom_pic.stem([lib_mz], [ms1_pr_i], '--', markerfmt='o', zorder=2)
     plt.setp(markerline, markerfacecolor='orange', markersize=6, markeredgewidth=0, alpha=0.9)
     plt.setp(stemlines, color='orange', alpha=0.8)
     ms_zoom_pic.text(lib_mz - 0.15, ms1_pr_i + ms_zoom_offset_i, '[M+0]', color='orange', fontsize=6)
@@ -157,14 +159,13 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     # theo range box
     m1_theo_base_box = patches.Rectangle((m1_theo_mz - ms1_delta, 0),
                                          2 * ms1_delta, deconv_lst[1],
-                                         facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none")
+                                         facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none", zorder=9)
     ms_zoom_pic.add_patch(m1_theo_base_box)
     m1_theo_box = patches.Rectangle((m1_theo_mz - ms1_delta, deconv_lst[1]), 2 * ms1_delta, m1_theo_i - deconv_lst[1],
-                                    facecolor=(0.1, 1.0, 1.0, 0.6), edgecolor="none")
+                                    facecolor=(0.1, 1.0, 1.0, 0.6), edgecolor="none", zorder=8)
     ms_zoom_pic.add_patch(m1_theo_box)
 
-    markerline, stemlines, baseline = ms_zoom_pic.stem([m1_theo_mz], [m1_theo_i], '--',
-                                                       markerfmt='o')
+    markerline, stemlines, baseline = ms_zoom_pic.stem([m1_theo_mz], [m1_theo_i], '--', markerfmt='o', zorder=3)
     plt.setp(stemlines, color='orange', alpha=0.8)
     plt.setp(markerline, markerfacecolor='orange', markersize=6, markeredgewidth=0, alpha=0.9)
     ms_zoom_pic.text(m1_theo_mz - 0.15, m1_theo_i + ms_zoom_offset_i, '[M+1]', color='orange', fontsize=6)
@@ -184,11 +185,10 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
         # m2_theo_r = m2_dct['theo_ratio']
         # m2_obs_r = m2_dct['obs_ratio']
         m2_theo_box = patches.Rectangle((m2_theo_mz - ms1_delta, 0), 2 * ms1_delta, m2_theo_i,
-                                        facecolor=(0.2, 1.0, 1.0, 0.6), edgecolor="none")
+                                        facecolor=(0.2, 1.0, 1.0, 0.6), edgecolor="none", zorder=7)
         ms_zoom_pic.add_patch(m2_theo_box)
         opt_box_lst.append(ms_zoom_pic)
-        markerline, stemlines, baseline = ms_zoom_pic.stem([m2_theo_mz], [m2_theo_i], '--',
-                                                           markerfmt='o')
+        markerline, stemlines, baseline = ms_zoom_pic.stem([m2_theo_mz], [m2_theo_i], '--', markerfmt='o', zorder=4)
         plt.setp(stemlines, color='orange', alpha=0.8)
         plt.setp(markerline, markerfacecolor='orange', markersize=6, markeredgewidth=0, alpha=0.9)
         ms_zoom_pic.text(m2_theo_mz - 0.15, m2_theo_i + ms_zoom_offset_i, '[M+2]', color='orange', fontsize=6)
@@ -208,15 +208,15 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
             # mh2_theo_r = mh2_dct['theo_ratio']
             # mh2_obs_r = mh2_dct['obs_ratio']
             mh2_theo_base_box = patches.Rectangle((mh2_theo_mz - ms1_delta, 0), 2 * ms1_delta, deconv_lst[decon_idx],
-                                                  facecolor=(0.2, 1.0, 1.0, 0.6), edgecolor="none")
+                                                  facecolor=(0.2, 1.0, 1.0, 0.6), edgecolor="none", zorder=6)
             ms_zoom_pic.add_patch(mh2_theo_base_box)
             opt_box_lst.append(mh2_theo_base_box)
             mh2_theo_box = patches.Rectangle((mh2_theo_mz - ms1_delta, deconv_lst[decon_idx]),
                                              2 * ms1_delta, mh2_theo_i - deconv_lst[decon_idx],
-                                             facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none")
+                                             facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none", zorder=5)
             ms_zoom_pic.add_patch(mh2_theo_box)
             markerline, stemlines, baseline = ms_zoom_pic.stem([mh2_theo_mz], [mh2_theo_i], '--',
-                                                               markerfmt='o')
+                                                               markerfmt='o', zorder=5)
             plt.setp(stemlines, color='red', alpha=0.8)
             plt.setp(markerline, markerfacecolor='red', markersize=6, markeredgewidth=0, alpha=0.9)
             if _mh2 == 0:
@@ -440,7 +440,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     # msms spectrum start
 
     msms_pic.stem(msp_info['mz'].tolist(), msp_info['rev_abs_i'].tolist(), 'red', markerfmt=' ', zorder=1)
-    msms_pic.stem(ms2_df['mz'].tolist(), ms2_df['i'].tolist(), 'black', markerfmt=' ', zorder=10)
+    msms_pic.stem(ms2_df['mz'].tolist(), ms2_df['i'].tolist(), 'black', markerfmt=' ', basefmt=' ', zorder=10)
     msms_pic.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
     msms_pic.set_xlabel("m/z", fontsize=10, labelpad=-1)
     msms_pic.set_ylabel("Intensity", fontsize=10)
