@@ -76,11 +76,11 @@ def huntlipids(param_dct):
 
     # use the SNR equation SNR = 20 * log10(signal/noise)
     # snr_score = 20 * math.log10((signal_sum_i / noise_sum_i))
-    # set s/n == 25 --> SNR_SCORE = 100
-    # default 3.5767 = 100 / (20 * math.log10(25)) --> 3.5767
+    # set s/n == 20 --> SNR_SCORE = 100
+    # default 6.5051 = 100 / (20 * math.log10(20)) --> 6.5051
     usr_max_sn_ratio = param_dct['sn_ratio']
-    if usr_max_sn_ratio == 25 or usr_max_sn_ratio == 0:
-        usr_amp_factor = 3.5767
+    if usr_max_sn_ratio == 20 or usr_max_sn_ratio == 0:
+        usr_amp_factor = 6.5051
     else:
         usr_amp_factor = 100 / (20 * math.log10(usr_max_sn_ratio))
 
@@ -256,11 +256,14 @@ def huntlipids(param_dct):
                                                                                       usr_ms2_info_th
                                                                                       )
                     fingerprint_lst = json.loads(_row_se['FINGERPRINT'])
-                    _fp_score, _obs_fp_df = score_calc.get_fingerprint_score(fingerprint_lst, _ms2_df,
-                                                                             ms2_precision=usr_ms2_precision,
-                                                                             ms2_threshold=usr_ms2_threshold,
-                                                                             ms2_infopeak_threshold=usr_ms2_info_th
-                                                                             )
+                    fp_info_dct = score_calc.get_fingerprint_score(fingerprint_lst, _ms2_df,
+                                                                   ms2_precision=usr_ms2_precision,
+                                                                   ms2_threshold=usr_ms2_threshold,
+                                                                   ms2_infopeak_threshold=usr_ms2_info_th)
+                    _fp_score = fp_info_dct['fingerprint_score']
+                    _obs_fp_df = fp_info_dct['obs_score_df']
+                    obs_fp_lst = fp_info_dct['obs_mz']
+                    missed_fp_lst = fp_info_dct['missed_mz']
 
                     match_factor = match_info_dct['MATCH_INFO']
                     fa_ident_df = match_info_dct['FA_INFO']
@@ -327,7 +330,8 @@ def huntlipids(param_dct):
                                                                           _usr_formula_charged, _usr_charge,
                                                                           save_img_as=img_name,
                                                                           ms1_precision=usr_ms1_precision,
-                                                                          msp_info=_msp_df
+                                                                          msp_info=_msp_df, obs_fp=obs_fp_lst,
+                                                                          missed_fp=missed_fp_lst
                                                                           )
 
                             print('==> check for output -->')

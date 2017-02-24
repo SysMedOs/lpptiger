@@ -24,9 +24,9 @@ from matplotlib._png import read_png
 import pandas as pd
 
 
-def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_dct,
-                 isotope_score_info_dct, formula_charged, charge,
-                 save_img_as=None, ms1_precision=50e-6, msp_info=pd.DataFrame()):
+def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_dct, isotope_score_info_dct,
+                 formula_charged, charge, save_img_as=None, ms1_precision=50e-6, msp_info=pd.DataFrame(),
+                 obs_fp=[], missed_fp=[]):
     ms2_pr_mz = mz_se['MS2_PR_mz']
     ms1_obs = mz_se['MS1_obs_mz']
     ms1_xic_mz = mz_se['MS1_XIC_mz']
@@ -376,8 +376,8 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
             _frag_i = _frag_se['i']
             _frag_class = _frag_se['LABEL']
             _frag_i_x = min(_frag_i * 5, 0.3 * max(_msms_low_df['i'].tolist()))
-            _frag_i = sorted([max(_msms_low_df['i'].tolist()) * 1.1, _frag_i * 1.1, _frag_i_x])[1]
-            markerline, stemlines, baseline = msms_low_pic.stem([_frag_mz], [_frag_i], markerfmt=' ')
+            _frag_i_r = sorted([max(_msms_low_df['i'].tolist()) * 1.1, _frag_i * 1.1, _frag_i_x])[1]
+            markerline, stemlines, baseline = msms_low_pic.stem([_frag_mz], [_frag_i_r], markerfmt=' ')
             plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
             markerline, stemlines, baseline = msms_pic.stem([_frag_mz], [_frag_i], markerfmt=' ')
             plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
@@ -390,8 +390,8 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
             _nl_i = _nl_se['i']
             _nl_class = _nl_se['LABEL']
             _nl_i_x = min(_nl_i * 5, 0.3 * max(_msms_high_df['i'].tolist()))
-            _nl_i = sorted([max(_msms_high_df['i'].tolist()) * 1.1, _nl_i * 1.1, _nl_i_x])[1]
-            markerline, stemlines, baseline = msms_high_pic.stem([_nl_mz], [_nl_i], markerfmt=' ')
+            _nl_i_r = sorted([max(_msms_high_df['i'].tolist()) * 1.1, _nl_i * 1.1, _nl_i_x])[1]
+            markerline, stemlines, baseline = msms_high_pic.stem([_nl_mz], [_nl_i_r], markerfmt=' ')
             plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
             markerline, stemlines, baseline = msms_pic.stem([_nl_mz], [_nl_i], markerfmt=' ')
             plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
@@ -404,8 +404,8 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
             _frag_i = _frag_se['i']
             _frag_class = _frag_se['LABEL']
             _frag_i_x = min(_frag_i * 5, 0.5 * max(_msms_low_df['i'].tolist()))
-            _frag_i = sorted([max(_msms_low_df['i'].tolist()) * 1.1, _frag_i * 1.1, _frag_i_x])[1]
-            markerline, stemlines, baseline = msms_low_pic.stem([_frag_mz], [_frag_i], markerfmt=' ')
+            _frag_i_r = sorted([max(_msms_low_df['i'].tolist()) * 1.1, _frag_i * 1.1, _frag_i_x])[1]
+            markerline, stemlines, baseline = msms_low_pic.stem([_frag_mz], [_frag_i_r], markerfmt=' ')
             plt.setp(stemlines, color='#00ccff', linewidth=3, alpha=0.5)
             markerline, stemlines, baseline = msms_pic.stem([_frag_mz], [_frag_i], markerfmt=' ')
             plt.setp(stemlines, color='#00ccff', linewidth=3, alpha=0.5)
@@ -418,8 +418,8 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
             _nl_i = _nl_se['i']
             _nl_class = _nl_se['LABEL']
             _nl_i_x = min(_nl_i * 5, 0.3 * max(_msms_low_df['i'].tolist()))
-            _nl_i = sorted([max(_msms_high_df['i'].tolist()) * 1.1, _nl_i * 1.1, _nl_i_x])[1]
-            markerline, stemlines, baseline = msms_high_pic.stem([_nl_mz], [_nl_i], markerfmt=' ')
+            _nl_i_r = sorted([max(_msms_high_df['i'].tolist()) * 1.1, _nl_i * 1.1, _nl_i_x])[1]
+            markerline, stemlines, baseline = msms_high_pic.stem([_nl_mz], [_nl_i_r], markerfmt=' ')
             plt.setp(stemlines, color='#00ccff', linewidth=3, alpha=0.5)
             markerline, stemlines, baseline = msms_pic.stem([_nl_mz], [_nl_i], markerfmt=' ')
             plt.setp(stemlines, color='#00ccff', linewidth=3, alpha=0.5)
@@ -427,11 +427,29 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
 
     # msms spectrum start
 
-    markerline, stemlines, baseline = msms_pic.stem(fingerprint_lst,
+    markerline, stemlines, baseline = msms_pic.stem(obs_fp,
                                                     [min(msp_info['rev_abs_i'].tolist()) * 1.1]
-                                                    * len(fingerprint_lst),
+                                                    * len(obs_fp),
                                                     ':', markerfmt=' ')
     plt.setp(stemlines, color='green', alpha=0.4, lw=1)
+    markerline, stemlines, baseline = msms_pic.stem(missed_fp,
+                                                    [min(msp_info['rev_abs_i'].tolist()) * 1.1]
+                                                    * len(missed_fp),
+                                                    ':', markerfmt=' ')
+    plt.setp(stemlines, color='grey', alpha=0.4, lw=1)
+
+    min_msp_i = min(msp_info['rev_abs_i'].tolist())
+    min_msp_i_fp = min_msp_i * 1.25
+    min_msp_i_fp_h = abs(min_msp_i * 0.15)
+    for obs_fp_mz in obs_fp:
+        obs_fp_box = patches.Rectangle((obs_fp_mz - 0.5, min_msp_i_fp), 1, min_msp_i_fp_h,
+                                       facecolor='green', edgecolor="none")
+        msms_pic.add_patch(obs_fp_box)
+    for missed_fp_mz in missed_fp:
+        missed_fp_box = patches.Rectangle((missed_fp_mz - 0.5, min_msp_i_fp), 1, min_msp_i_fp_h,
+                                          facecolor='grey', edgecolor="none")
+        msms_pic.add_patch(missed_fp_box)
+
     msms_pic.stem(msp_info['mz'].tolist(), msp_info['rev_abs_i'].tolist(), '#ff6600',
                   markerfmt=' ', basefmt='k-', zorder=2)
     msms_pic.stem(ms2_df['mz'].tolist(), ms2_df['i'].tolist(), 'black', markerfmt=' ', basefmt='k-', zorder=10)
@@ -439,7 +457,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     msms_pic.set_xlabel("m/z", fontsize=10, labelpad=-1)
     msms_pic.set_ylabel("Intensity", fontsize=10)
     msms_pic.set_xlim([min(ms2_df['mz'].tolist()) - 1, ms2_pr_mz + 20])
-    msms_pic.set_ylim([min(msp_info['rev_abs_i'].tolist()) * 1.15, max(ms2_df['i'].tolist()) * 1.6])
+    msms_pic.set_ylim([min_msp_i * 1.25, max(ms2_df['i'].tolist()) * 1.6])
 
     # set title
     xic_title_str = 'XIC of m/z %.4f | %s @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, abbr_id, lib_mz, ms1_pr_ppm)

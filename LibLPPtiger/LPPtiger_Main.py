@@ -7,6 +7,7 @@
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 #
+from __future__ import division
 
 try:  # python3
     import configparser
