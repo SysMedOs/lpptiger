@@ -117,39 +117,39 @@ class LogPageCreator(object):
         ms2_rt = ident_info_df.get_value(1, 'MS2_scan_time')
         dda = ident_info_df.get_value(1, 'DDA#')
         ms2_scan_id = ident_info_df.get_value(1, 'Scan#')
-        abbr_bulk = ident_info_df.get_value(1, 'Bulk_identification')
+        # abbr_bulk = ident_info_df.get_value(1, 'Bulk_identification')
         ident_abbr = ident_info_df.get_value(1, 'Proposed_structures')
         ident_abbr = ident_abbr.replace('<', '&lt;')
         ident_abbr = ident_abbr.replace('>', '&gt;')
-        score = ident_info_df.get_value(1, 'Score')
+        score = ident_info_df.get_value(1, 'Overall_score')
         formula_ion = ident_info_df.get_value(1, 'Formula_ion')
         charge = ident_info_df.get_value(1, 'Charge')
 
         with open(self.image_lst_page, 'a') as img_page:
             # convert info df to html table code
             if self.lipid_type in ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']:
-                plot_df_cols = ['Proposed_structures', 'Score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2',
-                                'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O']
+                plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2',
+                                'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', 'SN_ratio']
             elif self.lipid_type in ['TG', 'TAG', 'DG', 'DAG', 'MG', 'MAG']:
-                plot_df_cols = ['Proposed_structures', 'Score', 'i_sn1', 'i_sn2', 'i_sn3',
+                plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_sn3',
                                 'i_M-sn1', 'i_M-sn2', 'i_M-sn3',
-                                'i_M-(sn1+sn2)', 'i_M-(sn1+sn3)', 'i_M-(sn2+sn3)']
+                                'i_M-(sn1+sn2)', 'i_M-(sn1+sn3)', 'i_M-(sn2+sn3)', 'SN_ratio']
             else:
-                plot_df_cols = ['Proposed_structures', 'Score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2',
-                                'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O']
+                plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2',
+                                'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', 'SN_ratio']
             ident_col = ident_info_df.columns.tolist()
 
             for _col in plot_df_cols:
                 if _col not in ident_col:
                     ident_info_df.loc[:, _col] = ''
-            table_buf_code = ident_info_df.to_html(columns=plot_df_cols, float_format='%.1f')
+            table_buf_code = ident_info_df.to_html(columns=plot_df_cols, float_format='%.1f', border=0)
             table_buf_code = table_buf_code.replace('NaN', '')
             img_title_str = ('{mz}_RT{rt:.3}_DDArank{dda}_Scan{scan}_{ident}_{f}_{chg}_score{score}'
                              .format(mz='%.4f' % ms1_pr_mz, rt=ms2_rt, dda=dda, scan=ms2_scan_id,
                                      ident=ident_abbr, score=score, f=formula_ion, chg=charge))
             img_info_lst = ['<a name="', ident_idx, '"><h3>', '<a href="', img_path, '" target="blank">', img_title_str,
                             '</a></h3></a>', '<a href="', img_path, '" target="blank">',
-                            '<img src="', img_path, '" height="720" /></a>', table_buf_code, '\n<hr>\n']
+                            '<img src="', img_path, '" height="800" /></a>', table_buf_code, '\n<hr>\n']
             img_page.write(''.join(img_info_lst))
 
         with open(self.idx_lst_page, 'a') as idx_page:

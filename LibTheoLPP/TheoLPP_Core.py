@@ -71,6 +71,7 @@ def theolpp(usr_params):
     save_spectra = usr_params['msp_mode']
     save_msp = usr_params['msp_path']
     score_xlsx = usr_params['frag_pattern_path']
+    pl_fp_xlsx = usr_params['pl_hg_path']
 
     pl_df = pd.read_excel(pl_table, sheetname=usr_params['lipid_tab'])
     fa_df = pd.read_csv(fa_table, index_col=0)
@@ -102,7 +103,7 @@ def theolpp(usr_params):
     abbr_gen = AbbrGenerator()
 
     frag_gen = TheoFrag(pl_class, score_xlsx)
-    fingerprint_gen = FingerprintGen('ConfigurationFiles/PL_specific_ion_cfg.xlsx')
+    fingerprint_gen = FingerprintGen(pl_fp_xlsx)
 
     c_lst = []
 

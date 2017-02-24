@@ -78,8 +78,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         # slots for tab b
         QtCore.QObject.connect(self.ui.tab_b_loadlpppath_pb, QtCore.SIGNAL("clicked()"), self.b_load_sum_sdf)
         QtCore.QObject.connect(self.ui.tab_b_loadfapath_pb, QtCore.SIGNAL("clicked()"), self.b_load_sum_fa)
-        QtCore.QObject.connect(self.ui.tab_b_loadsdfpath_pb, QtCore.SIGNAL("clicked()"), self.b_load_sdf)
-        QtCore.QObject.connect(self.ui.tab_b_loadmsppath_pb, QtCore.SIGNAL("clicked()"), self.b_load_msp)
+        # QtCore.QObject.connect(self.ui.tab_b_loadsdfpath_pb, QtCore.SIGNAL("clicked()"), self.b_load_sdf)
+        # QtCore.QObject.connect(self.ui.tab_b_loadmsppath_pb, QtCore.SIGNAL("clicked()"), self.b_load_msp)
         QtCore.QObject.connect(self.ui.tab_b_ms2mzml_pb, QtCore.SIGNAL("clicked()"), self.b_load_mzml)
         QtCore.QObject.connect(self.ui.tab_b_saveimgfolder_pb, QtCore.SIGNAL("clicked()"), self.b_save_img2folder)
         QtCore.QObject.connect(self.ui.tab_b_sumxlsxpath_pb, QtCore.SIGNAL("clicked()"), self.b_save_output)
@@ -94,6 +94,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         QtCore.QObject.connect(self.ui.tab_c_hgcfg_pb, QtCore.SIGNAL("clicked()"), self.set_hg_specifc_pattern)
         QtCore.QObject.connect(self.ui.tab_c_scorecfg_pb, QtCore.SIGNAL("clicked()"), self.set_wfrag)
         QtCore.QObject.connect(self.ui.set_default_pb, QtCore.SIGNAL("clicked()"), self.set_default_cfg)
+        QtCore.QObject.connect(self.ui.pushButton, QtCore.SIGNAL("clicked()"), self.calc_snr_amp)
 
         # load configurations
         config = configparser.ConfigParser()
@@ -121,6 +122,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
                 self.ui.tab_c_hgcfg_le.setText(config.get(user_cfg, 'hg_specifc_lst'))
             if 'wfrag_lst' in options:
                 self.ui.tab_c_scorecfg_le.setText(config.get(user_cfg, 'wfrag_lst'))
+            if 'wfrag_lst' in options:
+                self.ui.tab_c_snratio_spb.setValue(int(config.get(user_cfg, 'sn_ratio')))
 
     def set_spec_t(self):
         self.ui.save_msp_le.show()
@@ -227,6 +230,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
             config.set('settings', 'frag_patterns', self.ui.tab_c_frag_pattern_le.text())
             config.set('settings', 'hg_specifc_lst', self.ui.tab_c_hgcfg_le.text())
             config.set('settings', 'wfrag_lst', self.ui.tab_c_scorecfg_le.text())
+            config.set('settings', 'sn_ratio', str(self.ui.tab_c_snratio_spb.value()))
             config.write(default_cfg)
 
     def load_lipid_list(self):
@@ -315,6 +319,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         prostane_mod_path = self.ui.tab_c_prostane_mod_lst_le.text()
         prostane_abbr_path = self.ui.tab_c_prostane_abbr_lst_le.text()
         frag_pattern_path = self.ui.tab_c_frag_pattern_le.text()
+        hgcfg_path = self.ui.tab_c_hgcfg_le.text()
 
         param_dct = {'lipid_class': lipid_class, 'ox_level': ox_level,
                      'oap_mode': oap_mode, 'ocp_mode': ocp_mode,
@@ -324,7 +329,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
                      'prostane_mode': prostane_mode, 'ox_prostane_mode': ox_prostane_mode,
                      'sdf_path': sdf_path, 'msp_mode': msp_mode, 'msp_path': msp_path,
                      'mod_lst_path': mod_lst_path, 'fa_lst_path': fa_lst_path, 'prostane_mod_path': prostane_mod_path,
-                     'prostane_abbr_path': prostane_abbr_path, 'frag_pattern_path': frag_pattern_path}
+                     'prostane_abbr_path': prostane_abbr_path, 'frag_pattern_path': frag_pattern_path,
+                     'pl_hg_path': hgcfg_path}
 
         print(param_dct)
         info_1, info_2 = theolpp(param_dct)
@@ -351,26 +357,26 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
             b_load_xlsx_str = b_load_lipidstable_dialog.selectedFiles()[0]
             b_load_xlsx_str = os.path.abspath(b_load_xlsx_str)
             self.ui.tab_b_loadfapath_le.setText(unicode(b_load_xlsx_str))
-
-    def b_load_sdf(self):
-        b_load_lipidstable_dialog = QtGui.QFileDialog(self)
-        b_load_lipidstable_dialog.setNameFilters([u'SDF files (*.sdf *.SDF)'])
-        b_load_lipidstable_dialog.selectNameFilter(u'SDF files (*.sdf *.SDF)')
-        if b_load_lipidstable_dialog.exec_():
-            self.ui.tab_b_loadsdfpath_le.clear()
-            b_load_sdf_str = b_load_lipidstable_dialog.selectedFiles()[0]
-            b_load_sdf_str = os.path.abspath(b_load_sdf_str)
-            self.ui.tab_b_loadsdfpath_le.setText(unicode(b_load_sdf_str))
-
-    def b_load_msp(self):
-        b_load_lipidstable_dialog = QtGui.QFileDialog(self)
-        b_load_lipidstable_dialog.setNameFilters([u'SDF files (*.msp *.MSP)'])
-        b_load_lipidstable_dialog.selectNameFilter(u'SDF files (*.msp *.MSP)')
-        if b_load_lipidstable_dialog.exec_():
-            self.ui.tab_b_loadmsppath_le.clear()
-            b_load_msp_str = b_load_lipidstable_dialog.selectedFiles()[0]
-            b_load_msp_str = os.path.abspath(b_load_msp_str)
-            self.ui.tab_b_loadmsppath_le.setText(unicode(b_load_msp_str))
+    #
+    # def b_load_sdf(self):
+    #     b_load_lipidstable_dialog = QtGui.QFileDialog(self)
+    #     b_load_lipidstable_dialog.setNameFilters([u'SDF files (*.sdf *.SDF)'])
+    #     b_load_lipidstable_dialog.selectNameFilter(u'SDF files (*.sdf *.SDF)')
+    #     if b_load_lipidstable_dialog.exec_():
+    #         self.ui.tab_b_loadsdfpath_le.clear()
+    #         b_load_sdf_str = b_load_lipidstable_dialog.selectedFiles()[0]
+    #         b_load_sdf_str = os.path.abspath(b_load_sdf_str)
+    #         self.ui.tab_b_loadsdfpath_le.setText(unicode(b_load_sdf_str))
+    #
+    # def b_load_msp(self):
+    #     b_load_lipidstable_dialog = QtGui.QFileDialog(self)
+    #     b_load_lipidstable_dialog.setNameFilters([u'SDF files (*.msp *.MSP)'])
+    #     b_load_lipidstable_dialog.selectNameFilter(u'SDF files (*.msp *.MSP)')
+    #     if b_load_lipidstable_dialog.exec_():
+    #         self.ui.tab_b_loadmsppath_le.clear()
+    #         b_load_msp_str = b_load_lipidstable_dialog.selectedFiles()[0]
+    #         b_load_msp_str = os.path.abspath(b_load_msp_str)
+    #         self.ui.tab_b_loadmsppath_le.setText(unicode(b_load_msp_str))
 
     def b_load_mzml(self):
         b_load_mzml_dialog = QtGui.QFileDialog(self)
@@ -397,8 +403,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.xlsx')
         self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP_FA_SUM.xlsx')
-        self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
-        self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
+        # self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
+        # self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
         self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
         # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_lpptiger\mzML\131015_PLPC_400ng_new_neg_LMQ15.mzML')
         self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output')
@@ -412,7 +418,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_b_ms2threshold_spb.setValue(20)
         self.ui.tab_b_score_spb.setValue(40.5)
         self.ui.tab_b_isotopescore_spb.setValue(85.0)
-        self.ui.tab_b_mzstart_dspb.setValue(660.0)
+        self.ui.tab_b_mzstart_dspb.setValue(690.0)
         self.ui.tab_b_mzend_dspb.setValue(700.0)
 
         if self.ui.vendor_waters_rb.isChecked():
@@ -445,8 +451,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         lpp_sum_info_path_str = str(self.ui.tab_b_loadlpppath_le.text())
         fa_sum_path_str = str(self.ui.tab_b_loadfapath_le.text())
-        sdf_path_str = str(self.ui.tab_b_loadsdfpath_le.text())
-        msp_path_str = str(self.ui.tab_b_loadmsppath_le.text())
+        # sdf_path_str = str(self.ui.tab_b_loadsdfpath_le.text())
+        # msp_path_str = str(self.ui.tab_b_loadmsppath_le.text())
         mzml_path_str = str(self.ui.tab_b_ms2mzml_le.text())
         img_output_folder_str = str(self.ui.tab_b_saveimgfolder_le.text())
         xlsx_output_path_str = str(self.ui.tab_b_sumxlsxpath_le.text())
@@ -471,6 +477,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         # from settings tab
         lipid_specific_cfg = self.ui.tab_c_hgcfg_le.text()
         score_cfg = self.ui.tab_c_scorecfg_le.text()
+        sn_ratio = self.ui.tab_c_snratio_spb.value()
 
         try:
             if os.path.isfile(lipid_specific_cfg):
@@ -503,10 +510,11 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         start_time_str = time.strftime("%Y-%m-%d_%H-%M", time.localtime())
 
+        # 'sdf_path_str': sdf_path_str,
+        # 'msp_path_str': msp_path_str,
+
         hunter_param_dct = {'lpp_sum_info_path_str': lpp_sum_info_path_str,
                             'fa_sum_path_str': fa_sum_path_str,
-                            'sdf_path_str': sdf_path_str,
-                            'msp_path_str': msp_path_str,
                             'mzml_path_str': mzml_path_str,
                             'img_output_folder_str': img_output_folder_str,
                             'xlsx_output_path_str': xlsx_output_path_str, 'rt_start': rt_start, 'rt_end': rt_end,
@@ -517,7 +525,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
                             'lipid_specific_cfg': lipid_specific_cfg, 'score_cfg': score_cfg, 'vendor': usr_vendor,
                             'ms2_infopeak_threshold': ms2_info_threshold,
                             'ms2_hginfopeak_threshold': hgms2_info_threshold,
-                            'rank_score': rank_score, 'fast_isotope': fast_isotope,
+                            'rank_score': rank_score, 'fast_isotope': fast_isotope, 'sn_ratio': sn_ratio,
                             'hunter_folder': self.theolpp_cwd,
                             'hunter_start_time': start_time_str, 'Experiment_mode': usr_exp_mode}
 
@@ -542,6 +550,22 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         else:
             self.ui.tab_b_statusrun_pte.insertPlainText('!! Failed read input files, please check vendor settings!!')
+
+    def calc_snr_amp(self):
+        import math
+
+        usr_max_sn_ratio = self.ui.tab_c_testsnratio_spb.value()
+        usr_test_sn_ratio = self.ui.tab_c_trysnratio_spb.value()
+
+        usr_amp_factor = 100 / (20 * math.log10(usr_max_sn_ratio))
+
+        origin_snr_score = 20 * math.log10(usr_test_sn_ratio)
+        amp_snr_score = usr_amp_factor * 20 * math.log10(usr_test_sn_ratio)
+        if amp_snr_score >= 100.0:
+            amp_snr_score = 100.0
+
+        self.ui.tab_c_originsnr_le.setText('%.1f' % origin_snr_score)
+        self.ui.tab_c_ampsnr_le.setText('%.1f' % amp_snr_score)
 
 if __name__ == '__main__':
     import sys

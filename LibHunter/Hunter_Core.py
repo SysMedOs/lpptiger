@@ -11,8 +11,11 @@
 
 from __future__ import division
 
-import time
+import json
+import math
 import os
+import time
+
 import pandas as pd
 
 from LibHunter.SpectraExtractor import extract_mzml
@@ -41,8 +44,8 @@ def huntlipids(param_dct):
     usr_vendor = param_dct['vendor']
 
     usr_xlsx = param_dct['lpp_sum_info_path_str']
-    usr_sdf = param_dct['sdf_path_str']
-    usr_msp = param_dct['msp_path_str']
+    # usr_sdf = param_dct['sdf_path_str']
+    # usr_msp = param_dct['msp_path_str']
     usr_mzml = param_dct['mzml_path_str']
     output_folder = param_dct['img_output_folder_str']
     output_sum_xlsx = param_dct['xlsx_output_path_str']
@@ -70,6 +73,16 @@ def huntlipids(param_dct):
     usr_ms2_hginfo_th = param_dct['ms2_hginfopeak_threshold']
     usr_rank_mode = param_dct['rank_score']
     usr_fast_isotope = param_dct['fast_isotope']
+
+    # use the SNR equation SNR = 20 * log10(signal/noise)
+    # snr_score = 20 * math.log10((signal_sum_i / noise_sum_i))
+    # set s/n == 25 --> SNR_SCORE = 100
+    # default 3.5767 = 100 / (20 * math.log10(25)) --> 3.5767
+    usr_max_sn_ratio = param_dct['sn_ratio']
+    if usr_max_sn_ratio == 25 or usr_max_sn_ratio == 0:
+        usr_amp_factor = 3.5767
+    else:
+        usr_amp_factor = 100 / (20 * math.log10(usr_max_sn_ratio))
 
     # hunter_folder = param_dct['hunter_folder']
 
@@ -236,11 +249,18 @@ def huntlipids(param_dct):
                                                           rank_mode=usr_rank_mode
                                                           )
 
-                    _cosine_score, _msp_df = score_calc.get_cosine_score(_msp_df, _ms2_df,
-                                                                         ms2_precision=usr_ms2_precision,
-                                                                         ms2_threshold=usr_ms2_threshold,
-                                                                         ms2_infopeak_threshold=usr_ms2_info_th
-                                                                         )
+                    _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df, _ms2_df,
+                                                                                      ms2_precision=usr_ms2_precision,
+                                                                                      ms2_threshold=usr_ms2_threshold,
+                                                                                      ms2_infopeak_threshold=
+                                                                                      usr_ms2_info_th
+                                                                                      )
+                    fingerprint_lst = json.loads(_row_se['FINGERPRINT'])
+                    _fp_score, _obs_fp_df = score_calc.get_fingerprint_score(fingerprint_lst, _ms2_df,
+                                                                             ms2_precision=usr_ms2_precision,
+                                                                             ms2_threshold=usr_ms2_threshold,
+                                                                             ms2_infopeak_threshold=usr_ms2_info_th
+                                                                             )
 
                     match_factor = match_info_dct['MATCH_INFO']
                     fa_ident_df = match_info_dct['FA_INFO']
@@ -268,6 +288,7 @@ def huntlipids(param_dct):
                                                                                ms2_hginfo_threshold=usr_ms2_hginfo_th,
                                                                                vendor=usr_vendor
                                                                                )
+
                             # format abbr. for file names
                             _save_abbr_bulk = _usr_abbr_bulk
                             _save_abbr_bulk = _save_abbr_bulk.replace(r'(', r'[')
@@ -287,7 +308,18 @@ def huntlipids(param_dct):
                             img_name = (output_folder + r'\LPPtiger_Results_Figures_%s' % hunter_start_time_str
                                         + img_name_core)
 
-                            usr_ident_info_dct['SCORE_INFO'].loc[:, 'Cosine_score'] = int(_cosine_score)
+                            snr_score, sn_ratio = score_calc.get_snr_score(usr_ident_info_dct, specific_check_dct,
+                                                                           _obs_msp_df, _obs_fp_df,
+                                                                           amplify_factor=usr_amp_factor)
+
+                            usr_ident_info_dct['SCORE_INFO'].loc[:, 'Cosine_score'] = _cosine_score
+                            usr_ident_info_dct['SCORE_INFO'].loc[:, 'Fingerprint'] = _fp_score
+                            usr_ident_info_dct['SCORE_INFO'].loc[:, 'Isotope_score'] = isotope_score
+                            usr_ident_info_dct['SCORE_INFO'].loc[:, 'SNR_score'] = snr_score
+                            hunter_score = usr_ident_info_dct['SCORE_INFO']['Hunter_score'].tolist()[0]
+                            overall_score = sum([hunter_score, _cosine_score, _fp_score, snr_score, isotope_score]) / 5
+                            overall_score = round(overall_score, 1)
+                            usr_ident_info_dct['SCORE_INFO'].loc[:, 'Overall_score'] = overall_score
 
                             isotope_checker, isotope_score = plot_spectra(_row_se, xic_dct, usr_ident_info_dct,
                                                                           usr_spec_info_dct, specific_check_dct,
@@ -354,7 +386,7 @@ def huntlipids(param_dct):
                                 _tmp_output_df['#Specific_peaks'] = target_frag_count + target_nl_count
                                 _tmp_output_df['#Contaminated_peaks'] = other_frag_count + other_nl_count
                                 _tmp_output_df['ppm'] = _exact_ppm
-                                _tmp_output_df['Isotope_score'] = '%.2f' % isotope_score
+                                _tmp_output_df['SN_ratio'] = '%.1f' % sn_ratio
 
                                 output_df = output_df.append(_tmp_output_df)
 
@@ -378,18 +410,19 @@ def huntlipids(param_dct):
                 output_round_dct[_t] = 2
         output_df = output_df.round(output_round_dct)
 
-        output_df.rename(columns={'Score': 'LipidHunter_Score',
-                                  '#Contaminated_peaks': '#Unspecific_peaks'}, inplace=True)
+        output_df.rename(columns={'#Contaminated_peaks': '#Unspecific_peaks'}, inplace=True)
 
         output_header_lst = ['Bulk_identification', 'Proposed_structures', 'Formula_neutral', 'Formula_ion',
-                             'Charge', 'Lib_mz', 'ppm', 'LipidHunter_Score', 'Cosine_score', 'MS1_obs_mz', 'MS1_obs_i',
-                             'Isotope_score', r'MS2_PR_mz', 'MS2_scan_time', 'DDA#', 'Scan#', 'i_sn1', 'i_sn2',
+                             'Charge', 'Lib_mz', 'ppm', 'SN_ratio', 'Overall_score',
+                             'Hunter_score', 'Cosine_score', 'Fingerprint', 'SNR_score', 'Isotope_score',
+                             'MS1_obs_mz', 'MS1_obs_i', r'MS2_PR_mz', 'MS2_scan_time',
+                             'DDA#', 'Scan#', 'i_sn1', 'i_sn2',
                              'i_[M-H]-sn1', 'i_[M-H]-sn2', 'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', '#Specific_peaks']
         output_header_lst += target_ident_lst
         output_header_lst += ['#Unspecific_peaks']
 
         output_df = output_df[output_header_lst]
-        output_df = output_df.sort_values(by=['MS1_obs_mz', 'MS2_scan_time', 'LipidHunter_Score'],
+        output_df = output_df.sort_values(by=['MS1_obs_mz', 'MS2_scan_time', 'Hunter_score'],
                                           ascending=[True, True, False])
         output_df = output_df.reset_index(drop=True)
         output_df.index += 1

@@ -40,7 +40,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     # _usr_ms2_scan_id = mz_se['scan_id']
     # _usr_rt = mz_se['rt']
     # _usr_abbr_bulk = mz_se['Abbreviation']
-    pl_type = mz_se['Class']
+    # pl_type = mz_se['Class']
 
     isotope_score = isotope_score_info_dct['isotope_score']
     isotope_checker_dct = isotope_score_info_dct['isotope_checker_dct']
@@ -236,7 +236,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
                          '[M+H2] Isotope score = %.1f' % m2_score,
                          verticalalignment='top', horizontalalignment='right',
                          color='red', fontsize=7)
-            
+
     # plot the isotope score
     ms_zoom_pic.text(m1_theo_mz + 0.2, ms_zoom_bp_i + 3 * ms_zoom_offset_i,
                      'Isotope score = %.1f' % isotope_score,
@@ -277,16 +277,15 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     _matched_lyso_df = ident_info_dct['MATCHED_LYSO_INFO']
 
     if _ident_table_df.shape[0] > 0:
-        _ident_table_df = _ident_table_df[['Proposed_structures', 'Score', 'Cosine_score']]
+        _ident_table_df = _ident_table_df[['Hunter_score', 'Cosine_score', 'Fingerprint',
+                                           'SNR_score', 'Isotope_score', 'Overall_score']]
         ident_col_labels = _ident_table_df.columns.values.tolist()
-        ident_row_labels = _ident_table_df.index.tolist()
         ident_table_vals = map(list, _ident_table_df.values)
         # ident_col_width_lst = [0.03 * len(str(x)) for x in ident_col_labels]
-        ident_col_width_lst = [0.5, 0.1, 0.2]
-        ident_table = ms_pic.table(cellText=ident_table_vals, rowLabels=ident_row_labels,
-                                   colWidths=ident_col_width_lst,
-                                   colLabels=ident_col_labels, loc='upper right')
-        ident_table.set_fontsize(6)
+        ident_col_width_lst = [0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+        ident_table = msms_pic.table(cellText=ident_table_vals, colWidths=ident_col_width_lst,
+                                     colLabels=ident_col_labels, loc='upper center', cellLoc='center')
+        ident_table.set_fontsize(8)
 
     if _fa_table_df.shape[0] > 0:
         for _i_fa, _fa_se in _fa_table_df.iterrows():
@@ -428,8 +427,11 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
 
     # msms spectrum start
 
-    msms_pic.stem(fingerprint_lst, [min(msp_info['rev_abs_i'].tolist()) * 1.1] * len(fingerprint_lst), 'green', '--',
-                  markerfmt=' ', basefmt='k-', zorder=1)
+    markerline, stemlines, baseline = msms_pic.stem(fingerprint_lst,
+                                                    [min(msp_info['rev_abs_i'].tolist()) * 1.1]
+                                                    * len(fingerprint_lst),
+                                                    ':', markerfmt=' ')
+    plt.setp(stemlines, color='green', alpha=0.4, lw=1)
     msms_pic.stem(msp_info['mz'].tolist(), msp_info['rev_abs_i'].tolist(), '#ff6600',
                   markerfmt=' ', basefmt='k-', zorder=2)
     msms_pic.stem(ms2_df['mz'].tolist(), ms2_df['i'].tolist(), 'black', markerfmt=' ', basefmt='k-', zorder=10)
@@ -437,7 +439,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     msms_pic.set_xlabel("m/z", fontsize=10, labelpad=-1)
     msms_pic.set_ylabel("Intensity", fontsize=10)
     msms_pic.set_xlim([min(ms2_df['mz'].tolist()) - 1, ms2_pr_mz + 20])
-    msms_pic.set_ylim([min(msp_info['rev_abs_i'].tolist()) * 1.15, max(ms2_df['i'].tolist()) * 1.5])
+    msms_pic.set_ylim([min(msp_info['rev_abs_i'].tolist()) * 1.15, max(ms2_df['i'].tolist()) * 1.6])
 
     # set title
     xic_title_str = 'XIC of m/z %.4f | %s @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, abbr_id, lib_mz, ms1_pr_ppm)

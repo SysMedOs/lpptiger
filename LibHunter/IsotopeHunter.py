@@ -327,6 +327,8 @@ class IsotopeHunter(object):
             m2_checker_dct = {}
             m2_score = 0
 
+        isotope_score = round(isotope_score, 1)
+
         isotope_score_info_dct = {'isotope_score': isotope_score, 'isotope_checker_dct': isotope_checker_dct,
                                   'm2_score': m2_score, 'm2_checker_dct': m2_checker_dct,
                                   'deconv_lst': deconv_lst}

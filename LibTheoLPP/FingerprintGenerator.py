@@ -7,8 +7,6 @@
 import json
 import re
 
-from itertools import combinations
-
 import pandas as pd
 
 
@@ -115,9 +113,10 @@ class FingerprintGen(object):
         try:
 
             pl_hg_df = self.pl_hg_cfg_df[self.pl_hg_cfg_df['CLASS'] == pl_class]
-
-            pl_frag_mz_lst = pl_hg_df[pl_hg_df['TYPE'] == 'FRAG']['EXACTMASS'].tolist()
-            pl_nl_mz_lst = pl_hg_df[pl_hg_df['TYPE'] == 'NL']['EXACTMASS'].tolist()
+            pl_frag_df = pl_hg_df[pl_hg_df['TYPE'] == 'FRAG']
+            pl_frag_mz_lst = pl_frag_df['EXACTMASS'].tolist()
+            pl_nl_df = pl_hg_df[pl_hg_df['TYPE'] == 'NL']
+            pl_nl_mz_lst = pl_nl_df['EXACTMASS'].tolist()
         except KeyError:
             pl_frag_mz_lst = []
             pl_nl_mz_lst = []
@@ -129,51 +128,58 @@ class FingerprintGen(object):
         sn2_formula = lpp_info_dct['SN2_FORMULA']
         sn1_formula_dct = self.parse_formula(sn1_formula)
         sn2_formula_dct = self.parse_formula(sn2_formula)
+        sn1_n_mz = self.formula_to_mz(sn1_formula_dct, charge='')
+        sn2_n_mz = self.formula_to_mz(sn2_formula_dct, charge='')
+        sn1_c_mz = self.formula_to_mz(sn1_formula_dct, charge='[M-H]-')
+        sn2_c_mz = self.formula_to_mz(sn2_formula_dct, charge='[M-H]-')
 
-        fa_frag_mz_lst = [self.formula_to_mz(sn1_formula_dct, charge='[M-H]-'),
-                          self.formula_to_mz(sn2_formula_dct, charge='[M-H]-')]
-        fa_nl_mz_lst = [self.formula_to_mz(sn1_formula_dct, charge='[M-H]-'),
-                        self.formula_to_mz(sn2_formula_dct, charge='[M-H]-')]
+        fa_frag_mz_lst = [sn1_c_mz, sn2_c_mz]
+        fa_nl_mz_lst = [sn1_n_mz, sn2_n_mz]
 
-        nl_elem_dct = {'OH': {'H': -2, 'O': -1}, 'COOH': {'C': -1, 'O': -2}}
+        nl_water_mz = 2 * 1.0078250321 + 15.9949146221
+        nl_co2_mz = 12.0 + 2 * 15.9949146221
 
-        for _nl in nl_elem_dct.keys():
-            if _nl in sn1_dct.keys():
-                if sn1_dct[_nl] > 1:
-                    mod_count_lst = range(1, sn1_dct[_nl] + 1)
-                else:
-                    mod_count_lst = [1]
-                for mod_c in mod_count_lst:
-                    for _elem in nl_elem_dct[_nl].keys():
-                        sn1_formula_dct[_elem] += mod_c * nl_elem_dct[_nl][_elem]
-                    fa_frag_mz_lst.append(self.formula_to_mz(sn1_formula_dct, charge='[M-H]-'))
-                    fa_nl_mz_lst.append(self.formula_to_mz(sn1_formula_dct, charge=''))
-            if _nl in sn2_dct.keys():
-                if sn2_dct[_nl] > 1:
-                    mod_count_lst = range(1, sn2_dct[_nl] + 1)
-                else:
-                    mod_count_lst = [1]
-                for mod_c in mod_count_lst:
-                    for _elem in nl_elem_dct[_nl].keys():
-                        sn2_formula_dct[_elem] += mod_c * nl_elem_dct[_nl][_elem]
-                    fa_frag_mz_lst.append(self.formula_to_mz(sn2_formula_dct, charge='[M-H]-'))
-                    fa_nl_mz_lst.append(self.formula_to_mz(sn2_formula_dct, charge=''))
+        if 'OH' in sn1_dct.keys():
+            if sn1_dct['OH'] > 1:
+                mod_count_lst = range(1, sn1_dct['OH'] + 1)
+            else:
+                mod_count_lst = [1]
+            for mod_c in mod_count_lst:
+                fa_frag_mz_lst.append(sn1_c_mz - mod_c * nl_water_mz)
+                fa_nl_mz_lst.append(sn1_n_mz - mod_c * nl_water_mz)
+
+        if 'OH' in sn2_dct.keys():
+            if sn2_dct['OH'] > 1:
+                mod_count_lst = range(1, sn2_dct['OH'] + 1)
+            else:
+                mod_count_lst = [1]
+            for mod_c in mod_count_lst:
+                fa_frag_mz_lst.append(sn2_c_mz - mod_c * nl_water_mz)
+                fa_nl_mz_lst.append(sn2_n_mz - mod_c * nl_water_mz)
+
+        if 'COOH' in sn1_dct.keys():
+            if sn1_dct['COOH'] == 1:
+                fa_frag_mz_lst.append(sn1_c_mz - nl_co2_mz)
+                fa_nl_mz_lst.append(sn1_n_mz - nl_co2_mz)
+        if 'COOH' in sn2_dct.keys():
+            if sn2_dct['COOH'] == 1:
+                fa_frag_mz_lst.append(sn2_c_mz - nl_co2_mz)
+                fa_nl_mz_lst.append(sn2_n_mz - nl_co2_mz)
 
         fp_mz_lst.extend(pl_frag_mz_lst)
         fp_mz_lst.extend(fa_frag_mz_lst)
 
-        nl_lst = pl_nl_mz_lst
-        nl_lst.extend(fa_nl_mz_lst)
-
-        num_nl = min(len(nl_lst), 3)
-        comb_range_lst = range(1, num_nl + 1)
-
         nl_comb_lst = []
-
-        for _c in comb_range_lst:
-            nl_comb_lst.extend(combinations(nl_lst, _c))
+        for _hg_nl in pl_nl_mz_lst:
+            for _fa_nl in fa_nl_mz_lst:
+                nl_comb_lst.append((_hg_nl, _fa_nl))
 
         fp_mz_lst.extend([pr_mz - sum(x) for x in nl_comb_lst])
+
+        print(pr_mz)
+        print(pl_nl_mz_lst)
+        print(fa_nl_mz_lst)
+        print(nl_comb_lst)
 
         water_loss = 0
         if 'OH' in sn1_dct.keys():
@@ -182,11 +188,11 @@ class FingerprintGen(object):
             water_loss += sn2_dct['OH']
 
         if water_loss == 1:
-            fp_mz_lst.append(pr_mz - 2 * 1.0078250321 - 15.9949146221)
+            fp_mz_lst.append(pr_mz - nl_water_mz)
         if water_loss > 1:
             water_loss_lst = range(1, water_loss + 1)
             for _w in water_loss_lst:
-                fp_mz_lst.append(pr_mz - _w * (2 * 1.0078250321 + 15.9949146221))
+                fp_mz_lst.append(pr_mz - _w * nl_water_mz)
         else:
             pass
 

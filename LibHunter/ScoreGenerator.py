@@ -9,7 +9,8 @@
 from __future__ import division
 
 import re
-import json
+# import json
+import math
 
 import numpy as np
 import pandas as pd
@@ -87,7 +88,7 @@ class ScoreGenerator:
         sn2_fa_c = 0
         sn2_fa_db = 0
         sn1_fa_abbr = ''
-        sn2_fa_abbr = ''
+        # sn2_fa_abbr = ''
         lyso_fa_linker_dct = {'sn1': '', 'sn2': ''}
 
         if pl_checker.match(abbr):
@@ -285,7 +286,7 @@ class ScoreGenerator:
         # format the output DataFrame
         if fa_ident_df.shape[0] > 0:
             fa_ident_df = fa_ident_df.query('i > %f' % ms2_threshold)
-            proposed_str_lst = {}
+            # proposed_str_lst = {}
 
             fa_ident_df['Flag'] = 1
             fa_ident_df = fa_ident_df[['Proposed_structures', 'FA', 'mz', 'i',
@@ -295,7 +296,7 @@ class ScoreGenerator:
             fa_ident_df = fa_ident_df.sort_values(by='i', ascending=False).head(10)
 
         if lyso_ident_df.shape[0] > 0:
-            lyso_found_dct = {}
+            # lyso_found_dct = {}
             lyso_ident_df = lyso_ident_df.query('i > %f' % ms2_threshold)
             if lipid_type == 'GL':
                 pass
@@ -309,7 +310,7 @@ class ScoreGenerator:
             lyso_ident_df = lyso_ident_df.sort_values(by='i', ascending=False).head(5)
 
         if lyso_w_ident_df.shape[0] > 0:
-            lyso_w_dct = {}
+            # lyso_w_dct = {}
             lyso_w_ident_df = lyso_w_ident_df.query('i > %f' % ms2_threshold).reset_index(drop=True)
 
             lyso_w_ident_df['Flag'] = 1
@@ -383,12 +384,12 @@ class ScoreGenerator:
         for _type in weight_type_lst:
             lipid_abbr_df[_type] = 0
         if fa_ident_df.shape[0] > 0 or lyso_ident_df.shape[0] > 0 or lyso_w_ident_df.shape[0] > 0:
-            combine_all_lst = pd.DataFrame()
+            # combine_all_lst = pd.DataFrame()
             try:
                 fa_ident_df['Type'] = 'FA'
                 fa_ident_lst = fa_ident_df.loc[fa_ident_df['Flag'] == 1]['FA'].tolist()
                 fa_i_lst = fa_ident_df.loc[fa_ident_df['Flag'] == 1]['i'].tolist()
-                combine_all_lst = combine_all_lst.append(fa_ident_df.loc[fa_ident_df['Flag'] == 1])
+                # combine_all_lst = combine_all_lst.append(fa_ident_df.loc[fa_ident_df['Flag'] == 1])
             except KeyError:
                 fa_ident_lst = []
                 fa_i_lst = []
@@ -397,7 +398,7 @@ class ScoreGenerator:
                 lyso_ident_df['Type'] = 'Lyso'
                 lyso_ident_lst = lyso_ident_df.loc[lyso_ident_df['Flag'] == 1]['FA'].tolist()
                 lyso_i_lst = lyso_ident_df.loc[lyso_ident_df['Flag'] == 1]['i'].tolist()
-                combine_all_lst = combine_all_lst.append(lyso_ident_df)
+                # combine_all_lst = combine_all_lst.append(lyso_ident_df)
             except KeyError:
                 lyso_ident_lst = []
                 lyso_i_lst = []
@@ -406,8 +407,8 @@ class ScoreGenerator:
                 lyso_w_ident_df['Type'] = 'LysoW'
                 lyso_w_ident_lst = lyso_w_ident_df.loc[lyso_w_ident_df['Flag'] == 1]['FA'].tolist()
                 lyso_w_i_lst = lyso_w_ident_df.loc[lyso_w_ident_df['Flag'] == 1]['i'].tolist()
-                combine_all_lst = combine_all_lst.append(lyso_w_ident_df[['Proposed_structures', 'FA', 'mz', 'i',
-                                                                          'ppm', 'ppm_abs', 'Flag', 'Type']])
+                # combine_all_lst = combine_all_lst.append(lyso_w_ident_df[['Proposed_structures', 'FA', 'mz', 'i',
+                #                                                           'ppm', 'ppm_abs', 'Flag', 'Type']])
             except KeyError:
                 lyso_w_ident_lst = []
                 lyso_w_i_lst = []
@@ -494,7 +495,7 @@ class ScoreGenerator:
                                                 weight_dct['[M-H]-sn2-H2O'] * r_lyso_w2_i * 0.01)
                     lyso_w_ident_df.drop(lyso_w_ident_df.index[_rank_lw_sn2], inplace=True)
 
-            lipid_abbr_df['Score'] = lipid_abbr_df[weight_type_lst].sum(axis=1, numeric_only=True)
+            lipid_abbr_df['Hunter_score'] = lipid_abbr_df[weight_type_lst].sum(axis=1, numeric_only=True)
             match_reporter = 1
         else:
             print('!!!!!! NO FA identified =====>--> Skip >>> >>>')
@@ -503,13 +504,15 @@ class ScoreGenerator:
         print(matched_fa_df)
         print('matched_lyso_df')
         print(matched_lyso_df)
+        lipid_abbr_df = lipid_abbr_df.round({'Hunter_score': 1})
 
         match_info_dct = {'MATCH_INFO': match_reporter, 'SCORE_INFO': lipid_abbr_df, 'FA_INFO': fa_ident_df,
                           'LYSO_INFO': lyso_ident_df, 'LYSO_W_INFO': lyso_w_ident_df,
                           'MATCHED_FA_INFO': matched_fa_df, 'MATCHED_LYSO_INFO': matched_lyso_df}
         return match_info_dct
 
-    def get_cosine_score(self, msp_df, ms2_df, ms2_precision=500e-6, ms2_threshold=100, ms2_infopeak_threshold=0.02):
+    @staticmethod
+    def get_cosine_score(msp_df, ms2_df, ms2_precision=500e-6, ms2_threshold=100, ms2_infopeak_threshold=0.02):
 
         lib_mz_lst = msp_df['mz'].tolist()
 
@@ -545,8 +548,40 @@ class ScoreGenerator:
         lib_flat = np.hstack(lib_ar.T)
 
         cosine_score = 100 * (1 - spatial.distance.cosine(obs_flat, lib_flat))
+        cosine_score = round(cosine_score, 1)
 
-        return cosine_score, msp_df
+        return cosine_score, msp_df, obs_score_df
+
+    @staticmethod
+    def get_fingerprint_score(fingerprint_lst, ms2_df, ms2_precision=500e-6,
+                              ms2_threshold=100, ms2_infopeak_threshold=0.02):
+
+        ms2_basepeak_i = ms2_df['i'].max()
+        ms2_info_i = ms2_basepeak_i * ms2_infopeak_threshold
+        ms2_threshold = max(ms2_threshold, ms2_info_i)
+
+        obs_score_df = pd.DataFrame()
+        for mz in fingerprint_lst:
+            mz_l = mz * (1 - ms2_precision)
+            mz_h = mz * (1 + ms2_precision)
+
+            tmp_df = ms2_df.query('%f <= mz <= %f and i >= %f ' % (mz_l, mz_h, ms2_threshold))
+
+            if tmp_df.shape[0] == 1:
+                obs_score_df = obs_score_df.append(tmp_df)
+            elif tmp_df.shape[0] > 1:
+                tmp_df = tmp_df.sort_values(by='i', ascending=False)
+                obs_score_df = obs_score_df.append(tmp_df.head(1))
+            else:
+                tmp_df = pd.DataFrame(data={'mz': [0.0], 'i': [0.0]})
+                obs_score_df = obs_score_df.append(tmp_df)
+
+        obs_lst = obs_score_df['mz'].tolist()
+
+        fingerprint_score = 100 * (1 - spatial.distance.cosine(np.array(obs_lst), np.array(fingerprint_lst)))
+        fingerprint_score = round(fingerprint_score, 1)
+
+        return fingerprint_score, obs_score_df
 
     def get_specific_peaks(self, mz_lib, ms2_df, ms2_precision=50e-6, ms2_threshold=10,
                            ms2_hginfo_threshold=0.02, vendor='waters'):
@@ -730,6 +765,103 @@ class ScoreGenerator:
             specific_ion_dct['OTHER_NL'] = _other_nl_df
 
         return specific_ion_dct
+
+    @staticmethod
+    def get_snr_score(ident_info_dct, specific_ion_dct, msp_obs_df, fp_obs_df, amplify_factor=3.5767):
+
+        signal_df = pd.DataFrame()
+        tmp_s_df = ident_info_dct['MATCHED_FA_INFO']
+        tmp_s_df = pd.DataFrame(tmp_s_df, columns=['mz', 'i'])
+        signal_df = signal_df.append(tmp_s_df)
+        try:
+            tmp_s_df = ident_info_dct['MATCHED_LYSO_INFO']
+            tmp_s_df = pd.DataFrame(tmp_s_df, columns=['mz', 'i'])
+            signal_df = signal_df.append(tmp_s_df)
+        except KeyError:
+            pass
+        try:
+            tmp_s_df = specific_ion_dct['TARGET_FRAG']
+            tmp_s_df = pd.DataFrame(tmp_s_df, columns=['mz', 'i'])
+            signal_df = signal_df.append(tmp_s_df)
+        except KeyError:
+            pass
+        try:
+            tmp_s_df = specific_ion_dct['TARGET_NL']
+            tmp_s_df = pd.DataFrame(tmp_s_df, columns=['mz', 'i'])
+            signal_df = signal_df.append(tmp_s_df)
+        except KeyError:
+            pass
+        try:
+            tmp_s_df = pd.DataFrame(msp_obs_df, columns=['mz', 'i'])
+            signal_df = signal_df.append(tmp_s_df)
+        except KeyError:
+            pass
+        try:
+            tmp_s_df = pd.DataFrame(fp_obs_df, columns=['mz', 'i'])
+            signal_df = signal_df.append(tmp_s_df)
+        except KeyError:
+            pass
+
+        noise_df = pd.DataFrame()
+        try:
+            tmp_n_df = ident_info_dct['FA_INFO']
+            tmp_n_df = pd.DataFrame(tmp_n_df, columns=['mz', 'i'])
+            noise_df = noise_df.append(tmp_n_df)
+        except KeyError:
+            pass
+        try:
+            tmp_n_df = ident_info_dct['LYSO_INFO']
+            tmp_n_df = pd.DataFrame(tmp_n_df, columns=['mz', 'i'])
+            noise_df = noise_df.append(tmp_n_df)
+        except KeyError:
+            pass
+        try:
+            tmp_n_df = ident_info_dct['LYSO_W_INFO']
+            tmp_n_df = pd.DataFrame(tmp_n_df, columns=['mz', 'i'])
+            noise_df = noise_df.append(tmp_n_df)
+        except KeyError:
+            pass
+        try:
+            tmp_n_df = specific_ion_dct['OTHER_FRAG']
+            tmp_n_df = pd.DataFrame(tmp_n_df, columns=['mz', 'i'])
+            noise_df = noise_df.append(tmp_n_df)
+        except KeyError:
+            pass
+        try:
+            tmp_n_df = specific_ion_dct['OTHER_NL']
+            tmp_n_df = pd.DataFrame(tmp_n_df, columns=['mz', 'i'])
+            noise_df = noise_df.append(tmp_n_df)
+        except KeyError:
+            pass
+
+        signal_df = signal_df.drop_duplicates()
+        signal_sum_i = sum(signal_df['i'].tolist())
+
+        if noise_df.shape > 0:
+            noise_df = noise_df.drop_duplicates()
+            noise_sum_i = sum(noise_df['i'].tolist())
+        else:
+            noise_sum_i = 1
+
+        # use the SNR equation SNR = 20 * log10(signal/noise)
+        # snr_score = 20 * math.log10((signal_sum_i / noise_sum_i))
+        # set s/n == 25 --> SNR_SCORE = 100
+        # default 3.5767 = 100 / (20 * math.log10(25)) --> 3.5767
+
+        sn_ratio = signal_sum_i / noise_sum_i
+
+        snr_score = amplify_factor * 20 * math.log10(sn_ratio)
+
+        if snr_score < 0:
+            snr_score = 0.0
+        elif snr_score > 100.0:
+            snr_score = 100.0
+        else:
+            snr_score = round(snr_score, 1)
+
+        print('SNR SCORE ==>', snr_score)
+
+        return snr_score, sn_ratio
 
 
 if __name__ == '__main__':
