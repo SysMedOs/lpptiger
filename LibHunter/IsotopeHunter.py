@@ -36,8 +36,6 @@ class IsotopeHunter(object):
         elem_key_lst = self.periodic_table_dct.keys()
         tmp_formula = formula
 
-        print(formula, type(formula))
-
         elem_lst = re.findall('[A-Z][a-z]*[0-9]*', formula)
         for _e in range(0, len(elem_lst)):
 

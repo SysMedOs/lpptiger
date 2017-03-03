@@ -37,7 +37,7 @@ class TheoDB_Oxidizer:
         mod_info_df.loc['OXIDATIONLEVEL', :] = mod_info_df.loc['OXIDATIONLEVEL', :].astype(int)
         # print('mod_info_df_t')
         # print(mod_info_df_t)
-        mod_info_df_t = mod_info_df_t[mod_info_df_t['OXIDATIONLEVEL'] < usr_oxlevel+1]
+        mod_info_df_t = mod_info_df_t[mod_info_df_t['OXIDATIONLEVEL'] < usr_oxlevel + 1]
         mod_info_df = mod_info_df_t.transpose()
         # print('mod_info_df')
         # print(mod_info_df)
@@ -46,6 +46,7 @@ class TheoDB_Oxidizer:
 
 def oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0):
     max_mod = ox_param_dct['MAX_MOD']
+    max_oh = ox_param_dct['MAX_MOD']
     max_keto = ox_param_dct['MAX_KETO']
     max_ooh = ox_param_dct['MAX_OOH']
     max_epoxy = ox_param_dct['MAX_EPOXY']
@@ -86,16 +87,18 @@ def oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0):
 
         oap_info_t_df['MAX_NUM'] = 0
         for _idx, _oap_row in oap_info_t_df.iterrows():
+
+            _tmp_mod_count = _oap_row['MAX_NUM']
             if _oap_row['OH'] == 1:
-                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_mod)
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', _tmp_mod_count + max_mod)
                 print('OH', oap_info_t_df)
             if _oap_row['KETO'] == 1:
-                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_keto)
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', _tmp_mod_count + max_keto)
             if _oap_row['OOH'] == 1:
-                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_ooh)
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', _tmp_mod_count + max_ooh)
             if _oap_row['EPOXY'] == 1:
-                oap_info_t_df.set_value(_idx, 'MAX_NUM', max_epoxy)
-        print(oap_info_t_df)
+                oap_info_t_df.set_value(_idx, 'MAX_NUM', _tmp_mod_count + max_epoxy)
+        print('oap_info_t_df')
         oap_info_t_df = oap_info_t_df.query('MAX_NUM > 0')
         print(oap_info_t_df)
 
@@ -152,14 +155,14 @@ def oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0):
                     _mod_df = _mod_df.append(_tmp_mod_df)
                     print(_mod_df)
 
-                # update the remaining number of oxidation sites
-                # _tmp_oap_info_t_df['MAX_NUM'] -= 1
-                # _tmp_oap_info_t_df = _tmp_oap_info_t_df.query('MAX_NUM > 0')
-                # print(_tmp_oap_info_t_df.shape)
+                    # update the remaining number of oxidation sites
+                    # _tmp_oap_info_t_df['MAX_NUM'] -= 1
+                    # _tmp_oap_info_t_df = _tmp_oap_info_t_df.query('MAX_NUM > 0')
+                    # print(_tmp_oap_info_t_df.shape)
 
     # get the exact position of each modification
     else:
-        pass
+        oap_info_t_df = pd.DataFrame()
 
     _mod_df = _mod_df.reset_index(drop=True)
     mod_df = fa_abbr_encode(fa_dct, oap_info_t_df, _mod_df, mode=0)
@@ -172,7 +175,6 @@ def oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0):
 
 # construct a decorator
 def bulk_oxidizer(theodb_oxidizer_cls):
-
     def _bulk_oxidizer(ox_func):
         def __bulk_oxidizer(usr_fa_dct, usr_mod_table, isop_cfg, isopabbr_cfg,
                             oxlevel, ox_param_dct, prostane_mode, prostane_ox_mode):
@@ -193,6 +195,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             smi2formula = SMILESparser()
 
             max_mod = ox_param_dct['MAX_MOD']
+            max_oh = ox_param_dct['MAX_MOD']
             max_keto = ox_param_dct['MAX_KETO']
             max_ooh = ox_param_dct['MAX_OOH']
             max_epoxy = ox_param_dct['MAX_EPOXY']
@@ -239,7 +242,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
             mod_info_df.loc['OOH', :] = mod_info_df.loc['OOH', :].astype(int)
             mod_info_df.loc['EPOXY', :] = mod_info_df.loc['EPOXY', :].astype(int)
             # mod_info_df['FRAG_SMILES'] = ''
-            
+
             if db_count > 0:
 
                 # mod_df = oap_oxidizer(fa_dct, mod_info_df, ox_param_dct, mod_mode=0)
@@ -319,7 +322,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 # modification type and number control
                 # mod_sum_df = mod_sum_df[(mod_sum_df.KETO < max_keto) & (mod_sum_df.DB >= _min_DB)]
                 mod_sum_df['MOD_NUM'] = mod_sum_df['OAP'] + mod_sum_df['OCP']
-    
+
                 # filter the OCP and OAP. OAP should be full length
                 mod_ocp_sum_df = mod_sum_df.query('OCP == 1')
                 mod_ocp_sum_df = mod_ocp_sum_df.query('0 < MOD_NUM <= %d' % max_mod)
@@ -329,20 +332,31 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
                 # the end of smiles is different for OCP
                 mod_ocp_sum_idx_lst = mod_ocp_sum_df.index.tolist()
-                mod_ocp_sum_df.loc[mod_ocp_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
-                                                                          mod_ocp_sum_df['SMILES'] + ocp_end_part)
-                mod_ocp_sum_df.is_copy = False
+                # mod_ocp_sum_df.loc[mod_ocp_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
+                #                                                           mod_ocp_sum_df['SMILES'] + ocp_end_part)
+                # mod_ocp_sum_df.is_copy = False
+                for _i_ocp, _r_ocp in mod_ocp_sum_df.iterrows():
+                    mod_ocp_sum_df = mod_ocp_sum_df.set_value(_i_ocp, 'FULL_SMILES',
+                                                              fa_dct['DB_pre_part'] + _r_ocp['SMILES']
+                                                              + ocp_end_part)
+
                 mod_oap_sum_idx_lst = mod_oap_sum_df.index.tolist()
-                mod_oap_sum_df.loc[mod_oap_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
-                                                                          mod_oap_sum_df['SMILES'] +
-                                                                          fa_dct['DB_post_part'])
-                mod_oap_sum_df.is_copy = False
-    
+                # mod_oap_sum_df.loc[mod_oap_sum_idx_lst, 'FULL_SMILES'] = (fa_dct['DB_pre_part'] +
+                #                                                           mod_oap_sum_df['SMILES'] +
+                #                                                           fa_dct['DB_post_part'])
+                # mod_oap_sum_df.is_copy = False
+                for _i_oap, _r_oap in mod_oap_sum_df.iterrows():
+                    mod_oap_sum_df = mod_oap_sum_df.set_value(_i_oap, 'FULL_SMILES',
+                                                              fa_dct['DB_pre_part'] + _r_oap['SMILES']
+                                                              + fa_dct['DB_post_part'])
+
                 mod_sum_df = mod_ocp_sum_df.append(mod_oap_sum_df)
+
                 # select the LPP according to user settings of max modification types
                 mod_max_ctrl_code = 'KETO <= %i and OOH<= %i' % (max_keto, max_ooh)
                 mod_sum_df = mod_sum_df.query(mod_max_ctrl_code)
-                mod_sum_df = mod_sum_df.query('EPOXY <= %i' % max_epoxy)
+
+                # mod_sum_df = mod_sum_df.query('EPOXY <= %i' % max_epoxy)
                 _full_smiles_lst = mod_sum_df['FULL_SMILES'].tolist()
                 _c_num_lst = []
                 for _smiles in _full_smiles_lst:
@@ -352,7 +366,7 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
                 # OAP should stay the same carbon number
                 _n_ocp_mod_sum_df = mod_sum_df.query('OCP == 1')
-                _n_oap_mod_sum_df = mod_sum_df.query('OAP == 1 and C_NUM == %d' % fa_c_count)
+                _n_oap_mod_sum_df = mod_sum_df.query('OAP >= 1 and C_NUM == %d' % fa_c_count)
                 mod_sum_df = _n_ocp_mod_sum_df.append(_n_oap_mod_sum_df)
 
                 # mod_sum_df.to_csv('oxDB.csv')
@@ -409,6 +423,9 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                 mod_sum_df = mod_sum_df.append(_isop_df.transpose())
                 # print('mod_sum_df', mod_sum_df.shape)
 
+            print('mod_sum_df')
+            print(mod_sum_df)
+
             if fa_dct['DB_LINK_type'] == 'O-':
                 _unmod_fa_abbr = 'O-%i:%i' % (fa_dct['DB_C_count'], db_count)
             elif fa_dct['DB_LINK_type'] == 'P-':
@@ -446,17 +463,16 @@ def bulk_oxidizer(theodb_oxidizer_cls):
 
             mod_sum_df = mod_sum_df.append(unmod_df)
             mod_sum_df = mod_sum_df.append(_lyso_df)
-            print(mod_sum_df)
 
             return mod_sum_df
 
         return __bulk_oxidizer
+
     return _bulk_oxidizer
 
 
 @bulk_oxidizer(TheoDB_Oxidizer)
 def oxidizer(fa_link_dct):
-
     """
 
     :param dict fa_link_dct: output from def fa_link_filter
@@ -534,7 +550,6 @@ def oxidizer(fa_link_dct):
 
 
 def fa_link_filter(usr_fa_smiles):
-
     """
     Find the P- / O- connections of sn1 / sn2 residues
     :param str usr_fa_smiles: the smiles code of sn1 / sn2 fatty acid
@@ -604,10 +619,10 @@ def fa_link_filter(usr_fa_smiles):
     post_ester_link_cooh_checker = re.match(post_ester_link_cooh_rgx, usr_fa_smiles)
     post_o_link_cooh_checker = re.match(post_o_link_cooh_rgx, usr_fa_smiles)
     post_p_link_cooh_checker = re.match(post_p_link_cooh_rgx, usr_fa_smiles)
-    
+
     post_rgx = ''
     post_str = ''
-    
+
     if ester_link_checker:
         if post_ester_link_checker:
             post_str = post_ester_link_str

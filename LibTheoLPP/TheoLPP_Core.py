@@ -285,8 +285,6 @@ def theolpp(usr_params):
                 _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
                 _lpp_dct['EXACT_MASS'] = _lpp_exactmass
                 fp_mz_lst = fingerprint_gen.get_fingerprint(_lpp_dct)
-                print('FINGERPRINT')
-                print(fp_mz_lst)
                 _lpp_dct['FINGERPRINT'] = fp_mz_lst
                 _lpp_mol.SetProp('FINGERPRINT', json.dumps(fp_mz_lst))
 

@@ -123,7 +123,11 @@ class PrecursorHunter(object):
                                     # pr_info_df = pr_info_df.sort_values(by='abs_ppm', ascending=True)
 
                                     ms1_obs_pr_df = ms1_obs_pr_df.append(pr_info_df)
+        print('ms1_obs_pr_df.shape', ms1_obs_pr_df.shape)
+        if ms1_obs_pr_df.shape[0] > 0:
+            ms1_obs_pr_df = ms1_obs_pr_df.sort_values(by=['Lib_mz', 'abs_ppm'], ascending=[True, True])
+            ms1_obs_pr_df = ms1_obs_pr_df.reset_index(drop=True)
+            return ms1_obs_pr_df
 
-        ms1_obs_pr_df = ms1_obs_pr_df.sort_values(by=['Lib_mz', 'abs_ppm'], ascending=[True, True])
-        ms1_obs_pr_df = ms1_obs_pr_df.reset_index(drop=True)
-        return ms1_obs_pr_df
+        else:
+            return '!! NO suitable precursor --> Check settings!!'

@@ -402,25 +402,33 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
     def b_run_hunter(self):
 
-        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.xlsx')
-        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP_FA_SUM.xlsx')
+        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\PC_CM_Lv1_max3O.xlsx')
+        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\PC_CM_Lv1_max3O_FA_SUM.xlsx')
+        # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std.xlsx')
+        # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std_FA_SUM.xlsx')
         # self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
         # self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
         self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
         # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_lpptiger\mzML\131015_PLPC_400ng_new_neg_LMQ15.mzML')
-        self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C9.xlsx')
-        self.ui.tab_b_rtstart_dspb.setValue(9.25)
-        self.ui.tab_b_rtend_dspb.setValue(10.75)
+        # self.ui.tab_b_ms2mzml_le.setText(r'D:\Synapt_rawspectra\oxPLstd\180816_oxPC_10ng.mzML')
+        # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\')
+        self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
+        # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C18.xlsx')
+        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_818.xlsx')
+        self.ui.tab_b_rtstart_dspb.setValue(3)
+        self.ui.tab_b_rtend_dspb.setValue(31)
         self.ui.tab_b_msppm_spb.setValue(20)
-        self.ui.tab_b_ms2ppm_spb.setValue(100)
+        self.ui.tab_b_ms2ppm_spb.setValue(50)
+        self.ui.tab_b_hgppm_spb.setValue(200)
         self.ui.tab_b_dda_spb.setValue(12)
-        self.ui.tab_b_msthreshold_spb.setValue(2500)
-        self.ui.tab_b_ms2threshold_spb.setValue(20)
-        self.ui.tab_b_score_spb.setValue(40.5)
+        self.ui.tab_b_msthreshold_spb.setValue(1000)
+        self.ui.tab_b_ms2threshold_spb.setValue(50)
+        self.ui.tab_b_score_spb.setValue(20.5)
         self.ui.tab_b_isotopescore_spb.setValue(85.0)
-        self.ui.tab_b_mzstart_dspb.setValue(690.0)
-        self.ui.tab_b_mzend_dspb.setValue(700.0)
+        self.ui.tab_b_mzstart_dspb.setValue(721.0)
+        self.ui.tab_b_mzend_dspb.setValue(723.0)
+        self.ui.tab_b_ms2infoth_dspb.setValue(1)
+        self.ui.tab_b_ms2hginfoth_dspb.setValue(1)
 
         if self.ui.vendor_waters_rb.isChecked():
             usr_vendor = 'waters'
@@ -545,8 +553,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         tot_run_time = huntlipids(hunter_param_dct)
 
-        if isinstance(tot_run_time, float):
-            self.ui.tab_b_statusrun_pte.insertPlainText('%.2f Sec\n' % tot_run_time)
+        if isinstance(tot_run_time, str):
+            self.ui.tab_b_statusrun_pte.insertPlainText(tot_run_time)
             self.ui.tab_b_statusrun_pte.insertPlainText('>>> >>> >>> FINISHED <<< <<< <<<')
 
         else:

@@ -107,7 +107,7 @@ class FingerprintGen(object):
             fp_mz_lst = [lpp_info_dct['EXACT_MASS'] - 1.0078250321]
             pr_mz = lpp_info_dct['EXACT_MASS'] - 3 * 1.0078250321 - 12.0
         else:
-            pr_mz = lpp_info_dct[lpp_info_dct['EXACT_MASS'] - 1.0078250321]
+            pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
             fp_mz_lst = [pr_mz]
 
         try:
@@ -142,8 +142,10 @@ class FingerprintGen(object):
         if 'OH' in sn1_dct.keys():
             if sn1_dct['OH'] > 1:
                 mod_count_lst = range(1, sn1_dct['OH'] + 1)
-            else:
+            elif sn1_dct['OH'] == 1:
                 mod_count_lst = [1]
+            else:
+                mod_count_lst = [0]
             for mod_c in mod_count_lst:
                 fa_frag_mz_lst.append(sn1_c_mz - mod_c * nl_water_mz)
                 fa_nl_mz_lst.append(sn1_n_mz - mod_c * nl_water_mz)
@@ -151,8 +153,10 @@ class FingerprintGen(object):
         if 'OH' in sn2_dct.keys():
             if sn2_dct['OH'] > 1:
                 mod_count_lst = range(1, sn2_dct['OH'] + 1)
-            else:
+            elif sn2_dct['OH'] == 1:
                 mod_count_lst = [1]
+            else:
+                mod_count_lst = [0]
             for mod_c in mod_count_lst:
                 fa_frag_mz_lst.append(sn2_c_mz - mod_c * nl_water_mz)
                 fa_nl_mz_lst.append(sn2_n_mz - mod_c * nl_water_mz)
@@ -183,9 +187,11 @@ class FingerprintGen(object):
 
         water_loss = 0
         if 'OH' in sn1_dct.keys():
-            water_loss += sn1_dct['OH']
+            if sn1_dct['OH'] > 0:
+                water_loss += sn1_dct['OH']
         if 'OH' in sn2_dct.keys():
-            water_loss += sn2_dct['OH']
+            if sn2_dct['OH'] > 0:
+                water_loss += sn2_dct['OH']
 
         if water_loss == 1:
             fp_mz_lst.append(pr_mz - nl_water_mz)
