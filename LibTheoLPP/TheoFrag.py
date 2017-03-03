@@ -73,6 +73,7 @@ class TheoFrag(object):
         _sn1_smi = lpp_info_dct['SN1_SMILES']
         _sn2_smi = lpp_info_dct['SN2_SMILES']
         _sn1_mod_dct = json.loads(lpp_info_dct['SN1_JSON'])
+        print(lpp_info_dct['SN2_JSON'])
         _sn2_mod_dct = json.loads(lpp_info_dct['SN2_JSON'])
 
         df_header_lst = self.pl_frag_df.columns.tolist()

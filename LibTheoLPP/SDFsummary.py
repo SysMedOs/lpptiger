@@ -34,8 +34,14 @@ def sdf2xlsx(usr_sdf, save_path):
         _formula = _mol.GetProp('FORMULA')
         _exactmass = _mol.GetProp('EXACT_MASS')
         _pr_info_dct = json.loads(_mol.GetProp('PRECURSOR_JSON'))
-        _msp_json = _mol.GetProp('MSP_JSON')
-        _fingerprint = _mol.GetProp('FINGERPRINT')
+        try:
+            _msp_json = _mol.GetProp('MSP_JSON')
+        except KeyError:
+            _msp_json = ''
+        try:
+            _fingerprint = _mol.GetProp('FINGERPRINT')
+        except KeyError:
+            _fingerprint = ''
         _full_smiles = _mol.GetProp('LPP_SMILES')
         _sn1_smiles = _mol.GetProp('SN1_SMILES')
         _sn2_smiles = _mol.GetProp('SN2_SMILES')

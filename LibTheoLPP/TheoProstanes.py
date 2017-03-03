@@ -34,8 +34,8 @@ class IsoProstanOx(object):
         print(self.isop_abbr_df)
 
         # for _abbr_idx, _abbr_r in self.isop_abbr_df.iterrows():
-        num_c_lst = self.isop_abbr_df['NUM_C'].tolist()
-        num_db_lst = self.isop_abbr_df['NUM_DB'].tolist()
+        num_c_lst = [int(nc) for nc in self.isop_abbr_df['NUM_C'].tolist()]
+        num_db_lst = [int(ndb) for ndb in self.isop_abbr_df['NUM_DB'].tolist()]
         class_abbr_lst = self.isop_abbr_df['CLASS_ABBR'].tolist()
         fa_pr_lst = zip(num_c_lst, num_db_lst)
 
@@ -44,7 +44,7 @@ class IsoProstanOx(object):
             _fa_idx = fa_pr_lst.index(_fa)
             self.isop_abbr_dct[_fa] = class_abbr_lst[_fa_idx]
 
-        print('isop_abbr_dct', self.isop_abbr_dct)
+        # print('isop_abbr_dct', self.isop_abbr_dct)
 
     @staticmethod
     def get_isop_series(isop_info_dct, usr_pre_smi, usr_pre_db_count, reverse=False):
@@ -52,10 +52,10 @@ class IsoProstanOx(object):
         pre_c_count = usr_pre_smi.count('C')
 
         if reverse is False:
-            isop_series = pre_c_count + 3 * usr_pre_db_count + isop_info_dct['MAIN_SERIES']
+            isop_series = pre_c_count + 1 + 3 * usr_pre_db_count + isop_info_dct['MAIN_SERIES']
             isop_series = str(isop_series)
         elif reverse is True:
-            isop_series = pre_c_count + 3 * usr_pre_db_count + isop_info_dct['REVERSE_SERIES']
+            isop_series = pre_c_count + 1 + 3 * usr_pre_db_count + isop_info_dct['REVERSE_SERIES']
             isop_series = str(isop_series)
         else:
             isop_series = ''
@@ -153,7 +153,7 @@ class IsoProstanOx(object):
         isop_json = ('{left}"C": {C_COUNT}, "DB": {DB_COUNT}, "CHO": {CHO_COUNT}, "EPOXY": 0, '
                      '"OAP": {OAP_COUNT}, "OCP": {OCP_COUNT}, "COOH": {COOH_COUNT}, '
                      '"KETO": {KETO_COUNT}, "OH": {OH_COUNT}, "OOH": {OOH_COUNT}, '
-                     '"LINK_TYPE": ""{right}, "Prostane":"{PROSTANE_TYPE}"'
+                     '"LINK_TYPE": "", "Prostane": "{PROSTANE_TYPE}"{right}'
                      .format(PROSTANE_TYPE=abbr_short,
                              C_COUNT=c_count,
                              DB_COUNT=usr_db,
@@ -213,41 +213,46 @@ class IsoProstanOx(object):
             _pre_post_db_count_lst = zip(_pre_ring_db_count_lst, _post_ring_db_count_lst)
             print(_pre_post_db_count_lst)
             for _db_seg in _pre_post_db_count_lst:
+                print('_db_seg', _db_seg)
 
-                _rebuild_smi = '/C=C\\C' * _db_seg[0] + _ring_info_dct['ORIGIN_SMILES'] + '/C=C\\C' * _db_seg[1]
-
+                _rebuild_smi = 'C/C=C\\' * _db_seg[0] + _ring_info_dct['ORIGIN_SMILES'] + 'C/C=C\\' * _db_seg[1]
+                print('rebuild smi', _rebuild_smi)
                 if _rebuild_smi == usr_db_main_smi:
 
-                    # print('rebuild check pass!')
+                    print('rebuild check pass!')
                     if _ring_info_dct['OCP'] == 0 and _ring_info_dct['OAP'] == 1:
-                        _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
-                                         _ring_info_dct['MAIN_SMILES'] + '/C=C\\C' * _db_seg[1] + usr_db_post_smi)
+                        _ring_lpp_smi = (usr_db_pre_smi + 'C/C=C\\' * _db_seg[0] +
+                                         _ring_info_dct['MAIN_SMILES'] + 'C/C=C\\' * _db_seg[1] + usr_db_post_smi)
 
-                        _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct, _remain_db_num,
-                                                                          _db_seg[0], usr_db_pre_smi, reverse=False)
+                        _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
+                                                                          _remain_db_num, _db_seg[0],
+                                                                          usr_db_pre_smi, reverse=False)
+                        print('_ring_lpp_smi_OAP', _ring_lpp_smi)
                         usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
                     elif _ring_info_dct['OCP'] == 1 and _ring_info_dct['OAP'] == 0:
-                        _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
+                        _ring_lpp_smi = (usr_db_pre_smi + 'C/C=C\\' * _db_seg[0] +
                                          _ring_info_dct['MAIN_SMILES'] + usr_db_post_smi)
-                        _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct, _remain_db_num,
-                                                                          _db_seg[0], usr_db_pre_smi, reverse=False)
+                        _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
+                                                                          _remain_db_num, _db_seg[0],
+                                                                          usr_db_pre_smi, reverse=False)
                         usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
+                        print('_ring_lpp_smi_OAP', _ring_lpp_smi)
 
                     _rev_smi = _ring_info_dct['REVERSE_SMILES']
                     if isinstance(_rev_smi, str):
                         # blank 'REVERSE_SMILES' gives np.nan which is float
                         if _rev_smi not in no_rev_lst:
                             if _ring_info_dct['OCP'] == 0 and _ring_info_dct['OAP'] == 1:
-                                _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
+                                _ring_lpp_smi = (usr_db_pre_smi + 'C/C=C\\' * _db_seg[0] +
                                                  _ring_info_dct['REVERSE_SMILES']
-                                                 + '/C=C\\C' * _db_seg[1] + usr_db_post_smi)
+                                                 + 'C/C=C\\' * _db_seg[1] + usr_db_post_smi)
 
                                 _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
                                                                                   _remain_db_num, _db_seg[0],
                                                                                   usr_db_pre_smi, reverse=True)
                                 usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
                             elif _ring_info_dct['OCP'] == 1 and _ring_info_dct['OAP'] == 0:
-                                _ring_lpp_smi = (usr_db_pre_smi + '/C=C\\C' * _db_seg[0] +
+                                _ring_lpp_smi = (usr_db_pre_smi + 'C/C=C\\' * _db_seg[0] +
                                                  _ring_info_dct['REVERSE_SMILES'] + usr_db_post_smi)
                                 _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
                                                                                   _remain_db_num, _db_seg[0],
@@ -260,7 +265,7 @@ class IsoProstanOx(object):
 
         # ox_isop_lpp_lst = [usr_db_pre_smi + _lpp_smi + usr_db_post_smi for _lpp_smi in usr_lpp_lst]
 
-        print(usr_lpp_dct.keys())
+        # print(usr_lpp_dct.keys())
 
         return usr_lpp_dct
 

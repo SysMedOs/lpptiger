@@ -155,19 +155,12 @@ def theolpp(usr_params):
                 _sn1_abbr_str = _sn1_row['FA_ABBR']
                 _sn1_typ_str = _sn1_row['FA_TYPE']
                 _sn1_formula_str = _sn1_row['FA_FORMULA']
-                # _sn1_json = _sn1_row['FA_JSON']
-                # print(_sn1_row)
-                # _sn1_abbr_str, _sn1_typ_str = abbr_gen.decode(_sn1_row['FA_CHECKER'])
-                # print(_sn1_row)
+
                 for (_sn2_idx, _sn2_row) in sn2_mod_sum_df.iterrows():
                     _sn2_mod_smiles = _sn2_row['FULL_SMILES']
                     _sn2_abbr_str = _sn2_row['FA_ABBR']
                     _sn2_typ_str = _sn2_row['FA_TYPE']
                     _sn2_formula_str = _sn2_row['FA_FORMULA']
-                    # _sn2_abbr_str, _sn2_typ_str = abbr_gen.decode(_sn2_row['FA_CHECKER'])
-                    # print(_sn2_row)
-
-                    # print('sn1 LPP =>', _sn1_abbr_str, ' | sn2 LPP =>', _sn2_abbr_str)
 
                     _oap_ocp_lst = [_sn1_typ_str, _sn2_typ_str]
                     _lpp_typ = ''.join(_oap_ocp_lst)
@@ -178,28 +171,6 @@ def theolpp(usr_params):
 
                         _lpp_sub_class_json = '{"SN1": "%s", "SN2": "%s"}' % (_sn1_typ_str, _sn2_typ_str)
 
-                        # _lpp_sn1_frag_lst = json.loads(_sn1_row['FRAG_SMILES'])
-                        # if _lpp_sn1_frag_lst != ['']:
-                        #     _lpp_sn1_frag_lst.append(_sn1_row['FULL_SMILES'])
-                        # else:
-                        #     _lpp_sn1_frag_lst = [_sn1_row['FULL_SMILES']]
-                        #
-                        # _lpp_sn2_frag_lst = json.loads(_sn2_row['FRAG_SMILES'])
-                        # if _lpp_sn2_frag_lst != ['']:
-                        #     _lpp_sn2_frag_lst.append(_sn2_row['FULL_SMILES'])
-                        # else:
-                        #     _lpp_sn2_frag_lst = [_sn2_row['FULL_SMILES']]
-                        #
-                        # _lpp_frag_lst = []
-                        #
-                        # for _sn1_frag in _lpp_sn1_frag_lst:
-                        #     for _sn2_frag in _lpp_sn2_frag_lst:
-                        #         _lpp_frag_lst.append(MergeBackLPP.pl_lpp(_pl_hg_abbr,
-                        #                                                  sn1=_sn1_frag, sn2=_sn2_frag))
-                        # _lpp_frag_json = json.dumps(_lpp_frag_lst)
-
-                        # 'LPP_FRAG': _lpp_frag_json,
-                        # 'SN1_FRAGS': _sn1_row['FRAG_SMILES'], 'SN2_FRAGS': _sn2_row['FRAG_SMILES'],
                         _lpp_info_dct = {'LPP_ORIGIN': _pl_abbr, 'LPP_SMILES': _lpp_smiles, 'LPP_CLASS': _pl_hg_abbr,
                                          'SN1_SMILES': _sn1_mod_smiles, 'SN2_SMILES': _sn2_mod_smiles,
                                          'SN1_ABBR': _sn1_abbr_str, 'SN2_ABBR': _sn2_abbr_str,
@@ -208,6 +179,8 @@ def theolpp(usr_params):
                                          'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json}
                         if save_spectra == 1:
                             _lpp_info_dct['MSP_JSON'] = frag_gen.calc_frags(_lpp_info_dct)
+                            print('_lpp_info_dct[MSP_JSON]')
+                            print(_lpp_info_dct['MSP_JSON'])
 
                         # print(_lpp_info_dct)
                         # 'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
@@ -299,7 +272,7 @@ def theolpp(usr_params):
         for _k_lpp in sdf_dct.keys():
             _lpp_dct = sdf_dct[_k_lpp]
             _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
-            # print(_lpp_smiles)
+            print(_lpp_smiles)
             _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
             AllChem.Compute2DCoords(_lpp_mol)
             _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
@@ -338,7 +311,8 @@ def theolpp(usr_params):
         msp_obj.close()
 
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
-    SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
+    if save_msp == 1:
+        SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
 
     t_spent = time.clock() - t_start
     info_updater_1 = '=>%i of LPP generated ==> ' % len(sdf_dct.keys())

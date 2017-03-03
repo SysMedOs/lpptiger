@@ -412,19 +412,25 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                                      'OAP': int(_fa_row['OAP']),
                                                      'OCP': int(_fa_row['OCP'])})
 
-            if 3 <= db_count and prostane_mode == 1:
-                # isop_cfg = r'D:\theolpp\LibTheoLPP\IsoP_ModConfig.csv'
-                ox_isop = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
+                print('db_count', db_count, 'prostane_mode', prostane_mode)
 
-                _isop_lpp_dct = ox_isop.get_isop_lpp()
+                if db_count >= 3 and prostane_mode == 1:
+                    # isop_cfg = r'D:\theolpp\LibTheoLPP\IsoP_ModConfig.csv'
+                    ox_isop = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
 
-                _isop_df = pd.DataFrame(_isop_lpp_dct)
+                    _isop_lpp_dct = ox_isop.get_isop_lpp()
+                    # print('_isop_lpp_dct')
+                    # print(_isop_lpp_dct)
 
-                mod_sum_df = mod_sum_df.append(_isop_df.transpose())
-                # print('mod_sum_df', mod_sum_df.shape)
+                    _isop_df = pd.DataFrame(_isop_lpp_dct)
+                    # print('_isop_df')
+                    # print(_isop_df)
 
-            print('mod_sum_df')
-            print(mod_sum_df)
+                    mod_sum_df = mod_sum_df.append(_isop_df.transpose())
+                    # print('mod_sum_df', mod_sum_df.shape)
+
+            # print('mod_sum_df')
+            # print(mod_sum_df)
 
             if fa_dct['DB_LINK_type'] == 'O-':
                 _unmod_fa_abbr = 'O-%i:%i' % (fa_dct['DB_C_count'], db_count)
