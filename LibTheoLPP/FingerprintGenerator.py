@@ -180,10 +180,10 @@ class FingerprintGen(object):
 
         fp_mz_lst.extend([pr_mz - sum(x) for x in nl_comb_lst])
 
-        print(pr_mz)
-        print(pl_nl_mz_lst)
-        print(fa_nl_mz_lst)
-        print(nl_comb_lst)
+        # print(pr_mz)
+        # print(pl_nl_mz_lst)
+        # print(fa_nl_mz_lst)
+        # print(nl_comb_lst)
 
         water_loss = 0
         if 'OH' in sn1_dct.keys():

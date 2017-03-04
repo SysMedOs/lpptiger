@@ -202,8 +202,8 @@ class IsoProstanOx(object):
 
             _ring_info_dct = _ring_info_se.to_dict()
 
-            print(_ring_info_dct['ORIGIN_SMILES'])
-            print(usr_db_main_smi)
+            # print(_ring_info_dct['ORIGIN_SMILES'])
+            # print(usr_db_main_smi)
             # _pattern_rgx = re.compile(_ring_info_dct['ORIGIN_SMILES'])
 
             _db_required_num = _ring_info_dct['DB_NUM_REQUIRED']
@@ -211,15 +211,14 @@ class IsoProstanOx(object):
             _pre_ring_db_count_lst = range(0, _remain_db_num + 1)
             _post_ring_db_count_lst = sorted(_pre_ring_db_count_lst, reverse=True)
             _pre_post_db_count_lst = zip(_pre_ring_db_count_lst, _post_ring_db_count_lst)
-            print(_pre_post_db_count_lst)
+            # print(_pre_post_db_count_lst)
             for _db_seg in _pre_post_db_count_lst:
-                print('_db_seg', _db_seg)
+                # print('_db_seg', _db_seg)
 
                 _rebuild_smi = 'C/C=C\\' * _db_seg[0] + _ring_info_dct['ORIGIN_SMILES'] + 'C/C=C\\' * _db_seg[1]
-                print('rebuild smi', _rebuild_smi)
+                # print('rebuild smi', _rebuild_smi)
                 if _rebuild_smi == usr_db_main_smi:
-
-                    print('rebuild check pass!')
+                    # print('rebuild check pass!')
                     if _ring_info_dct['OCP'] == 0 and _ring_info_dct['OAP'] == 1:
                         _ring_lpp_smi = (usr_db_pre_smi + 'C/C=C\\' * _db_seg[0] +
                                          _ring_info_dct['MAIN_SMILES'] + 'C/C=C\\' * _db_seg[1] + usr_db_post_smi)
@@ -227,7 +226,7 @@ class IsoProstanOx(object):
                         _isop_abbr, _isop_lpp_sum_dct = self.get_info_dct(_ring_lpp_smi, _ring_info_dct,
                                                                           _remain_db_num, _db_seg[0],
                                                                           usr_db_pre_smi, reverse=False)
-                        print('_ring_lpp_smi_OAP', _ring_lpp_smi)
+                        # print('_ring_lpp_smi_OAP', _ring_lpp_smi)
                         usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
                     elif _ring_info_dct['OCP'] == 1 and _ring_info_dct['OAP'] == 0:
                         _ring_lpp_smi = (usr_db_pre_smi + 'C/C=C\\' * _db_seg[0] +
@@ -236,7 +235,7 @@ class IsoProstanOx(object):
                                                                           _remain_db_num, _db_seg[0],
                                                                           usr_db_pre_smi, reverse=False)
                         usr_lpp_dct[_isop_abbr] = _isop_lpp_sum_dct
-                        print('_ring_lpp_smi_OAP', _ring_lpp_smi)
+                        # print('_ring_lpp_smi_OAP', _ring_lpp_smi)
 
                     _rev_smi = _ring_info_dct['REVERSE_SMILES']
                     if isinstance(_rev_smi, str):
@@ -264,7 +263,6 @@ class IsoProstanOx(object):
                         pass
 
         # ox_isop_lpp_lst = [usr_db_pre_smi + _lpp_smi + usr_db_post_smi for _lpp_smi in usr_lpp_lst]
-
         # print(usr_lpp_dct.keys())
 
         return usr_lpp_dct
@@ -350,7 +348,7 @@ if __name__ == '__main__':
 
                 # pass
 
-    print(len(lpp_mol_lst))
+    # print(len(lpp_mol_lst))
     img = Draw.MolsToGridImage(lpp_mol_lst, molsPerRow=6, subImgSize=(200, 200))
     # img.show()
     img.save(save_img)

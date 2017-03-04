@@ -153,8 +153,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_general_mod(self):
         self.ui.tab_c_mod_lst_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.csv *.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.csv *.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.csv *.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.csv *.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -163,8 +163,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_fa_white_lst(self):
         self.ui.tab_c_fa_lst_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.csv *.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.csv *.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.csv *.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.csv *.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -173,8 +173,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_prostane_mod(self):
         self.ui.tab_c_prostane_mod_lst_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.csv *.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.csv *.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.csv *.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.csv *.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -183,8 +183,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_prostane_abbr(self):
         self.ui.tab_c_prostane_abbr_lst_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.csv *.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.csv *.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.csv *.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.csv *.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -193,8 +193,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_frag_pattern(self):
         self.ui.tab_c_frag_pattern_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.csv *.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.csv *.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.csv *.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.csv *.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -203,8 +203,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_hg_specifc_pattern(self):
         self.ui.tab_c_hgcfg_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -213,8 +213,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def set_wfrag(self):
         self.ui.tab_c_scorecfg_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.xlsx)')
         if load_table_dialog.exec_():
             a_load_table_str = load_table_dialog.selectedFiles()[0]
             a_load_table_str = os.path.abspath(a_load_table_str)
@@ -237,8 +237,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
     def load_lipid_list(self):
         self.ui.load_lipid_le.clear()
         load_table_dialog = QtGui.QFileDialog(self)
-        load_table_dialog.setNameFilters([u'Tables (*.xlsx)'])
-        load_table_dialog.selectNameFilter(u'Tables (*.xlsx)')
+        load_table_dialog.setNameFilters(['Tables (*.xlsx)'])
+        load_table_dialog.selectNameFilter('Tables (*.xlsx)')
         if load_table_dialog.exec_():
             self.ui.label_14.show()
             self.ui.exceltab_cb.show()
@@ -251,20 +251,20 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
             self.ui.exceltab_cb.addItems(sheetnames_lst)
 
     def save_sdf(self):
-        save_sdf_path = QtGui.QFileDialog.getSaveFileName(caption=u'Save file', filter=u'.sdf')
+        save_sdf_path = QtGui.QFileDialog.getSaveFileName(caption='Save file', filter='.sdf')
         self.ui.save_sdf_le.clear()
         save_sdf_str = os.path.abspath(save_sdf_path[0])
         self.ui.save_sdf_le.setText(save_sdf_str)
 
     def save_msp(self):
-        save_msp_path = QtGui.QFileDialog.getSaveFileName(caption=u'Save file', filter=u'.msp')
+        save_msp_path = QtGui.QFileDialog.getSaveFileName(caption='Save file', filter='.msp')
         self.ui.save_msp_le.clear()
         save_msp_str = os.path.abspath(save_msp_path[0])
         self.ui.save_msp_le.setText(save_msp_str)
 
     def run_theolpp(self):
 
-        self.ui.run_status_te.append(u'start!')
+        self.ui.run_status_te.append('start!')
         ox_level = 1
         if self.ui.ox_level1_rb.isChecked():
             ox_level = 1
@@ -337,27 +337,36 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         info_1, info_2 = theolpp(param_dct)
         self.ui.run_status_te.append(info_1)
         self.ui.run_status_te.append(info_2)
-        self.ui.run_status_te.append(u'Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+        self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+
+        # try:
+        #     info_1, info_2 = theolpp(param_dct)
+        #     self.ui.run_status_te.append(info_1)
+        #     self.ui.run_status_te.append(info_2)
+        #     self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+        #
+        # except:
+        #     self.ui.run_status_te.append('!! An error has occurred, please check your settings !!')
 
     def b_load_sum_sdf(self):
         b_load_lipidstable_dialog = QtGui.QFileDialog(self)
-        b_load_lipidstable_dialog.setNameFilters([u'MS Excel files (*.xlsx *.XLSX)'])
-        b_load_lipidstable_dialog.selectNameFilter(u'MS Excel files (*.xlsx *.XLSX)')
+        b_load_lipidstable_dialog.setNameFilters(['MS Excel files (*.xlsx *.XLSX)'])
+        b_load_lipidstable_dialog.selectNameFilter('MS Excel files (*.xlsx *.XLSX)')
         if b_load_lipidstable_dialog.exec_():
             self.ui.tab_b_loadlpppath_le.clear()
             b_load_xlsx_str = b_load_lipidstable_dialog.selectedFiles()[0]
             b_load_xlsx_str = os.path.abspath(b_load_xlsx_str)
-            self.ui.tab_b_loadlpppath_le.setText(unicode(b_load_xlsx_str))
+            self.ui.tab_b_loadlpppath_le.setText(b_load_xlsx_str)
 
     def b_load_sum_fa(self):
         b_load_lipidstable_dialog = QtGui.QFileDialog(self)
-        b_load_lipidstable_dialog.setNameFilters([u'MS Excel files (*.xlsx *.XLSX)'])
-        b_load_lipidstable_dialog.selectNameFilter(u'MS Excel files (*.xlsx *.XLSX)')
+        b_load_lipidstable_dialog.setNameFilters(['MS Excel files (*.xlsx *.XLSX)'])
+        b_load_lipidstable_dialog.selectNameFilter('MS Excel files (*.xlsx *.XLSX)')
         if b_load_lipidstable_dialog.exec_():
             self.ui.tab_b_loadfapath_le.clear()
             b_load_xlsx_str = b_load_lipidstable_dialog.selectedFiles()[0]
             b_load_xlsx_str = os.path.abspath(b_load_xlsx_str)
-            self.ui.tab_b_loadfapath_le.setText(unicode(b_load_xlsx_str))
+            self.ui.tab_b_loadfapath_le.setText(b_load_xlsx_str)
     #
     # def b_load_sdf(self):
     #     b_load_lipidstable_dialog = QtGui.QFileDialog(self)
@@ -381,40 +390,40 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
     def b_load_mzml(self):
         b_load_mzml_dialog = QtGui.QFileDialog(self)
-        b_load_mzml_dialog.setNameFilters([u'mzML spectra files (*.mzML *.mzml)'])
-        b_load_mzml_dialog.selectNameFilter(u'mzML spectra files (*.mzML *.mzml)')
+        b_load_mzml_dialog.setNameFilters(['mzML spectra files (*.mzML *.mzml)'])
+        b_load_mzml_dialog.selectNameFilter('mzML spectra files (*.mzML *.mzml)')
         if b_load_mzml_dialog.exec_():
             self.ui.tab_b_ms2mzml_le.clear()
             b_load_mzml_str = b_load_mzml_dialog.selectedFiles()[0]
             b_load_mzml_str = os.path.abspath(b_load_mzml_str)
-            self.ui.tab_b_ms2mzml_le.setText(unicode(b_load_mzml_str))
+            self.ui.tab_b_ms2mzml_le.setText(b_load_mzml_str)
 
     def b_save_img2folder(self):
         self.ui.tab_b_saveimgfolder_le.clear()
         e_save_img2folder_str = QtGui.QFileDialog.getExistingDirectory()
-        self.ui.tab_b_saveimgfolder_le.setText(unicode(e_save_img2folder_str))
+        self.ui.tab_b_saveimgfolder_le.setText(e_save_img2folder_str)
 
     def b_save_output(self):
-        e_save_output_path = QtGui.QFileDialog.getSaveFileName(caption=u'Save file', filter=u'.xlsx')
+        e_save_output_path = QtGui.QFileDialog.getSaveFileName(caption='Save file', filter='.xlsx')
         self.ui.tab_b_sumxlsxpath_le.clear()
         e_save_output_str = os.path.abspath(e_save_output_path[0])
-        self.ui.tab_b_sumxlsxpath_le.setText(unicode(e_save_output_str))
+        self.ui.tab_b_sumxlsxpath_le.setText(e_save_output_str)
 
     def b_run_hunter(self):
 
-        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\PC_CM_Lv1_max3O.xlsx')
-        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\PC_CM_Lv1_max3O_FA_SUM.xlsx')
-        # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std.xlsx')
-        # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std_FA_SUM.xlsx')
-        # self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
-        # self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
-        self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
-        # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_lpptiger\mzML\131015_PLPC_400ng_new_neg_LMQ15.mzML')
-        # self.ui.tab_b_ms2mzml_le.setText(r'D:\Synapt_rawspectra\oxPLstd\180816_oxPC_10ng.mzML')
-        # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\')
-        self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
-        # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C18.xlsx')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_818.xlsx')
+        # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane.xlsx')
+        # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane.xlsx')
+        # # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std.xlsx')
+        # # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std_FA_SUM.xlsx')
+        # # self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
+        # # self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
+        # self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
+        # # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_lpptiger\mzML\131015_PLPC_400ng_new_neg_LMQ15.mzML')
+        # # self.ui.tab_b_ms2mzml_le.setText(r'D:\Synapt_rawspectra\oxPLstd\180816_oxPC_10ng.mzML')
+        # # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\')
+        # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
+        # # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C18.xlsx')
+        # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_Lv1_prostane.xlsx')
         self.ui.tab_b_rtstart_dspb.setValue(3)
         self.ui.tab_b_rtend_dspb.setValue(31)
         self.ui.tab_b_msppm_spb.setValue(20)
@@ -422,11 +431,11 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_b_hgppm_spb.setValue(200)
         self.ui.tab_b_dda_spb.setValue(12)
         self.ui.tab_b_msthreshold_spb.setValue(1000)
-        self.ui.tab_b_ms2threshold_spb.setValue(50)
+        self.ui.tab_b_ms2threshold_spb.setValue(10)
         self.ui.tab_b_score_spb.setValue(20.5)
-        self.ui.tab_b_isotopescore_spb.setValue(85.0)
-        self.ui.tab_b_mzstart_dspb.setValue(721.0)
-        self.ui.tab_b_mzend_dspb.setValue(723.0)
+        self.ui.tab_b_isotopescore_spb.setValue(80.0)
+        self.ui.tab_b_mzstart_dspb.setValue(600.0)
+        self.ui.tab_b_mzend_dspb.setValue(1000.0)
         self.ui.tab_b_ms2infoth_dspb.setValue(1)
         self.ui.tab_b_ms2hginfoth_dspb.setValue(1)
 

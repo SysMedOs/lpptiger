@@ -61,10 +61,7 @@ class SMILESparser(object):
             return formula
 
         smiles_lst = list(usr_smiles)
-        elem_dct = {}
-        elem_dct['C'] = smiles_lst.count('C')
-        elem_dct['O'] = smiles_lst.count('O')
-        elem_dct['dbe'] = smiles_lst.count('=')
+        elem_dct = {'C': smiles_lst.count('C'), 'O': smiles_lst.count('O'), 'dbe': smiles_lst.count('=')}
         if smiles_lst.count('P') > 0:
             elem_dct['P'] = smiles_lst.count('P')
         if smiles_lst.count('N') > 0:

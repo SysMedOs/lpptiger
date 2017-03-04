@@ -92,7 +92,7 @@ def theolpp(usr_params):
 
     ox_param_dct = {'MAX_MOD': ox_max, 'MAX_KETO': keto_max, 'MAX_OOH': ooh_max, 'MAX_EPOXY': epoxy_max}
 
-    sdf_writer = Chem.SDWriter(open(save_sdf, mode='w'))
+    # sdf_writer = Chem.SDWriter(open(save_sdf, mode='w'))
     if save_spectra == 1 and len(save_msp) > 0:
         msp_obj = open(save_msp, mode='w')
     else:
@@ -179,11 +179,6 @@ def theolpp(usr_params):
                                          'LM_ID': _lpp_id_str, 'SN_JSON': _lpp_sub_class_json}
                         if save_spectra == 1:
                             _lpp_info_dct['MSP_JSON'] = frag_gen.calc_frags(_lpp_info_dct)
-                            print('_lpp_info_dct[MSP_JSON]')
-                            print(_lpp_info_dct['MSP_JSON'])
-
-                        # print(_lpp_info_dct)
-                        # 'SN1_INFO': _sn1_row['FA_CHECKER'], 'SN2_INFO': _sn2_row['FA_CHECKER'],
 
                         _lpp_info_se = pd.Series(data=_lpp_info_dct)
                         _pl_lpp_df[_lpp_id_str] = _lpp_info_se
@@ -223,7 +218,10 @@ def theolpp(usr_params):
 
     mzcalc = MZcalc()
 
+    sdf_writer = Chem.SDWriter(open(save_sdf, mode='w'))
+
     if save_spectra == 1:
+
         for _k_lpp in sdf_dct.keys():
             _lpp_dct = sdf_dct[_k_lpp]
             if len(json.loads(_lpp_dct['MSP_JSON']).keys()) > 0:
@@ -269,10 +267,10 @@ def theolpp(usr_params):
                     MSPcreator.to_msp(msp_obj, _lpp_dct)
 
     elif save_spectra == 0:
+
         for _k_lpp in sdf_dct.keys():
             _lpp_dct = sdf_dct[_k_lpp]
             _lpp_smiles = str(_lpp_dct['LPP_SMILES'])
-            print(_lpp_smiles)
             _lpp_mol = Chem.MolFromSmiles(_lpp_smiles)
             AllChem.Compute2DCoords(_lpp_mol)
             _lpp_mol.SetProp('_Name', str(_lpp_dct['LM_ID']))
@@ -311,7 +309,7 @@ def theolpp(usr_params):
         msp_obj.close()
 
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
-    if save_msp == 1:
+    if save_spectra == 1:
         SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
 
     t_spent = time.clock() - t_start

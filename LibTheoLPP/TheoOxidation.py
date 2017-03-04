@@ -412,21 +412,19 @@ def bulk_oxidizer(theodb_oxidizer_cls):
                                                      'OAP': int(_fa_row['OAP']),
                                                      'OCP': int(_fa_row['OCP'])})
 
-                print('db_count', db_count, 'prostane_mode', prostane_mode)
-
                 if db_count >= 3 and prostane_mode == 1:
                     # isop_cfg = r'D:\theolpp\LibTheoLPP\IsoP_ModConfig.csv'
-                    ox_isop = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
+                    ox_prostane = IsoProstanOx(fa_dct, isop_cfg, isopabbr_cfg)
 
-                    _isop_lpp_dct = ox_isop.get_isop_lpp()
-                    # print('_isop_lpp_dct')
-                    # print(_isop_lpp_dct)
+                    _prostane_lpp_dct = ox_prostane.get_isop_lpp()
+                    _prostane_df = pd.DataFrame(_prostane_lpp_dct)
+                    _prostane_df = _prostane_df.transpose()
+                    for _idx_p, _prostane in _prostane_df.iterrows():
+                        _prostane_df = _prostane_df.set_value(_idx_p, 'FA_FORMULA',
+                                                              smi2formula.smiles2formula(_prostane['FULL_SMILES'],
+                                                                                         charge='M'))
 
-                    _isop_df = pd.DataFrame(_isop_lpp_dct)
-                    # print('_isop_df')
-                    # print(_isop_df)
-
-                    mod_sum_df = mod_sum_df.append(_isop_df.transpose())
+                    mod_sum_df = mod_sum_df.append(_prostane_df)
                     # print('mod_sum_df', mod_sum_df.shape)
 
             # print('mod_sum_df')
