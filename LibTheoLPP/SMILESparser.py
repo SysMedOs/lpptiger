@@ -71,6 +71,20 @@ class SMILESparser(object):
         elif smiles_lst.count('N') == 0:
             elem_dct['H'] = smiles_lst.count('C') * 2 + 2 - 2 * smiles_lst.count('=')
 
+        # remove 2H for each ring
+        if '1' in smiles_lst:
+            if smiles_lst.count('1') == 2:
+                elem_dct['H'] -= 2
+        if '2' in smiles_lst:
+            if smiles_lst.count('2') == 2:
+                elem_dct['H'] -= 2
+        if '3' in smiles_lst:
+            if smiles_lst.count('3') == 2:
+                elem_dct['H'] -= 2
+        if '4' in smiles_lst:
+            if smiles_lst.count('4') == 2:
+                elem_dct['H'] -= 2
+
         if charge in self.charge_lst:
             tmp_chg_dct = self.charge_dct[charge]
 

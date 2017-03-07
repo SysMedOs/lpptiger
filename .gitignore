@@ -109,3 +109,5 @@ LibTheoLPP/images/
 /temp/
 /ConfigurationFiles/
 /temp/UI/
+/temp/accerlerator/numba_pandas2.py
+/temp/accerlerator/numba_pandas_test.py

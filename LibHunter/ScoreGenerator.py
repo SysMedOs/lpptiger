@@ -75,7 +75,7 @@ class ScoreGenerator:
         pl_checker = re.compile(r'(P[ACEGSI])([(])(.*)([)])')
         pip_checker = re.compile(r'(PIP)([(])(.*)([)])')
         tg_checker = re.compile(r'(TG)([(])(.*)([)])')
-        fa_checker = re.compile(r'(\d{1,2})([:])(\d{1,2})(.*)([/_])(\d{1,2})([:])(\d{1,2})(.*)')
+        fa_checker = re.compile(r'(.*)(\d{1,2})([:])(\d{1,2})(.*)([/_])(.*)(\d{1,2})([:])(\d{1,2})(.*)')
         fa_o_checker = re.compile(r'(O-)(\d{1,2})([:])(\d)(.*)([/_])(\d{1,2})([:])(\d{1,2})(.*)')
         fa_p_checker = re.compile(r'(P-)(\d{1,2})([:])(\d)(.*)([/_])(\d{1,2})([:])(\d{1,2})(.*)')
 
@@ -109,51 +109,60 @@ class ScoreGenerator:
             tg_typ_lst = tg_re_chk.groups()
             _pl_typ = tg_typ_lst[0]
             info_fa_typ = tg_typ_lst[2]
-        if fa_checker.match(abbr):
-            print('FA')
-            _pl_typ = 'FA'
-            info_fa_typ = abbr
-        if fa_o_checker.match(abbr):
-            print('FA')
-            _pl_typ = 'FA'
-            info_fa_typ = abbr
-        if fa_p_checker.match(abbr):
-            print('FA')
-            _pl_typ = 'FA'
-            info_fa_typ = abbr
+        # if fa_checker.match(abbr):
+        #     print('FA')
+        #     _pl_typ = 'FA'
+        #     info_fa_typ = abbr
+        # if fa_o_checker.match(abbr):
+        #     print('FA')
+        #     _pl_typ = 'FA'
+        #     info_fa_typ = abbr
+        # if fa_p_checker.match(abbr):
+        #     print('FA')
+        #     _pl_typ = 'FA'
+        #     info_fa_typ = abbr
 
         if fa_checker.match(info_fa_typ):
-            bulk_fa_linker = 'A-A-'
-            lyso_fa_linker_dct = {'A': ''}
-            fa_chk = fa_checker.match(info_fa_typ)
-            info_fa_lst = fa_chk.groups()
-            sn1_fa_c = info_fa_lst[0]
-            sn1_fa_db = info_fa_lst[2]
-            sn2_fa_c = info_fa_lst[5]
-            sn2_fa_db = info_fa_lst[7]
-            sn1_fa_abbr = ''.join(info_fa_lst[0:4])
-            sn2_fa_abbr = ''.join(info_fa_lst[5:])
-        elif fa_o_checker.match(info_fa_typ):
-            bulk_fa_linker = 'O-A-'
-            lyso_fa_linker_dct = {'O': '', 'A': 'O-'}  # link of the other sn after NL of this sn
-            fa_chk = fa_o_checker.match(info_fa_typ)
-            info_fa_lst = fa_chk.groups()
-            sn1_fa_c = info_fa_lst[1]
-            sn1_fa_db = info_fa_lst[3]
-            sn2_fa_c = info_fa_lst[5]
-            sn2_fa_db = info_fa_lst[7]
-            sn1_fa_abbr = ''.join(info_fa_lst[0:3])
-            sn2_fa_abbr = ''.join(info_fa_lst[5:])
-        elif fa_p_checker.match(info_fa_typ):
-            bulk_fa_linker = 'P-A-'
-            lyso_fa_linker_dct = {'P': '', 'A': 'P-'}  # link of the other sn after NL of this sn
-            fa_chk = fa_p_checker.match(info_fa_typ)
-            info_fa_lst = fa_chk.groups()
-            sn1_fa_c = info_fa_lst[1]
-            sn1_fa_db = info_fa_lst[3]
-            sn2_fa_c = info_fa_lst[5]
-            sn2_fa_db = info_fa_lst[7]
-            sn2_fa_abbr = ''.join(info_fa_lst[5:])
+
+            if fa_o_checker.match(info_fa_typ):
+                bulk_fa_linker = 'O-A-'
+                lyso_fa_linker_dct = {'O': '', 'A': 'O-'}  # link of the other sn after NL of this sn
+                fa_chk = fa_o_checker.match(info_fa_typ)
+                info_fa_lst = fa_chk.groups()
+                sn1_fa_c = info_fa_lst[1]
+                sn1_fa_db = info_fa_lst[3]
+                sn2_fa_c = info_fa_lst[5]
+                sn2_fa_db = info_fa_lst[7]
+                sn1_fa_abbr = ''.join(info_fa_lst[0:3])
+                sn2_fa_abbr = ''.join(info_fa_lst[5:])
+            elif fa_p_checker.match(info_fa_typ):
+                bulk_fa_linker = 'P-A-'
+                lyso_fa_linker_dct = {'P': '', 'A': 'P-'}  # link of the other sn after NL of this sn
+                fa_chk = fa_p_checker.match(info_fa_typ)
+                info_fa_lst = fa_chk.groups()
+                sn1_fa_c = info_fa_lst[1]
+                sn1_fa_db = info_fa_lst[3]
+                sn2_fa_c = info_fa_lst[5]
+                sn2_fa_db = info_fa_lst[7]
+                sn2_fa_abbr = ''.join(info_fa_lst[5:])
+            else:
+                bulk_fa_linker = 'A-A-'
+                lyso_fa_linker_dct = {'A': ''}
+                fa_chk = fa_checker.match(info_fa_typ)
+                info_fa_lst = fa_chk.groups()
+                if len(info_fa_lst[1]) == 1:
+                    try:
+                        sn1_fa_c = int(info_fa_lst[0]) * 10 + int(info_fa_lst[1])
+                    except:
+                        sn1_fa_c = info_fa_lst[1]
+                else:
+                    sn1_fa_c = info_fa_lst[1]
+                sn1_fa_db = info_fa_lst[3]
+                sn2_fa_c = info_fa_lst[7]
+                sn2_fa_db = info_fa_lst[9]
+                sn1_fa_abbr = ''.join(info_fa_lst[0:5])
+                sn2_fa_abbr = ''.join(info_fa_lst[6:])
+
         else:
             sn1_fa_abbr = ''
             sn2_fa_abbr = ''
@@ -544,15 +553,17 @@ class ScoreGenerator:
         else:
             print('!!!!!! NO FA identified =====>--> Skip >>> >>>')
         #
-        # print('matched_fa_df')
-        # print(matched_fa_df)
-        # print('matched_lyso_df')
-        # print(matched_lyso_df)
+        print('matched_fa_df')
+        print(matched_fa_df)
+        print('matched_lyso_df')
+        print(matched_lyso_df)
 
         match_info_dct = {'MATCH_INFO': match_reporter, 'SCORE_INFO': lipid_info_df,
                           'FA_INFO': fa_ident_df, 'LYSO_INFO': lyso_ident_df, 'LYSO_W_INFO': lyso_w_ident_df,
                           'MATCHED_FA_INFO': matched_fa_df, 'MATCHED_LYSO_INFO': matched_lyso_df}
-        return match_info_dct
+        matched_checker = matched_fa_df.shape[0] + matched_lyso_df.shape[0]
+
+        return match_info_dct, matched_checker
 
     @staticmethod
     def get_cosine_score(msp_df, ms2_df, ms2_precision=500e-6, ms2_threshold=100, ms2_infopeak_threshold=0.02):
@@ -569,6 +580,8 @@ class ScoreGenerator:
             mz_h = mz * (1 + ms2_precision)
 
             tmp_df = ms2_df.query('%f <= mz <= %f and i >= %f ' % (mz_l, mz_h, ms2_threshold))
+
+            # print(tmp_df)
 
             if tmp_df.shape[0] == 1:
                 obs_score_df = obs_score_df.append(tmp_df)
@@ -592,6 +605,10 @@ class ScoreGenerator:
 
         cosine_score = 100 * (1 - spatial.distance.cosine(obs_flat, lib_flat))
         cosine_score = round(cosine_score, 1)
+        if cosine_score > 0:
+            pass
+        else:
+            cosine_score = 0
         print('msp_df')
         print(msp_df)
         print('obs_msp_df')
@@ -947,7 +964,7 @@ class ScoreGenerator:
         print('sn_ratio ==>', sn_ratio)
         print('SNR SCORE ==>', snr_score)
 
-        return snr_score, sn_ratio
+        return snr_score, sn_ratio, noise_df
 
 
 if __name__ == '__main__':

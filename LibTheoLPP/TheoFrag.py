@@ -123,9 +123,9 @@ class TheoFrag(object):
                 if int(_sn1_mod_dct['OAP']) + int(_sn1_mod_dct['OCP']) > 0 and \
                                         int(_sn2_mod_dct['OAP']) + int(_sn2_mod_dct['OCP']) == 0:
                     _score_se = _score_se.rename({'[sn1-H]-': '[sn2-H]-', '[sn2-H]-': '[sn1-H]-'})
-                    if '[sn1-H2O-H]-' in frag_type_lst and '[sn2-H2O-H]-':
+                    if '[sn1-H2O-H]-' in frag_type_lst and '[sn2-H2O-H]-' in frag_type_lst:
                         _score_se = _score_se.rename({'[sn1-H2O-H]-': '[sn2-H2O-H]-', '[sn2-H2O-H]-': '[sn1-H2O-H]-'})
-                    if '[sn1-CO2-H]-' in frag_type_lst and '[sn2-CO2-H]-':
+                    if '[sn1-CO2-H]-' in frag_type_lst and '[sn2-CO2-H]-' in frag_type_lst:
                         _score_se = _score_se.rename({'[sn1-CO2-H]-': '[sn2-CO2-H]-', '[sn2-CO2-H]-': '[sn1-CO2-H]-'})
 
                     _sn_switch_dct ={}

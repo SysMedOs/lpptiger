@@ -50,15 +50,17 @@ class PrecursorHunter(object):
             pc_fa_df.loc[:, 'Formula'] = pc_fa_df['[M+HCOO]-_FORMULA'].str.strip('-')
             pc_fa_df.loc[:, 'Ion'] = '[M+HCOO]-'
             pc_fa_df.loc[:, 'Lib_mz'] = pc_fa_df['[M+HCOO]-_MZ']
+            if pc_h_df.shape[0] > 0:
+                pc_h_df.loc[:, 'PR_MZ_LOW'] = pc_h_df['[M-H]-_MZ'] - pr_window
+                pc_h_df.loc[:, 'PR_MZ_HIGH'] = pc_h_df['[M-H]-_MZ'] + pr_window
+                pc_h_df.loc[:, 'Formula'] = pc_h_df['[M-H]-_FORMULA'].str.strip('-')
+                pc_h_df.loc[:, 'Ion'] = '[M-H]-'
+                pc_h_df.loc[:, 'Lib_mz'] = pc_h_df['[M-H]-_MZ']
+                self.lpp_info_df = pc_fa_df.copy()
+                self.lpp_info_df = self.lpp_info_df.append(pc_h_df)
+            else:
+                self.lpp_info_df = pc_fa_df.copy()
 
-            pc_h_df.loc[:, 'PR_MZ_LOW'] = pc_h_df['[M-H]-_MZ'] - pr_window
-            pc_h_df.loc[:, 'PR_MZ_HIGH'] = pc_h_df['[M-H]-_MZ'] + pr_window
-            pc_h_df.loc[:, 'Formula'] = pc_h_df['[M-H]-_FORMULA'].str.strip('-')
-            pc_h_df.loc[:, 'Ion'] = '[M-H]-'
-            pc_h_df.loc[:, 'Lib_mz'] = pc_h_df['[M-H]-_MZ']
-
-            self.lpp_info_df = pc_fa_df.copy()
-            self.lpp_info_df = self.lpp_info_df.append(pc_h_df)
             self.lpp_info_df = self.lpp_info_df.sort_values(by='PR_MZ_LOW')
 
         else:
