@@ -16,12 +16,14 @@ from __future__ import division
 from __future__ import print_function
 
 import pandas as pd
+import numpy as np
+from numba import jit, jitclass, int64, float64, guvectorize
 
 
 class PrecursorHunter(object):
     def __init__(self, lpp_info_df, mzml_path, param_dct):
         self.lpp_info_df = lpp_info_df
-        self.mzml_path = mzml_path
+        # self.mzml_path = mzml_path
         self.param_dct = param_dct
 
     def get_matched_pr(self, scan_info_df, spectra_pl):
@@ -133,3 +135,50 @@ class PrecursorHunter(object):
 
         else:
             return '!! NO suitable precursor --> Check settings!!'
+
+
+@jitclass([
+    ('xmin', float64),
+    ('xmax', float64),
+    ('nbins', int64),
+    ('xstep', float64),
+    ('xcenter', float64[:]),
+    ('bins', int64[:]),
+    ('moments', float64[:])
+])
+class PrecursorHunterNumba(object):
+
+    def __init__(self, lpp_info_df, mzml_path, param_dct):
+        self.lpp_info_df = lpp_info_df
+        self.mzml_path = mzml_path
+        self.param_dct = param_dct
+
+    def __init__(self, xmin, xmax, nbins):
+        self.xmin = xmin
+        self.xmax = xmax
+        self.nbins = nbins
+        self.xstep = (xmax - xmin) / nbins
+        self.xcenter = (np.arange(nbins) + 0.5) * self.xstep - self.xmin
+        self.bins = np.zeros(self.nbins, dtype=np.int64)
+        self.moments = np.zeros(3, dtype=np.float64)
+
+    def fill_many(self, values):
+        for value in values:
+            bin_index = np.int64((value - self.xmin) / self.xstep)
+            if 0 <= bin_index < len(self.bins):
+                self.bins[bin_index] += 1
+                self.moments[0] += 1
+                self.moments[1] += value
+                self.moments[2] += value ** 2
+
+    @property
+    def count(self):
+        return np.int64(self.moments[0])
+
+    @property
+    def mean(self):
+        return self.moments[1] / self.moments[0]
+
+    @property
+    def stddev(self):
+        return np.sqrt(self.moments[2] / self.moments[0] - self.mean ** 2)

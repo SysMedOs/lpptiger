@@ -35,12 +35,6 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     func_id = mz_se['DDA_rank']
     ms1_pr_ppm = mz_se['ppm']
     fingerprint_lst = json.loads(mz_se['FINGERPRINT'])
-    # _usr_formula = mz_se['Formula']
-    # _usr_ms2_function = mz_se['function']
-    # _usr_ms2_scan_id = mz_se['scan_id']
-    # _usr_rt = mz_se['rt']
-    # _usr_abbr_bulk = mz_se['Abbreviation']
-    # pl_type = mz_se['Class']
 
     isotope_score = isotope_score_info_dct['isotope_score']
     isotope_checker_dct = isotope_score_info_dct['isotope_checker_dct']
@@ -263,7 +257,6 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
 
     # prepare DataFrame for msms zoomed plot
     # plot color markers for zoomed MS2 first. Then overlay with zoomed spectra. Plot full ms2 in the last step.
-    _msms_mz_max = ms2_df['mz'].max()
     _msms_low_df = ms2_df.query('mz <= 400')
     _msms_high_df = ms2_df.query('mz > 400')
     _msms_high_df = _msms_high_df.query('mz < %.4f' % (ms2_pr_mz + 1))
@@ -272,36 +265,19 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     _msms_low_delta = _msms_low_df['i'].max() * 0.06
     _msms_high_delta = _msms_high_df['i'].max() * 0.06
 
-    _ident_table_df = ident_info_dct['SCORE_INFO']
-    _fa_table_df = ident_info_dct['FA_INFO']
-    _lyso_table_df = ident_info_dct['LYSO_INFO']
     _matched_fa_df = ident_info_dct['MATCHED_FA_INFO']
     _matched_lyso_df = ident_info_dct['MATCHED_LYSO_INFO']
+    _other_signals_df = ident_info_dct['OTHER_SIGNALS_INFO']
 
-    if _ident_table_df.shape[0] > 0:
-        # _ident_table_df = _ident_table_df[['Hunter_score', 'Cosine_score', 'Fingerprint',
-        #                                    'SNR_score', 'Isotope_score', 'Overall_score']]
-        # ident_col_labels = _ident_table_df.columns.values.tolist()
-        # ident_table_vals = map(list, _ident_table_df.values)
-        # # ident_col_width_lst = [0.03 * len(str(x)) for x in ident_col_labels]
-        # ident_col_width_lst = [0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
-        # ident_table = msms_pic.table(cellText=ident_table_vals, colWidths=ident_col_width_lst,
-        #                              colLabels=ident_col_labels, loc='upper center', cellLoc='center')
-        # ident_table.set_fontsize(8)
-        overall_score = _ident_table_df['Overall_score'].tolist()[0]
+    overall_score = ident_info_dct['Overall_score']
 
-        ident_col_labels = ('Proposed_structure', 'Score')
-        _ident_table_df = pd.DataFrame(data={'Proposed_structure': abbr_id, 'Score': overall_score}, index=[0])
-        ident_table_vals = map(list, _ident_table_df.values)
-        ident_col_width_lst = [0.6, 0.15]
-        ident_table = msms_pic.table(cellText=ident_table_vals, colWidths=ident_col_width_lst,
-                                     colLabels=ident_col_labels, loc='upper center', cellLoc='center')
-        ident_table.set_fontsize(8)
-
-        # msms_pic.text(_msms_mz_max * 0.2, _msms_max * 1.15,
-        #               ' %s    Score = %.1f' % (abbr_id, overall_score),
-        #               verticalalignment='top', horizontalalignment='center',
-        #               color='#ff6600', fontsize=8)
+    ident_col_labels = ('Proposed_structure', 'Score')
+    _ident_table_df = pd.DataFrame(data={'Proposed_structure': abbr_id, 'Score': overall_score}, index=[0])
+    ident_table_vals = map(list, _ident_table_df.values)
+    ident_col_width_lst = [0.6, 0.15]
+    ident_table = msms_pic.table(cellText=ident_table_vals, colWidths=ident_col_width_lst,
+                                 colLabels=ident_col_labels, loc='upper center', cellLoc='center')
+    ident_table.set_fontsize(8)
 
     if _matched_fa_df.shape[0] > 0:
         matched_fa_mz_lst = _matched_fa_df['mz'].tolist()
@@ -327,20 +303,9 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
                                    color='#00ccff', fontsize=8)
     else:
         matched_fa_mz_lst = []
-    if _fa_table_df.shape[0] > 0:
-        for _i_fa, _fa_se in _fa_table_df.iterrows():
-            if _fa_se['mz'] not in matched_fa_mz_lst:
-                markerline, stemlines, baseline = msms_pic.stem([_fa_se['mz']], [_fa_se['i']], markerfmt=' ')
-                plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-                markerline, stemlines, baseline = msms_low_pic.stem([_fa_se['mz']], [_fa_se['i']], markerfmt=' ')
-                plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-                _msms_low_peak_str = '%.4f' % _fa_se['mz']
-                _msms_low_peak_y = float(_fa_se['i'])
-                msms_low_pic.text(_fa_se['mz'], _msms_low_peak_y, _msms_low_peak_str, fontsize=6, color='red')
 
     if _matched_lyso_df.shape[0] > 0:
         matched_lyso_mz_lst = _matched_lyso_df['mz'].tolist()
-        matched_lyso_count = len(matched_lyso_mz_lst)
         for _i_lyso, _lyso_se in _matched_lyso_df.iterrows():
             markerline, stemlines, baseline = msms_pic.stem([_lyso_se['mz']], [_lyso_se['i']], markerfmt=' ')
             plt.setp(stemlines, color='#00ccff', linewidth=3)
@@ -353,40 +318,31 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
                                color='#00ccff', fontsize=8)
     else:
         matched_lyso_mz_lst = []
-        matched_lyso_count = 0
 
-    if _lyso_table_df.shape[0] > 0:
-        for _i_lyso, _lyso_se in _lyso_table_df.iterrows():
-            if matched_lyso_count == 0 or _lyso_se['mz'] not in matched_lyso_mz_lst:
-                markerline, stemlines, baseline = msms_pic.stem([_lyso_se['mz']], [_lyso_se['i']], markerfmt=' ')
+    if _other_signals_df.shape[0] > 0:
+        for _i_other_sig, _other_sig_se in _other_signals_df.iterrows():
+            if _other_sig_se['mz'] in matched_lyso_mz_lst or _other_sig_se['mz'] in matched_fa_mz_lst:
+                pass
+            else:
+                markerline, stemlines, baseline = msms_pic.stem([_other_sig_se['mz']], [_other_sig_se['i']],
+                                                                markerfmt=' ')
                 plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-                markerline, stemlines, baseline = msms_high_pic.stem([_lyso_se['mz']], [_lyso_se['i']], markerfmt=' ')
-                plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-                _msms_high_peak_str = '%.4f' % _lyso_se['mz']
-                _msms_high_peak_y = float(_lyso_se['i'])
-                msms_high_pic.text(_lyso_se['mz'], _msms_high_peak_y, _msms_high_peak_str, fontsize=6, color='red')
-
-    # if noise_df.shape[0] > 0:
-    #     for _i_noise, _noise_se in noise_df.iterrows():
-    #         if _noise_se['mz'] in matched_lyso_mz_lst or _noise_se['mz'] in matched_fa_mz_lst:
-    #             pass
-    #         else:
-    #             markerline, stemlines, baseline = msms_pic.stem([_noise_se['mz']], [_noise_se['i']], markerfmt=' ')
-    #             plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-    #             if _noise_se['mz'] <= 400:
-    #                 markerline, stemlines, baseline = msms_low_pic.stem([_noise_se['mz']], [_noise_se['i']],
-    #                                                                     markerfmt=' ')
-    #                 plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-    #                 _msms_low_peak_str = '%.4f' % _noise_se['mz']
-    #                 _msms_low_peak_y = float(_noise_se['i'])
-    #                 msms_low_pic.text(_noise_se['mz'], _msms_low_peak_y, _msms_low_peak_str, fontsize=6, color='red')
-    #             else:
-    #                 markerline, stemlines, baseline = msms_high_pic.stem([_noise_se['mz']], [_noise_se['i']],
-    #                                                                      markerfmt=' ')
-    #                 plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
-    #                 _msms_high_peak_str = '%.4f' % _noise_se['mz']
-    #                 _msms_high_peak_y = float(_noise_se['i'])
-    #                 msms_high_pic.text(_noise_se['mz'], _msms_high_peak_y, _msms_high_peak_str, fontsize=6, color='red')
+                if _other_sig_se['mz'] <= 400:
+                    markerline, stemlines, baseline = msms_low_pic.stem([_other_sig_se['mz']], [_other_sig_se['i']],
+                                                                        markerfmt=' ')
+                    plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
+                    _msms_low_peak_str = '%.4f' % _other_sig_se['mz']
+                    _msms_low_peak_y = float(_other_sig_se['i'])
+                    msms_low_pic.text(_other_sig_se['mz'], _msms_low_peak_y, _msms_low_peak_str, fontsize=6,
+                                      color='red')
+                else:
+                    markerline, stemlines, baseline = msms_high_pic.stem([_other_sig_se['mz']], [_other_sig_se['i']],
+                                                                         markerfmt=' ')
+                    plt.setp(stemlines, color='red', linewidth=3, alpha=0.5)
+                    _msms_high_peak_str = '%.4f' % _other_sig_se['mz']
+                    _msms_high_peak_y = float(_other_sig_se['i'])
+                    msms_high_pic.text(_other_sig_se['mz'], _msms_high_peak_y, _msms_high_peak_str,
+                                       fontsize=6, color='red')
 
     # msms spectrum zoomed < 400 start
     if _msms_low_df.shape[0] > 0:

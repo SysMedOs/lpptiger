@@ -110,20 +110,21 @@ class LogPageCreator(object):
         print('try to add identification to report html')
 
         img_path = img_name[1:]
-        ident_idx = str(ident_idx)
 
-        ms1_pr_mz = ident_info_df.get_value(1, r'MS1_obs_mz')
+
+        ms1_pr_mz = ident_info_df.get_value(ident_idx, r'MS1_obs_mz')
         # ms2_pr_mz = ident_info_df.get_value(1, r'MS2_PR_mz')
-        ms2_rt = ident_info_df.get_value(1, 'MS2_scan_time')
-        dda = ident_info_df.get_value(1, 'DDA#')
-        ms2_scan_id = ident_info_df.get_value(1, 'Scan#')
-        # abbr_bulk = ident_info_df.get_value(1, 'Bulk_identification')
-        ident_abbr = ident_info_df.get_value(1, 'Proposed_structures')
+        ms2_rt = ident_info_df.get_value(ident_idx, 'MS2_scan_time')
+        dda = ident_info_df.get_value(ident_idx, 'DDA#')
+        ms2_scan_id = ident_info_df.get_value(ident_idx, 'Scan#')
+        # abbr_bulk = ident_info_df.get_value(ident_idx, 'Bulk_identification')
+        ident_abbr = ident_info_df.get_value(ident_idx, 'Proposed_structures')
         ident_abbr = ident_abbr.replace('<', '&lt;')
         ident_abbr = ident_abbr.replace('>', '&gt;')
-        score = ident_info_df.get_value(1, 'Overall_score')
-        formula_ion = ident_info_df.get_value(1, 'Formula_ion')
-        charge = ident_info_df.get_value(1, 'Charge')
+        score = ident_info_df.get_value(ident_idx, 'Overall_score')
+        formula_ion = ident_info_df.get_value(ident_idx, 'Formula_ion')
+        charge = ident_info_df.get_value(ident_idx, 'Charge')
+        ident_idx = str(ident_idx)
 
         with open(self.image_lst_page, 'a') as img_page:
             # convert info df to html table code
