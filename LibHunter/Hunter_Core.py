@@ -22,7 +22,7 @@ from LibHunter.SpectraExtractor import extract_mzml
 from LibHunter.SpectraExtractor import get_spectra
 from LibHunter.SpectraExtractor import get_xic_all
 from LibHunter.ScoreGenerator import ScoreGenerator
-from LibHunter.PanelPloter import plot_spectra
+from LibHunter.PanelPlotter import plot_spectra
 from LibHunter.ScoreFilter import check_peaks
 from LibHunter.IsotopeHunter import IsotopeHunter
 # from LibHunter.AbbrElemCalc import BulkAbbrFormula
@@ -251,8 +251,7 @@ def huntlipids(param_dct):
                                                                                _ms2_df,
                                                                                ms2_precision=usr_ms2_precision,
                                                                                ms2_threshold=usr_ms2_threshold,
-                                                                               ms2_infopeak_threshold=usr_ms2_info_th
-                                                                               )
+                                                                               ms2_infopeak_threshold=usr_ms2_info_th)
                     rank_score = match_info_dct['Rank_score']
                     matched_fa_df = match_info_dct['MATCHED_FA_INFO']
 
@@ -313,12 +312,12 @@ def huntlipids(param_dct):
                                 img_name = (output_folder + r'\LPPtiger_Results_Figures_%s' % hunter_start_time_str
                                             + img_name_core)
 
-                                snr_score, sn_ratio, noise_df = score_calc.get_snr_score(match_info_dct,
-                                                                                         specific_check_dct,
-                                                                                         _obs_msp_df,
-                                                                                         _obs_fp_df,
-                                                                                         amplify_factor=
-                                                                                         usr_amp_factor)
+                                snr_score, sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(match_info_dct,
+                                                                                                     specific_check_dct,
+                                                                                                     _obs_msp_df,
+                                                                                                     _obs_fp_df,
+                                                                                                     amplify_factor=
+                                                                                                     usr_amp_factor)
 
                                 if sn_ratio >= 1.0:
 
@@ -326,11 +325,11 @@ def huntlipids(param_dct):
                                                          snr_score, isotope_score]) / 5
                                     overall_score = round(overall_score, 1)
 
-                                    if overall_score >= 65:
-                                        match_info_dct['Cosine_score'] = overall_score
-                                        match_info_dct['Fingerprint'] = overall_score
-                                        match_info_dct['Isotope_score'] = overall_score
-                                        match_info_dct['SNR_score'] = overall_score
+                                    if overall_score >= 40:
+                                        match_info_dct['Cosine_score'] = _cosine_score
+                                        match_info_dct['Fingerprint'] = _fp_score
+                                        match_info_dct['Isotope_score'] = isotope_score
+                                        match_info_dct['SNR_score'] = snr_score
                                         match_info_dct['Overall_score'] = overall_score
 
                                         isotope_checker, isotope_score = plot_spectra(_row_se, xic_dct,
@@ -344,7 +343,7 @@ def huntlipids(param_dct):
                                                                                       msp_info=_msp_df,
                                                                                       obs_fp=obs_fp_lst,
                                                                                       missed_fp=missed_fp_lst,
-                                                                                      noise_df=noise_df
+                                                                                      snr_i_info=snr_i_info
                                                                                       )
 
                                         print('==> check for output -->')
@@ -446,7 +445,7 @@ def huntlipids(param_dct):
 
         output_header_lst = ['Bulk_identification', 'Proposed_structures', 'Formula_neutral', 'Formula_ion',
                              'Charge', 'Lib_mz', 'ppm', 'SN_ratio', 'Overall_score',
-                             'Hunter_score', 'Cosine_score', 'Fingerprint', 'SNR_score', 'Isotope_score',
+                             'Rank_score', 'Cosine_score', 'Fingerprint', 'SNR_score', 'Isotope_score',
                              'MS1_obs_mz', 'MS1_obs_i', r'MS2_PR_mz', 'MS2_scan_time',
                              'DDA#', 'Scan#', 'i_sn1', 'i_sn2',
                              'i_[M-H]-sn1', 'i_[M-H]-sn2', 'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', '#Specific_peaks']

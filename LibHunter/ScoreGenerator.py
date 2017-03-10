@@ -447,8 +447,11 @@ class ScoreGenerator:
 
         else:
             print('!! No structure related signals found !!')
-            match_info_dct = {}
             matched_checker = 0
+            empty_df = pd.DataFrame()
+            match_info_dct = {'MATCH_INFO': matched_checker, 'Rank_score': 0.0,
+                              'OTHER_SIGNALS_INFO': empty_df,
+                              'MATCHED_FA_INFO': empty_df, 'MATCHED_LYSO_INFO': empty_df}
 
         return match_info_dct, matched_checker
 
@@ -815,7 +818,7 @@ class ScoreGenerator:
         print('signal_df')
         print(signal_df)
 
-        if noise_df.shape > 0:
+        if noise_df.shape[0] > 0:
 
             noise_df = noise_df.drop_duplicates()
             # remove mz if they are identified
@@ -851,7 +854,9 @@ class ScoreGenerator:
         print('sn_ratio ==>', sn_ratio)
         print('SNR SCORE ==>', snr_score)
 
-        return snr_score, sn_ratio, noise_df
+        snr_i_info = {'min_signal': signal_df['i'].min(), 'min_noise': noise_df['i'].min()}
+
+        return snr_score, sn_ratio, noise_df, snr_i_info
 
 
 if __name__ == '__main__':
