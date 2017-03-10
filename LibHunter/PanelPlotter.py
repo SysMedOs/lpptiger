@@ -25,14 +25,13 @@ from matplotlib._png import read_png
 import pandas as pd
 
 
-def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_dct, isotope_score_info_dct,
+def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_dct, isotope_score_info_dct,
                  formula_charged, charge, save_img_as=None, ms1_precision=50e-6, msp_info=pd.DataFrame(),
                  obs_fp=[], missed_fp=[], snr_i_info={}):
     ms2_pr_mz = mz_se['MS2_PR_mz']
     ms1_obs = mz_se['MS1_obs_mz']
     ms1_xic_mz = mz_se['MS1_XIC_mz']
     lib_mz = mz_se['Lib_mz']
-    abbr_id = mz_se['Abbreviation']
     func_id = mz_se['DDA_rank']
     ms1_pr_ppm = mz_se['ppm']
 
@@ -61,12 +60,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     ms_zoom_query_str = ' %.2f < mz < %.2f' % (ms1_obs - 1.5, ms1_obs + 3.55)
     ms_zoom_df = ms1_df.query(ms_zoom_query_str)
 
-    _msms_low_df = ms2_df.query('mz <= 400')
-    _msms_high_df = ms2_df.query('mz > 400')
-    _msms_high_df = _msms_high_df.query('mz < %.4f' % (ms2_pr_mz + 1))
-
     # cut lower peaks to accelerate plotting time
-
     m1_dct = isotope_checker_dct[1]
     m1_theo_mz = m1_dct['theo_mz']
     m1_theo_i = m1_dct['theo_i']
@@ -78,6 +72,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
         ms1_max = ms1_df['i'].max()
         ms1_top1000_i = sorted(ms1_df['i'].tolist(), reverse=True)[499]
         ms1_plot_th = min(m1_obs_i, 3 * ms1_min, ms1_max * 0.01, 1000, ms1_top1000_i)
+        ms1_plot_th = max(ms1_plot_th, ms1_top1000_i)
         print(m1_obs_i, 3 * ms1_min, ms1_max * 0.01, 1000, ms1_top1000_i)
         ms1_df = ms1_df.query('i >= %f' % ms1_plot_th)
         print('Plot full MS1 with abs intensity filter > %f' % ms1_plot_th)
@@ -87,15 +82,26 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
         msp_abs_min = abs(max(msp_info['rev_abs_i'].tolist()))
         ms2_top1000_i = sorted(ms2_df['i'].tolist(), reverse=True)[499]
         ms2_min_lst = [3 * ms2_min, ms2_max * 0.01, 10, msp_abs_min, ms2_top1000_i]
+        ms2_plot_th = max(min(ms2_min_lst), ms2_top1000_i)
         try:
+            ms2_sig_i_lst = []
             for _sn in snr_i_info.keys():
-                ms2_min_lst.append(snr_i_info[_sn])
+                ms2_sig_i_lst.append(snr_i_info[_sn])
+
+            ms2_sig_th = min(ms2_sig_i_lst)
+            if ms2_sig_th < ms2_plot_th:
+                ms2_plot_th = ms2_sig_th
         except KeyError:
             pass
         print(ms2_min_lst)
-        ms2_plot_th = min(ms2_min_lst)
-        ms2_df = ms2_df.query('i >= %f' % ms2_plot_th)
-        print('Plot full MS/MS with abs intensity filter > %f' % ms2_plot_th)
+        ms2_plot_th -= 1
+        if ms2_plot_th > 0:
+            ms2_df = ms2_df.query('i >= %f' % ms2_plot_th)
+            print('Plot full MS/MS with abs intensity filter > %f' % ms2_plot_th)
+
+    _msms_low_df = ms2_df.query('mz <= 400')
+    _msms_high_df = ms2_df.query('mz > 400')
+    _msms_high_df = _msms_high_df.query('mz < %.4f' % (ms2_pr_mz + 1))
 
     print ('Start looking for MS2 PR m/z %f @ MS1 best PR m/z %f with lib m/z %f'
            % (ms2_pr_mz, ms1_obs, lib_mz))
@@ -310,7 +316,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     overall_score = ident_info_dct['Overall_score']
 
     ident_col_labels = ('Proposed_structure', 'Score')
-    _ident_table_df = pd.DataFrame(data={'Proposed_structure': abbr_id, 'Score': overall_score}, index=[0])
+    _ident_table_df = pd.DataFrame(data={'Proposed_structure': abbr, 'Score': overall_score}, index=[0])
     ident_table_vals = map(list, _ident_table_df.values)
     ident_col_width_lst = [0.6, 0.15]
     ident_table = msms_pic.table(cellText=ident_table_vals, colWidths=ident_col_width_lst,
@@ -512,7 +518,7 @@ def plot_spectra(mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_d
     msms_pic.set_ylim([min_msp_i * 1.35, _msms_max * 1.6])
 
     # set title
-    xic_title_str = 'XIC of m/z %.4f | %s @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, abbr_id, lib_mz, ms1_pr_ppm)
+    xic_title_str = 'XIC of m/z %.4f | %s @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, abbr, lib_mz, ms1_pr_ppm)
     ms_title_str = 'MS @ %.3f min' % ms1_rt
     ms_zoom_title_str = 'Theoretical isotopic distribution for %s %s' % (formula_charged, charge)
     msms_title_str = ('MS/MS for m/z %.4f | DDA rank %d @ %.3f min' % (ms2_pr_mz, func_id, ms2_rt))
