@@ -247,7 +247,7 @@ def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_ch
             # mh2_theo_r = mh2_dct['theo_ratio']
             # mh2_obs_r = mh2_dct['obs_ratio']
             mh2_theo_base_box = patches.Rectangle((mh2_theo_mz - ms1_delta, 0), 2 * ms1_delta, deconv_lst[decon_idx],
-                                                  facecolor=(0.2, 1.0, 1.0, 0.6), edgecolor="none", zorder=1)
+                                                  facecolor=(0, 0.8, 1.0, 0.6), edgecolor="none", zorder=1)
             ms_zoom_pic.add_patch(mh2_theo_base_box)
             # opt_box_lst.append(mh2_theo_base_box)
             # mh2_theo_box = patches.Rectangle((mh2_theo_mz - ms1_delta, deconv_lst[decon_idx]),
@@ -255,7 +255,7 @@ def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_ch
             #                                  facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none", zorder=12)
             mh2_theo_box = patches.Rectangle((mh2_theo_mz - ms1_delta, deconv_lst[decon_idx]),
                                              2 * ms1_delta, mh2_theo_i - deconv_lst[decon_idx],
-                                             facecolor=(0, 0.8, 1.0, 0.6), edgecolor="none", zorder=1)
+                                             facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor="none", zorder=1)
             ms_zoom_pic.add_patch(mh2_theo_box)
             markerline, stemlines, baseline = ms_zoom_pic.stem([mh2_theo_mz], [mh2_theo_i], '--',
                                                                markerfmt='o', zorder=24)

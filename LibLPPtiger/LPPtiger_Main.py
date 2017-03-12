@@ -410,8 +410,9 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_b_sumxlsxpath_le.setText(e_save_output_str)
 
     def b_run_hunter(self):
-        QtGui.QMessageBox.information(self, 'Information', 'LPPtiger need time to run, it might take up to few hours.\n'
-                                                           'The Please click "OK" to start the analysis.')
+        # QtGui.QMessageBox.information(self, 'Information',
+        #                               'LPPtiger need time to run, it might take up to few hours.\n'
+        #                               'The Please click "OK" to start the analysis.')
 
         # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane.xlsx')
         # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane_FA_SUM.xlsx')
@@ -425,9 +426,9 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\')
         self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
         # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C18.xlsx')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_Lv1.xlsx')
+        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_Lv12.xlsx')
         self.ui.tab_b_rtstart_dspb.setValue(24.0)
-        self.ui.tab_b_rtend_dspb.setValue(27.0)
+        self.ui.tab_b_rtend_dspb.setValue(26.0)
         self.ui.tab_b_msppm_spb.setValue(20)
         self.ui.tab_b_ms2ppm_spb.setValue(50)
         self.ui.tab_b_hgppm_spb.setValue(50)
@@ -436,7 +437,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_b_ms2threshold_spb.setValue(5)
         self.ui.tab_b_score_spb.setValue(27.5)
         self.ui.tab_b_isotopescore_spb.setValue(80.0)
-        self.ui.tab_b_mzstart_dspb.setValue(780.0)
+        self.ui.tab_b_mzstart_dspb.setValue(790.0)
         self.ui.tab_b_mzend_dspb.setValue(820.0)
         self.ui.tab_b_ms2infoth_dspb.setValue(0)
         self.ui.tab_b_ms2hginfoth_dspb.setValue(0)

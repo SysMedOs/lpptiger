@@ -11,6 +11,7 @@ from __future__ import division
 import re
 # import json
 import math
+import gc
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,9 @@ from scipy import spatial
 
 
 class ScoreGenerator:
-    def __init__(self, fa_def_df, weight_df, key_frag_df, lipid_type, ion_charge='[M-H]-', ms2_precision=500e-6):
+    def __init__(self, fa_def_df, weight_df, key_frag_df, lipid_type, checked_info_df,
+                 ion_charge='[M-H]-', ms2_precision=500e-6):
+        gc.disable()
         self.fa_def_df = fa_def_df
         self.weight_dct = weight_df.to_dict()
         self.weight_type_lst = self.weight_dct.keys()
@@ -27,12 +30,7 @@ class ScoreGenerator:
         self.target_nl_df = key_frag_df.query(r'CLASS == "%s" and TYPE == "NL" and PR_CHARGE == "%s"'
                                               % (lipid_type, ion_charge))
 
-        if ion_charge in ['[M-H]-', '[M+HCOO]-', '[M+CH3COO]-', '[M+FA-H]-', '[M+OAc]-']:
-            charge_mode = 'NEG'
-        elif ion_charge in ['[M+H]+', '[M+NH4]+']:
-            charge_mode = 'POS'
-        else:
-            charge_mode = 'NEG'
+        charge_mode = 'NEG'
 
         self.other_frag_df = key_frag_df.query('CLASS != "%s" and TYPE == "FRAG" and CHARGE_MODE == "%s"'
                                                % (lipid_type, charge_mode))
@@ -40,20 +38,71 @@ class ScoreGenerator:
                                              % (lipid_type, charge_mode))
         self.lipid_type = lipid_type
 
-        self.fa_uniquemz_df = pd.DataFrame(self.fa_def_df, columns=['elem', 'mass', '[M-H]-', 'NL-H2O'])
+        fa_uniquemz_df = pd.DataFrame(self.fa_def_df, columns=['elem', 'mass', '[M-H]-', 'NL-H2O'])
         # Keep same elem only once to speed up
-        self.fa_uniquemz_df.drop_duplicates(subset='elem', inplace=True)
-        self.fa_uniquemz_df.rename(columns={'mass': 'NL'}, inplace=True)
-        self.fa_uniquemz_df.loc[:, 'sn'] = self.fa_uniquemz_df.loc[:, '[M-H]-']
-        self.fa_uniquemz_df.loc[:, '[M-H]-_s'] = self.fa_uniquemz_df['[M-H]-'] * (1 - ms2_precision)
-        self.fa_uniquemz_df.loc[:, '[M-H]-_b'] = self.fa_uniquemz_df['[M-H]-'] * (1 + ms2_precision)
-        self.fa_uniquemz_df.loc[:, 'NL_s'] = self.fa_uniquemz_df['NL'] * (1 - ms2_precision)
-        self.fa_uniquemz_df.loc[:, 'NL_b'] = self.fa_uniquemz_df['NL'] * (1 + ms2_precision)
-        self.fa_uniquemz_df.loc[:, 'NL-H2O_s'] = self.fa_uniquemz_df['NL-H2O'] * (1 - ms2_precision)
-        self.fa_uniquemz_df.loc[:, 'NL-H2O_b'] = self.fa_uniquemz_df['NL-H2O'] * (1 + ms2_precision)
-        for _i_u_mz, _u_mz_r in self.fa_uniquemz_df.iterrows():
-            self.fa_uniquemz_df.set_value(_i_u_mz, '[M-H]-_query', '%f <= mz <= %f' % (_u_mz_r['[M-H]-_s'],
-                                                                                       _u_mz_r['[M-H]-_b']))
+        fa_uniquemz_df.drop_duplicates(subset='elem', inplace=True)
+        fa_uniquemz_df.rename(columns={'mass': 'NL'}, inplace=True)
+        fa_uniquemz_df.loc[:, 'sn'] = fa_uniquemz_df.loc[:, '[M-H]-']
+        fa_uniquemz_df.loc[:, '[M-H]-_s'] = fa_uniquemz_df['[M-H]-'] * (1 - ms2_precision)
+        fa_uniquemz_df.loc[:, '[M-H]-_b'] = fa_uniquemz_df['[M-H]-'] * (1 + ms2_precision)
+        fa_uniquemz_df.loc[:, 'NL_s'] = fa_uniquemz_df['NL'] * (1 - ms2_precision)
+        fa_uniquemz_df.loc[:, 'NL_b'] = fa_uniquemz_df['NL'] * (1 + ms2_precision)
+        fa_uniquemz_df.loc[:, 'NL-H2O_s'] = fa_uniquemz_df['NL-H2O'] * (1 - ms2_precision)
+        fa_uniquemz_df.loc[:, 'NL-H2O_b'] = fa_uniquemz_df['NL-H2O'] * (1 + ms2_precision)
+        if lipid_type == 'PC':
+            pc_fa_df = checked_info_df[checked_info_df['[M+HCOO]-_MZ'] > 0]
+            pc_h_df = checked_info_df[checked_info_df['[M-H]-_MZ'] > 0]
+            pr_charged_mz_fa_lst = set(pc_fa_df['[M+HCOO]-_MZ'].tolist())
+            pr_charged_mz_fa_mode_lst = ['[M+HCOO]-'] * len(pr_charged_mz_fa_lst)
+            self.pr_info_lst = zip(pr_charged_mz_fa_lst, pr_charged_mz_fa_mode_lst)
+            if pc_h_df.shape[0] > 0:
+                pr_charged_mz_h_lst = set(pc_h_df['[M-H]-_MZ'].tolist())
+                pr_charged_mz_h_mode_lst = ['[M-H]-'] * len(pr_charged_mz_h_lst)
+                self.pr_info_lst += zip(pr_charged_mz_h_lst, pr_charged_mz_h_mode_lst)
+        else:
+            pr_charged_mz_lst = set(checked_info_df['[M-H]-_MZ'].tolist())
+            pr_charge_mode_lst = ['[M-H]-'] * len(pr_charged_mz_lst)
+            self.pr_info_lst = zip(pr_charged_mz_lst, pr_charge_mode_lst)
+        self.pr_query_dct = {}
+
+        for pr_mz_info in self.pr_info_lst:
+            pr_mz_dct = {}
+            pr_mz = pr_mz_info[0]
+            pr_charge = pr_mz_info[1]
+            for _i_u_mz, _u_mz_r in fa_uniquemz_df.iterrows():
+                _tmp_fa_mz = _u_mz_r['[M-H]-']
+                _tmp_fa_mz_dct = {'sn': _u_mz_r['sn'],
+                                  '[M-H]-_query': ('%f <= mz <= %f' % (_u_mz_r['[M-H]-_s'], _u_mz_r['[M-H]-_b']))}
+
+                if lipid_type == 'PC' and pr_charge == '[M+HCOO]-':
+                    _tmp_fa_mz_dct['[M-H]-sn'] = pr_mz - _u_mz_r['NL-H2O'] - 60.021130  # - CH3COOH for PC
+                    _tmp_fa_mz_dct['[M-H]-sn-H2O'] = pr_mz - _u_mz_r['NL'] - 60.021130  # - CH3COOH for PC
+                    _tmp_fa_mz_dct['[M-H]-sn_query'] = ('%f <= mz <= %f' %
+                                                        (pr_mz - _u_mz_r['NL-H2O_b'] - 60.021130,
+                                                         pr_mz - _u_mz_r['NL-H2O_s'] - 60.021130))
+                    _tmp_fa_mz_dct['[M-H]-sn-H2O_query'] = ('%f <= mz <= %f' %
+                                                            (pr_mz - _u_mz_r['NL_b'] - 60.021130,
+                                                             pr_mz - _u_mz_r['NL_s'] - 60.021130))
+                elif lipid_type == 'PS' and pr_charge == '[M-H]-':
+                    _tmp_fa_mz_dct['[M-H]-sn'] = pr_mz - _u_mz_r['NL-H2O'] - 87.032029  # - C3H5NO2 for PS
+                    _tmp_fa_mz_dct['[M-H]-sn-H2O'] = pr_mz - _u_mz_r['NL'] - 87.032029  # - C3H5NO2 for PS
+                    _tmp_fa_mz_dct['[M-H]-sn_query'] = ('%f <= mz <= %f' %
+                                                        (pr_mz - _u_mz_r['NL-H2O_b'] - 87.032029,
+                                                         pr_mz - _u_mz_r['NL-H2O_s'] - 87.032029))
+                    _tmp_fa_mz_dct['[M-H]-sn-H2O_query'] = ('%f <= mz <= %f' %
+                                                            (pr_mz - _u_mz_r['NL_b'] - 87.032029,
+                                                             pr_mz - _u_mz_r['NL_s'] - 87.032029))
+                else:
+                    # Loss of FA-18, -OH remains on Glycerol back bone
+                    _tmp_fa_mz_dct['[M-H]-sn'] = pr_mz - _u_mz_r['NL-H2O']
+                    # Loss of FA as full acid, -OH remains on FA NL
+                    _tmp_fa_mz_dct['[M-H]-sn-H2O'] = pr_mz - _u_mz_r['NL']
+                    _tmp_fa_mz_dct['[M-H]-sn_query'] = ('%f <= mz <= %f' %
+                                                        (pr_mz - _u_mz_r['NL-H2O_b'],pr_mz - _u_mz_r['NL-H2O_s']))
+                    _tmp_fa_mz_dct['[M-H]-sn-H2O_query'] = ('%f <= mz <= %f' %
+                                                            (pr_mz - _u_mz_r['NL_b'],pr_mz - _u_mz_r['NL_s']))
+                pr_mz_dct[_tmp_fa_mz] = _tmp_fa_mz_dct
+            self.pr_query_dct[pr_mz] = pr_mz_dct
 
     @staticmethod
     def get_pr_mz(charge_type, mz_lib):
@@ -264,8 +313,7 @@ class ScoreGenerator:
 
         return ident_df_dct, ident_checker
 
-    def get_fa_possibilities(self, abbr, charge_type, mz_lib, ms2_df, ms2_precision=500e-6,
-                             ms2_threshold=100, ms2_infopeak_threshold=0.02):
+    def get_fa_possibilities(self, mz_lib, charge_type, ms2_df, ms2_threshold=100, ms2_infopeak_threshold=0.02):
 
         other_fa_df = pd.DataFrame()
         other_lyso_l_df = pd.DataFrame()
@@ -276,62 +324,20 @@ class ScoreGenerator:
         ms2_info_i = ms2_basepeak_i * ms2_infopeak_threshold
         ms2_threshold = max(ms2_threshold, ms2_info_i)
 
-        calc_pr_mz = mz_lib
+        if (mz_lib, charge_type) in self.pr_info_lst:
+            pr_query_dct = self.pr_query_dct[mz_lib]
 
-        if abbr[:2] in ['PA', 'PC', 'PE', 'PG', 'PI', 'PS', 'SM']:
-            lipid_type = 'PL'
-        elif abbr[:2] in ['TA', 'TG', 'DA', 'DG', 'MA', 'MG']:
-            lipid_type = 'GL'
-        else:
-            lipid_type = 'PL'
-
-        if lipid_type == 'PL':
-            fa_chk_df = self.fa_uniquemz_df[['sn', 'NL', 'NL_s', 'NL_b', 'NL-H2O', 'NL-H2O_s', 'NL-H2O_b',
-                                             '[M-H]-', '[M-H]-_query']]
-
-            if abbr[:2] == 'PC' and charge_type == '[M+HCOO]-':
-                fa_chk_df.loc[:, '[M-H]-sn'] = calc_pr_mz - fa_chk_df['NL-H2O'] - 60.021130  # - CH3COOH for PC
-                fa_chk_df.loc[:, '[M-H]-sn-H2O'] = calc_pr_mz - fa_chk_df['NL'] - 60.021130  # - CH3COOH for PC
-                for _i_pc, _r_pc in fa_chk_df.iterrows():
-                    fa_chk_df.set_value(_i_pc, '[M-H]-sn_query', ('%f <= mz <= %f' %
-                                                                  (calc_pr_mz - _r_pc['NL-H2O_b'] - 60.021130,
-                                                                   calc_pr_mz - _r_pc['NL-H2O_s'] - 60.021130)))
-                    fa_chk_df.set_value(_i_pc, '[M-H]-sn-H2O_query', ('%f <= mz <= %f' %
-                                                                      (calc_pr_mz - _r_pc['NL_b'] - 60.021130,
-                                                                       calc_pr_mz - _r_pc['NL_s'] - 60.021130)))
-            elif abbr[:2] == 'PS' and charge_type == '[M-H]-':
-                fa_chk_df.loc[:, '[M-H]-sn'] = calc_pr_mz - fa_chk_df['NL-H2O'] - 87.032029  # - C3H5NO2 for PS
-                fa_chk_df.loc[:, '[M-H]-sn-H2O'] = calc_pr_mz - fa_chk_df['NL'] - 87.032029  # - C3H5NO2 for PS
-                for _i_ps, _r_ps in fa_chk_df.iterrows():
-                    fa_chk_df.set_value(_i_ps, '[M-H]-sn_query', ('%f <= mz <= %f' %
-                                                                  (calc_pr_mz - _r_ps['NL-H2O_b'] - 87.032029,
-                                                                   calc_pr_mz - _r_ps['NL-H2O_s'] - 87.032029)))
-                    fa_chk_df.set_value(_i_ps, '[M-H]-sn-H2O_query', ('%f <= mz <= %f' %
-                                                                      (calc_pr_mz - _r_ps['NL_b'] - 87.032029,
-                                                                       calc_pr_mz - _r_ps['NL_s'] - 87.032029)))
-            else:
-                # Loss of FA-18, -OH remains on Glycerol back bone
-                fa_chk_df.loc[:, '[M-H]-sn'] = calc_pr_mz - fa_chk_df['NL-H2O']
-                # Loss of FA as full acid, -OH remains on FA NL
-                fa_chk_df.loc[:, '[M-H]-sn-H2O'] = calc_pr_mz - fa_chk_df['NL']
-                for _i_pr, _r_pr in fa_chk_df.iterrows():
-                    fa_chk_df.set_value(_i_pr, '[M-H]-sn_query', ('%f <= mz <= %f' %
-                                                                  (calc_pr_mz - _r_pr['NL-H2O_b'],
-                                                                   calc_pr_mz - _r_pr['NL-H2O_s'])))
-                    fa_chk_df.set_value(_i_pr, '[M-H]-sn-H2O_query', ('%f <= mz <= %f' %
-                                                                      (calc_pr_mz - _r_pr['NL_b'],
-                                                                       calc_pr_mz - _r_pr['NL_s'])))
-
-            for _i, _fa_se in fa_chk_df.iterrows():
+            for _fa_mz in pr_query_dct.keys():
+                _fa_dct = pr_query_dct[_fa_mz]
 
                 for _frag_type in ['sn', '[M-H]-sn', '[M-H]-sn-H2O']:
-                    _frag_mz = _fa_se[_frag_type]
+                    _frag_mz = _fa_dct[_frag_type]
                     if _frag_type == 'sn':
-                        _frag_df = ms2_df.query(_fa_se['[M-H]-_query'])
+                        _frag_df = ms2_df.query(_fa_dct['[M-H]-_query'])
                     elif _frag_type == '[M-H]-sn':
-                        _frag_df = ms2_df.query(_fa_se['[M-H]-sn_query'])
+                        _frag_df = ms2_df.query(_fa_dct['[M-H]-sn_query'])
                     elif _frag_type == '[M-H]-sn-H2O':
-                        _frag_df = ms2_df.query(_fa_se['[M-H]-sn-H2O_query'])
+                        _frag_df = ms2_df.query(_fa_dct['[M-H]-sn-H2O_query'])
 
                     if _frag_df.shape[0] > 0:
                         _frag_df.loc[:, 'ppm'] = 1e6 * (_frag_df['mz'] - _frag_mz) / _frag_mz
@@ -345,12 +351,16 @@ class ScoreGenerator:
                                 pass
                             else:
                                 _frag_df = _frag_i_df.append(_frag_ppm_df)
+                        else:
+                            pass
                         if _frag_type == 'sn':
                             other_fa_df = other_fa_df.append(_frag_df)
                         elif _frag_type == '[M-H]-sn':
                             other_lyso_h_df = other_lyso_h_df.append(_frag_df)
                         elif _frag_type == '[M-H]-sn-H2O':
                             other_lyso_l_df = other_lyso_l_df.append(_frag_df)
+                        else:
+                            pass
 
         # format the output DataFrame
         if other_fa_df.shape[0] > 0:
@@ -371,28 +381,34 @@ class ScoreGenerator:
             other_lyso_l_df = other_lyso_l_df.sort_values(by=['i', 'ppm_abs'], ascending=[False, True])
             other_lyso_l_df = other_lyso_l_df.sort_values(by='i', ascending=False).head(5).reset_index(drop=True)
 
+        print('other_fa_df')
+        print(other_fa_df)
+        print('other_lyso_h_df')
+        print(other_lyso_h_df)
+        print('other_lyso_l_df')
+        print(other_lyso_l_df)
+
         other_signals_dct = {'other_fa_df': other_fa_df,
                              'other_lyso_h_df': other_lyso_h_df, 'other_lyso_l_df': other_lyso_l_df}
 
         return other_signals_dct
 
-    def get_rankscore(self, abbr, charge_type, mz_lib, ms2_df, ms2_precision=500e-6,
+    def get_rankscore(self, abbr, charge_type, ms1_obs_mz, ms1_lib_mz, ms2_df, ms2_precision=500e-6,
                       ms2_threshold=100, ms2_infopeak_threshold=0.02):
 
         lipid_info_dct = self.get_structure(abbr)
 
-        ident_signals_dct, ident_checker = self.get_fa_signals(lipid_info_dct, charge_type, mz_lib, ms2_df,
+        ident_signals_dct, ident_checker = self.get_fa_signals(lipid_info_dct, charge_type, ms1_obs_mz, ms2_df,
                                                                ms2_precision=ms2_precision,
                                                                ms2_threshold=ms2_threshold,
-                                                               ms2_infopeak_threshold=ms2_infopeak_threshold
-                                                               )
+                                                               ms2_infopeak_threshold=ms2_infopeak_threshold)
         # need at least one FA from signal checker
         if ident_checker > 0:
             ident_signal_lst = ident_signals_dct.keys()
             if len(ident_signal_lst) > 0:
 
-                other_signals_dct = self.get_fa_possibilities(abbr, charge_type, mz_lib, ms2_df,
-                                                              ms2_precision=ms2_precision, ms2_threshold=ms2_threshold,
+                other_signals_dct = self.get_fa_possibilities(ms1_lib_mz, charge_type, ms2_df,
+                                                              ms2_threshold=ms2_threshold,
                                                               ms2_infopeak_threshold=ms2_infopeak_threshold)
 
                 other_fa_df = other_signals_dct['other_fa_df']
@@ -451,34 +467,43 @@ class ScoreGenerator:
                 print('matched_lyso_df')
                 print(matched_lyso_df)
 
-                matched_checker = 1
-                if other_fa_df.shape[0] > 0:
-                    other_signals_df = other_signals_df.append(other_fa_df)
-                if other_lyso_l_df.shape[0] > 0:
-                    other_signals_df = other_signals_df.append(other_lyso_l_df)
-                if other_lyso_h_df.shape[0] > 0:
-                    other_signals_df = other_signals_df.append(other_lyso_h_df)
+                if matched_fa_df.shape[0] > 0:
 
-                other_signals_df = other_signals_df.reset_index(drop=True)
+                    matched_checker = 1
+                    if other_fa_df.shape[0] > 0:
+                        other_signals_df = other_signals_df.append(other_fa_df)
+                    if other_lyso_l_df.shape[0] > 0:
+                        other_signals_df = other_signals_df.append(other_lyso_l_df)
+                    if other_lyso_h_df.shape[0] > 0:
+                        other_signals_df = other_signals_df.append(other_lyso_h_df)
 
-                other_drop_lst = []
-                if other_signals_df.shape[0] > 0:
-                    ident_signal_chk_lst = [round(s, 1) for s in signal_mz_lst]
-                    other_signal_lst = other_signals_df['mz'].tolist()
-                    other_signal_chk_lst = [round(s, 1) for s in other_signal_lst]
-                    for sig_mz in ident_signal_chk_lst:
-                        if sig_mz in other_signal_chk_lst:
-                            other_sig_idx = other_signal_chk_lst.index(sig_mz)
-                            other_drop_lst.append(other_sig_idx)
+                    other_signals_df = other_signals_df.reset_index(drop=True)
 
-                other_signals_df = other_signals_df.drop(other_signals_df.index[other_drop_lst])
+                    other_drop_lst = []
+                    if other_signals_df.shape[0] > 0:
+                        ident_signal_chk_lst = [round(s, 1) for s in signal_mz_lst]
+                        other_signal_lst = other_signals_df['mz'].tolist()
+                        other_signal_chk_lst = [round(s, 1) for s in other_signal_lst]
+                        for sig_mz in ident_signal_chk_lst:
+                            if sig_mz in other_signal_chk_lst:
+                                other_sig_idx = other_signal_chk_lst.index(sig_mz)
+                                other_drop_lst.append(other_sig_idx)
 
-                rank_score = round(rank_score, 1)
+                    other_signals_df = other_signals_df.drop(other_signals_df.index[other_drop_lst])
 
-                match_info_dct = {'MATCH_INFO': matched_checker, 'Rank_score': rank_score,
-                                  'OTHER_SIGNALS_INFO': other_signals_df,
-                                  'MATCHED_FA_INFO': matched_fa_df, 'MATCHED_LYSO_INFO': matched_lyso_df}
+                    rank_score = round(rank_score, 1)
 
+                    match_info_dct = {'MATCH_INFO': matched_checker, 'Rank_score': rank_score,
+                                      'OTHER_SIGNALS_INFO': other_signals_df,
+                                      'MATCHED_FA_INFO': matched_fa_df, 'MATCHED_LYSO_INFO': matched_lyso_df}
+
+                else:
+                    print('!! No structure related signals found !!')
+                    matched_checker = 0
+                    empty_df = pd.DataFrame()
+                    match_info_dct = {'MATCH_INFO': matched_checker, 'Rank_score': 0.0,
+                                      'OTHER_SIGNALS_INFO': empty_df,
+                                      'MATCHED_FA_INFO': empty_df, 'MATCHED_LYSO_INFO': empty_df}
             else:
                 print('!! No structure related signals found !!')
                 matched_checker = 0

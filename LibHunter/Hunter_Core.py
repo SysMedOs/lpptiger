@@ -140,9 +140,6 @@ def huntlipids(param_dct):
     # get the information from the following columns and leave the rewark back
     usr_key_frag_df = usr_key_frag_df[['CLASS', 'TYPE', 'EXACTMASS', 'PR_CHARGE', 'LABEL', 'CHARGE_MODE']]
 
-    score_calc = ScoreGenerator(usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type,
-                                ion_charge=charge_mode, ms2_precision=usr_ms2_precision)
-
     print('=== ==> --> Start to parse mzML')
     # extract all spectra from mzML to pandas DataFrame
     usr_scan_info_df, usr_spectra_pl = extract_mzml(usr_mzml, usr_rt_range, dda_top=usr_dda_top,
@@ -166,9 +163,6 @@ def huntlipids(param_dct):
         _tmp_usr_df = ms1_obs_pr_df.query('DDA_rank == %f and scan_number == %f' % (_dda_rank, _scan_id))
         checked_info_df = checked_info_df.append(_tmp_usr_df)
 
-    ms1_obs_mz_lst = ms1_obs_pr_df['MS1_obs_mz'].tolist()
-    ms1_obs_mz_lst = set(ms1_obs_mz_lst)
-
     ms1_xic_mz_lst = ms1_obs_pr_df['MS1_XIC_mz'].tolist()
     ms1_xic_mz_lst = set(ms1_xic_mz_lst)
 
@@ -189,6 +183,9 @@ def huntlipids(param_dct):
     print('checked_info_df')
     print(checked_info_df.shape)
 
+    score_calc = ScoreGenerator(usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type, checked_info_df,
+                                ion_charge=charge_mode, ms2_precision=usr_ms2_precision)
+
     # get spectra of one ABBR and plot
     for _n, _subgroup_df in checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time']):
         print('_subgroup_df')
@@ -208,6 +205,11 @@ def huntlipids(param_dct):
 
         _usr_formula = _samemz_se['FORMULA_NEUTRAL']
         _usr_formula_charged = _samemz_se['Formula']
+
+        # if usr_lipid_type == 'PC' and charge_mode == '[M+HCOO]-':
+        #     usr_lib_pr_mz = _samemz_se['[M+HCOO]-_mz']
+        # else:
+        #     usr_lib_pr_mz = _samemz_se['[M-H]-_mz']
 
         if _tmp_chk_df.shape[0] == 1:
             print('>>> >>> >>> Processing MS2/MS scan of:')
@@ -244,43 +246,44 @@ def huntlipids(param_dct):
                     for _i_abbr, _r_abbr in _subgroup_df.iterrows():
                         _usr_abbr_bulk = _r_abbr['Abbreviation']
                         print('Check_proposed_structure:', _usr_abbr_bulk)
-                        match_info_dct, matched_checker = score_calc.get_rankscore(_usr_abbr_bulk,
-                                                                                   charge_mode, _ms1_pr_mz,
-                                                                                   _ms2_df,
-                                                                                   ms2_precision=usr_ms2_precision,
-                                                                                   ms2_threshold=usr_ms2_threshold,
-                                                                                   ms2_infopeak_threshold=
-                                                                                   usr_ms2_info_th)
-                        rank_score = match_info_dct['Rank_score']
-                        matched_fa_df = match_info_dct['MATCHED_FA_INFO']
 
-                        if matched_checker > 0 and rank_score > usr_rankscore_filter and matched_fa_df.shape[0] > 0:
-                            print('Rank_score: %.f --> passed' % rank_score)
+                        _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
+                        _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df, _ms2_df,
+                                                                                          ms2_precision=
+                                                                                          usr_ms2_precision,
+                                                                                          ms2_threshold=
+                                                                                          usr_ms2_threshold,
+                                                                                          ms2_infopeak_threshold=
+                                                                                          usr_ms2_info_th)
 
-                            _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
-                            _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df, _ms2_df,
-                                                                                              ms2_precision=
-                                                                                              usr_ms2_precision,
-                                                                                              ms2_threshold=
-                                                                                              usr_ms2_threshold,
-                                                                                              ms2_infopeak_threshold=
-                                                                                              usr_ms2_info_th
-                                                                                              )
+                        if _cosine_score > 20:
+                            print('==> --> Cosine similarity score: %f' % _cosine_score)
 
-                            if _cosine_score > 0:
-                                print('==> --> Cosine similarity score: %f' % _cosine_score)
+                            fingerprint_lst = json.loads(_samemz_se['FINGERPRINT'])
+                            fp_info_dct = score_calc.get_fingerprint_score(fingerprint_lst, _ms2_df,
+                                                                           ms2_precision=usr_ms2_precision,
+                                                                           ms2_threshold=usr_ms2_threshold,
+                                                                           ms2_infopeak_threshold=usr_ms2_info_th)
+                            _fp_score = fp_info_dct['fingerprint_score']
+                            _obs_fp_df = fp_info_dct['obs_score_df']
+                            obs_fp_lst = fp_info_dct['obs_mz']
+                            missed_fp_lst = fp_info_dct['missed_mz']
 
-                                fingerprint_lst = json.loads(_samemz_se['FINGERPRINT'])
-                                fp_info_dct = score_calc.get_fingerprint_score(fingerprint_lst, _ms2_df,
-                                                                               ms2_precision=usr_ms2_precision,
-                                                                               ms2_threshold=usr_ms2_threshold,
-                                                                               ms2_infopeak_threshold=usr_ms2_info_th)
-                                _fp_score = fp_info_dct['fingerprint_score']
-                                _obs_fp_df = fp_info_dct['obs_score_df']
-                                obs_fp_lst = fp_info_dct['obs_mz']
-                                missed_fp_lst = fp_info_dct['missed_mz']
+                            if _fp_score > 20:
 
-                                if _fp_score > 0:
+                                match_info_dct, matched_checker = score_calc.get_rankscore(_usr_abbr_bulk,
+                                                                                           charge_mode, _ms1_pr_mz,
+                                                                                           _usr_mz_lib, _ms2_df,
+                                                                                           ms2_precision=
+                                                                                           usr_ms2_precision,
+                                                                                           ms2_threshold=
+                                                                                           usr_ms2_threshold,
+                                                                                           ms2_infopeak_threshold=
+                                                                                           usr_ms2_info_th)
+                                rank_score = match_info_dct['Rank_score']
+
+                                if matched_checker > 0 and rank_score > usr_rankscore_filter:
+                                    print('Rank_score: %.f --> passed' % rank_score)
 
                                     specific_check_dct = score_calc.get_specific_peaks(_usr_mz_lib, _ms2_df,
                                                                                        ms2_precision=

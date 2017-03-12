@@ -9,6 +9,7 @@
 from __future__ import division
 from __future__ import print_function
 import re
+import gc
 
 import pandas as pd
 import pymzml
@@ -37,6 +38,8 @@ def extract_mzml(mzml, rt_range, dda_top=6, ms1_threshold=1000, ms2_threshold=10
     :rtype: pandas.DataFrame, pandas.Panel
 
     """
+
+    gc.disable()
 
     waters_obo_lst = (('MS:1000016', ['value']), ('MS:1000744', ['value']), ('MS:1000042', ['value']),
                       ('MS:1000796', ['value']), ('MS:1000514', ['name']), ('MS:1000515', ['name']),
@@ -258,10 +261,14 @@ def get_spectra(mz, mz_lib, function, ms2_scan_id, ms1_obs_mz_lst,
     spec_info_dct = {'ms1_i': ms1_i, 'ms1_mz': ms1_mz, 'ms1_pr_ppm': ms1_pr_ppm, 'ms1_rt': ms1_rt, 'ms2_rt': ms2_rt,
                      '_ms1_spec_idx': ms1_spec_idx, '_ms2_spec_idx': ms2_spec_idx, 'ms1_df': ms1_df, 'ms2_df': ms2_df}
 
+    gc.enable()
+
     return spec_info_dct
 
 
 def get_xic(ms1_mz, mzml, rt_range, ppm=500, ms1_precision=50e-6, msn_precision=500e-6, vendor='waters'):
+
+    gc.disable()
 
     waters_obo_lst = (('MS:1000016', ['value']), ('MS:1000744', ['value']), ('MS:1000042', ['value']),
                       ('MS:1000796', ['value']), ('MS:1000514', ['name']), ('MS:1000515', ['name']),
@@ -331,10 +338,13 @@ def get_xic(ms1_mz, mzml, rt_range, ppm=500, ms1_precision=50e-6, msn_precision=
 
                         ms1_xic_df = ms1_xic_df.append(_found_ms1_df.sort_values(by='ppm').head(1))
 
+    gc.enable()
     return ms1_xic_df
 
 
 def get_xic_all(info_df, mzml, rt_range, ms1_precision=50e-6, msn_precision=500e-6, vendor='waters'):
+
+    gc.disable()
 
     waters_obo_lst = (('MS:1000016', ['value']), ('MS:1000744', ['value']), ('MS:1000042', ['value']),
                       ('MS:1000796', ['value']), ('MS:1000514', ['name']), ('MS:1000515', ['name']),
@@ -441,16 +451,17 @@ def get_xic_all(info_df, mzml, rt_range, ms1_precision=50e-6, msn_precision=500e
                                                                     (by='i', ascending=False).head(1))
                                 ms1_xic_dct[_ms1_xic] = ms1_xic_df
 
+    gc.enable()
     return ms1_xic_dct
 
 
-if __name__ == '__main__':
-
-    usr_mzml = r'test\CM_neg_30min.mzML'
-    usr_dda_top = 12
-    usr_rt_range = [25, 27]
-
-    usr_scan_info_df, usr_spec_pl = extract_mzml(usr_mzml, usr_rt_range, usr_dda_top)
-
-    print(usr_scan_info_df.head(5))
-    print(usr_spec_pl.items)
+# if __name__ == '__main__':
+#
+#     usr_mzml = r'test\CM_neg_30min.mzML'
+#     usr_dda_top = 12
+#     usr_rt_range = [25, 27]
+#
+#     usr_scan_info_df, usr_spec_pl = extract_mzml(usr_mzml, usr_rt_range, usr_dda_top)
+#
+#     print(usr_scan_info_df.head(5))
+#     print(usr_spec_pl.items)

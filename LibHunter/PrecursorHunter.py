@@ -15,6 +15,8 @@
 from __future__ import division
 from __future__ import print_function
 
+import gc
+
 import pandas as pd
 import numpy as np
 from numba import jit, jitclass, int64, float64, guvectorize
@@ -25,6 +27,7 @@ class PrecursorHunter(object):
         self.lpp_info_df = lpp_info_df
         # self.mzml_path = mzml_path
         self.param_dct = param_dct
+        gc.disable()
 
     def get_matched_pr(self, scan_info_df, spectra_pl):
 
