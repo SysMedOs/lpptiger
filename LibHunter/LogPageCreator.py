@@ -111,7 +111,6 @@ class LogPageCreator(object):
 
         img_path = img_name[1:]
 
-
         ms1_pr_mz = ident_info_df.get_value(ident_idx, r'MS1_obs_mz')
         # ms2_pr_mz = ident_info_df.get_value(1, r'MS2_PR_mz')
         ms2_rt = ident_info_df.get_value(ident_idx, 'MS2_scan_time')

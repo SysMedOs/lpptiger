@@ -49,21 +49,21 @@ class PrecursorHunter(object):
 
             print('PC [M+HCOO]- LPP: ', pc_fa_df.shape[0])
             print('PC [M-H]- LPP: ', pc_h_df.shape[0])
-            pc_fa_df.loc[:, 'PR_MZ_LOW'] = pc_fa_df['[M+HCOO]-_MZ'] - pr_window
-            pc_fa_df.loc[:, 'PR_MZ_HIGH'] = pc_fa_df['[M+HCOO]-_MZ'] + pr_window
+            pc_fa_df.loc[:, 'PR_MZ_LOW'] = pc_fa_df.loc[:, '[M+HCOO]-_MZ'] - pr_window
+            pc_fa_df.loc[:, 'PR_MZ_HIGH'] = pc_fa_df.loc[:, '[M+HCOO]-_MZ'] + pr_window
             pc_fa_df.loc[:, 'MS1_MZ_LOW'] = pc_fa_df['[M+HCOO]-_MZ'] * (1 - 0.000001 * ms1_ppm)
             pc_fa_df.loc[:, 'MS1_MZ_HIGH'] = pc_fa_df['[M+HCOO]-_MZ'] * (1 + 0.000001 * ms1_ppm)
             pc_fa_df.loc[:, 'Formula'] = pc_fa_df['[M+HCOO]-_FORMULA'].str.strip('-')
             pc_fa_df.loc[:, 'Ion'] = '[M+HCOO]-'
-            pc_fa_df.loc[:, 'Lib_mz'] = pc_fa_df['[M+HCOO]-_MZ']
+            pc_fa_df.loc[:, 'Lib_mz'] = pc_fa_df.loc[:, '[M+HCOO]-_MZ']
             if pc_h_df.shape[0] > 0:
-                pc_h_df.loc[:, 'PR_MZ_LOW'] = pc_h_df['[M-H]-_MZ'] - pr_window
-                pc_h_df.loc[:, 'PR_MZ_HIGH'] = pc_h_df['[M-H]-_MZ'] + pr_window
+                pc_h_df.loc[:, 'PR_MZ_LOW'] = pc_h_df.loc[:, '[M-H]-_MZ'] - pr_window
+                pc_h_df.loc[:, 'PR_MZ_HIGH'] = pc_h_df.loc[:, '[M-H]-_MZ'] + pr_window
                 pc_h_df.loc[:, 'MS1_MZ_LOW'] = pc_h_df['[M-H]-_MZ'] * (1 - 0.000001 * ms1_ppm)
                 pc_h_df.loc[:, 'MS1_MZ_HIGH'] = pc_h_df['[M-H]-_MZ'] * (1 + 0.000001 * ms1_ppm)
                 pc_h_df.loc[:, 'Formula'] = pc_h_df['[M-H]-_FORMULA'].str.strip('-')
                 pc_h_df.loc[:, 'Ion'] = '[M-H]-'
-                pc_h_df.loc[:, 'Lib_mz'] = pc_h_df['[M-H]-_MZ']
+                pc_h_df.loc[:, 'Lib_mz'] = pc_h_df.loc[:, '[M-H]-_MZ']
                 self.lpp_info_df = pc_fa_df.copy()
                 self.lpp_info_df = self.lpp_info_df.append(pc_h_df)
             else:
@@ -72,13 +72,13 @@ class PrecursorHunter(object):
             self.lpp_info_df = self.lpp_info_df.sort_values(by='PR_MZ_LOW')
 
         else:
-            self.lpp_info_df.loc[:, 'PR_MZ_LOW'] = self.lpp_info_df['[M-H]-_MZ'] - pr_window
-            self.lpp_info_df.loc[:, 'PR_MZ_HIGH'] = self.lpp_info_df['[M-H]-_MZ'] + pr_window
+            self.lpp_info_df.loc[:, 'PR_MZ_LOW'] = self.lpp_info_df.loc[:, '[M-H]-_MZ'] - pr_window
+            self.lpp_info_df.loc[:, 'PR_MZ_HIGH'] = self.lpp_info_df.loc[:, '[M-H]-_MZ'] + pr_window
             self.lpp_info_df.loc[:, 'MS1_MZ_LOW'] = self.lpp_info_df['[M-H]-_MZ'] * (1 - 0.000001 * ms1_ppm)
             self.lpp_info_df.loc[:, 'MS1_MZ_HIGH'] = self.lpp_info_df['[M-H]-_MZ'] * (1 + 0.000001 * ms1_ppm)
-            self.lpp_info_df.loc[:, 'Formula'] = self.lpp_info_df['[M-H]-_FORMULA'].str.strip('-')
+            self.lpp_info_df.loc[:, 'Formula'] = self.lpp_info_df.loc[:, '[M-H]-_FORMULA'].str.strip('-')
             self.lpp_info_df.loc[:, 'Ion'] = '[M-H]-'
-            self.lpp_info_df.loc[:, 'Lib_mz'] = self.lpp_info_df['[M-H]-_MZ']
+            self.lpp_info_df.loc[:, 'Lib_mz'] = self.lpp_info_df.loc[:, '[M-H]-_MZ']
 
         for _n, _subgroup_df in self.lpp_info_df.groupby(['Lib_mz', 'Formula']):
             _samemz_se = _subgroup_df.iloc[0, :].squeeze()
@@ -130,10 +130,10 @@ class PrecursorHunter(object):
                                     _subgroup_df.loc[:, 'MS1_XIC_mz'] = round(_ms1_mz, 4)
                                     _subgroup_df.loc[:, 'ppm'] = _ppm
                                     _subgroup_df.loc[:, 'abs_ppm'] = abs(_ppm)
-                                    print(_subgroup_df[['Abbreviation', 'spec_index', 'MS2_PR_mz', 'MS1_obs_mz']])
+                                    # print(_subgroup_df[['Abbreviation', 'spec_index', 'MS2_PR_mz', 'MS1_obs_mz']])
                                     ms1_obs_pr_df = ms1_obs_pr_df.append(_subgroup_df)
 
-        print('ms1_obs_pr_df.shape', ms1_obs_pr_df.shape)
+        # print('ms1_obs_pr_df.shape', ms1_obs_pr_df.shape)
         if ms1_obs_pr_df.shape[0] > 0:
             ms1_obs_pr_df = ms1_obs_pr_df.sort_values(by=['Lib_mz', 'abs_ppm'], ascending=[True, True])
             ms1_obs_pr_df = ms1_obs_pr_df.reset_index(drop=True)
