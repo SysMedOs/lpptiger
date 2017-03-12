@@ -15,6 +15,7 @@ import json
 import math
 import os
 import time
+from multiprocessing import Pool
 
 import pandas as pd
 
@@ -23,9 +24,7 @@ from LibHunter.SpectraExtractor import get_spectra
 from LibHunter.SpectraExtractor import get_xic_all
 from LibHunter.ScoreGenerator import ScoreGenerator
 from LibHunter.PanelPlotter import plot_spectra
-from LibHunter.ScoreFilter import check_peaks
 from LibHunter.IsotopeHunter import IsotopeHunter
-# from LibHunter.AbbrElemCalc import BulkAbbrFormula
 from LibHunter.LogPageCreator import LogPageCreator
 from LibHunter.PrecursorHunter import PrecursorHunter
 
@@ -38,6 +37,8 @@ def huntlipids(param_dct):
     """
 
     start_time = time.clock()
+
+    usr_core_num = 4
 
     usr_lipid_type = param_dct['lipid_type']
     charge_mode = param_dct['charge_mode']
@@ -147,7 +148,7 @@ def huntlipids(param_dct):
                                                     vendor=usr_vendor
                                                     )
 
-    ms1_obs_pr_df = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl)
+    ms1_obs_pr_df = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl, core_num=usr_core_num)
 
     if isinstance(ms1_obs_pr_df, str):
         return '!! NO suitable precursor --> Check settings!!\n'
@@ -166,12 +167,31 @@ def huntlipids(param_dct):
     ms1_xic_mz_lst = set(ms1_xic_mz_lst)
 
     print('=== ==> --> Start to extract XIC')
-    try:
-        xic_dct = get_xic_all(ms1_obs_pr_df, usr_mzml, usr_rt_range, ms1_precision=usr_ms1_precision,
-                              msn_precision=usr_ms2_precision, vendor=usr_vendor)
+    sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
+    core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
+    print(core_key_list)
+    # Start multiprocessing
+    print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
+    xic_dct = {}
+    parallel_pool = Pool()
+    pr_info_results_lst = []
+    for core_list in core_key_list:
+        core_list = filter(lambda x: x is not None, core_list)
+        pr_info_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
+                                                                      usr_ms1_precision, usr_ms2_precision,
+                                                                      usr_vendor,))
+        pr_info_results_lst.append(pr_info_result)
 
-    except KeyError:
-        return u'Nothing found! Check mzML vendor settings!'
+    parallel_pool.close()
+    parallel_pool.join()
+
+    for pr_info_result in pr_info_results_lst:
+        sub_xic_dct = pr_info_result.get()
+        if len(sub_xic_dct.keys()) > 0:
+            if len(xic_dct.keys()) > 0:
+                xic_dct = dict(xic_dct, **sub_xic_dct)
+            else:
+                xic_dct = sub_xic_dct.copy()
 
     print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
 
