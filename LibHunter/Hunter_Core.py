@@ -105,8 +105,7 @@ def huntlipids(param_dct):
     else:
         lpp_info_df = lpp_info_df[(mz_start <= lpp_info_df['[M-H]-_MZ']) & (lpp_info_df['[M-H]-_MZ'] <= mz_end)]
 
-    pr_hunter = PrecursorHunter(lpp_info_df, usr_mzml, param_dct)
-    # abbr2formula = BulkAbbrFormula()
+    pr_hunter = PrecursorHunter(lpp_info_df, param_dct)
 
     # keep stay in current working directory
     current_path = os.getcwd()
@@ -180,16 +179,12 @@ def huntlipids(param_dct):
     ident_page_idx = 1
     checked_info_df.sort_values(by=['Lib_mz', 'scan_time', 'MS2_PR_mz'],
                                 ascending=[True, True, True], inplace=True)
-    print('checked_info_df')
-    print(checked_info_df.shape)
 
     score_calc = ScoreGenerator(usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type, checked_info_df,
-                                ion_charge=charge_mode, ms2_precision=usr_ms2_precision)
+                                ion_charge=charge_mode, ms2_ppm=param_dct['ms2_ppm'])
 
     # get spectra of one ABBR and plot
     for _n, _subgroup_df in checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time']):
-        print('_subgroup_df')
-        print(_subgroup_df)
         _samemz_se = _subgroup_df.iloc[0, :].squeeze()
         _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
         # _usr_ms1_obs_mz = _samemz_se['MS1_obs_mz']

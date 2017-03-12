@@ -67,7 +67,7 @@ def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_ch
     m1_obs_mz = m1_dct['obs_mz']
     m1_obs_i = m1_dct['obs_i']
     print('spectra shape', ms1_df.shape, ms2_df.shape)
-    if ms1_df.shape[0] >= 500:
+    if ms1_df['i'].max() >= 10000 and ms1_df.shape[0] >= 500:
         ms1_min = ms1_df['i'].min()
         ms1_max = ms1_df['i'].max()
         ms1_top1000_i = sorted(ms1_df['i'].tolist(), reverse=True)[499]
@@ -76,7 +76,7 @@ def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_ch
         print(m1_obs_i, 3 * ms1_min, ms1_max * 0.01, 1000, ms1_top1000_i)
         ms1_df = ms1_df.query('i >= %f' % ms1_plot_th)
         print('Plot full MS1 with abs intensity filter > %f' % ms1_plot_th)
-    if ms2_df.shape[0] >= 500:
+    if ms2_df['i'].max() >= 1000 and ms2_df.shape[0] >= 500:
         ms2_min = ms2_df['i'].min()
         ms2_max = ms2_df['i'].max()
         msp_abs_min = abs(max(msp_info['rev_abs_i'].tolist()))

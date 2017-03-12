@@ -17,10 +17,12 @@ import numpy as np
 import pandas as pd
 from scipy import spatial
 
+from ParallelFunc import ppm_window_para
+
 
 class ScoreGenerator:
     def __init__(self, fa_def_df, weight_df, key_frag_df, lipid_type, checked_info_df,
-                 ion_charge='[M-H]-', ms2_precision=500e-6):
+                 ion_charge='[M-H]-', ms2_ppm=200):
         gc.disable()
         self.fa_def_df = fa_def_df
         self.weight_dct = weight_df.to_dict()
@@ -43,12 +45,12 @@ class ScoreGenerator:
         fa_uniquemz_df.drop_duplicates(subset='elem', inplace=True)
         fa_uniquemz_df.rename(columns={'mass': 'NL'}, inplace=True)
         fa_uniquemz_df.loc[:, 'sn'] = fa_uniquemz_df.loc[:, '[M-H]-']
-        fa_uniquemz_df.loc[:, '[M-H]-_s'] = fa_uniquemz_df['[M-H]-'] * (1 - ms2_precision)
-        fa_uniquemz_df.loc[:, '[M-H]-_b'] = fa_uniquemz_df['[M-H]-'] * (1 + ms2_precision)
-        fa_uniquemz_df.loc[:, 'NL_s'] = fa_uniquemz_df['NL'] * (1 - ms2_precision)
-        fa_uniquemz_df.loc[:, 'NL_b'] = fa_uniquemz_df['NL'] * (1 + ms2_precision)
-        fa_uniquemz_df.loc[:, 'NL-H2O_s'] = fa_uniquemz_df['NL-H2O'] * (1 - ms2_precision)
-        fa_uniquemz_df.loc[:, 'NL-H2O_b'] = fa_uniquemz_df['NL-H2O'] * (1 + ms2_precision)
+        fa_uniquemz_df.loc[:, '[M-H]-_s'] = ppm_window_para(fa_uniquemz_df['[M-H]-'].values, -1 * ms2_ppm)
+        fa_uniquemz_df.loc[:, '[M-H]-_b'] = ppm_window_para(fa_uniquemz_df['[M-H]-'].values, ms2_ppm)
+        fa_uniquemz_df.loc[:, 'NL_s'] = ppm_window_para(fa_uniquemz_df['NL'].values, -1 * ms2_ppm)
+        fa_uniquemz_df.loc[:, 'NL_b'] = ppm_window_para(fa_uniquemz_df['NL'].values, ms2_ppm)
+        fa_uniquemz_df.loc[:, 'NL-H2O_s'] = ppm_window_para(fa_uniquemz_df['NL-H2O'].values, -1 * ms2_ppm)
+        fa_uniquemz_df.loc[:, 'NL-H2O_b'] = ppm_window_para(fa_uniquemz_df['NL-H2O'].values, ms2_ppm)
         if lipid_type == 'PC':
             pc_fa_df = checked_info_df[checked_info_df['[M+HCOO]-_MZ'] > 0]
             pc_h_df = checked_info_df[checked_info_df['[M-H]-_MZ'] > 0]

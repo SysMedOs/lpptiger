@@ -19,13 +19,13 @@ import gc
 
 import pandas as pd
 import numpy as np
-from numba import jit, jitclass, int64, float64, guvectorize
+
+from ParallelFunc import ppm_calc_para, ppm_window_para, pr_window_calc_para
 
 
 class PrecursorHunter(object):
-    def __init__(self, lpp_info_df, mzml_path, param_dct):
+    def __init__(self, lpp_info_df, param_dct):
         self.lpp_info_df = lpp_info_df
-        # self.mzml_path = mzml_path
         self.param_dct = param_dct
         gc.disable()
 
@@ -49,18 +49,18 @@ class PrecursorHunter(object):
 
             print('PC [M+HCOO]- LPP: ', pc_fa_df.shape[0])
             print('PC [M-H]- LPP: ', pc_h_df.shape[0])
-            pc_fa_df.loc[:, 'PR_MZ_LOW'] = pc_fa_df.loc[:, '[M+HCOO]-_MZ'] - pr_window
-            pc_fa_df.loc[:, 'PR_MZ_HIGH'] = pc_fa_df.loc[:, '[M+HCOO]-_MZ'] + pr_window
-            pc_fa_df.loc[:, 'MS1_MZ_LOW'] = pc_fa_df['[M+HCOO]-_MZ'] * (1 - 0.000001 * ms1_ppm)
-            pc_fa_df.loc[:, 'MS1_MZ_HIGH'] = pc_fa_df['[M+HCOO]-_MZ'] * (1 + 0.000001 * ms1_ppm)
+            pc_fa_df.loc[:, 'PR_MZ_LOW'] = pr_window_calc_para(pc_fa_df['[M+HCOO]-_MZ'].values, -1 * pr_window)
+            pc_fa_df.loc[:, 'PR_MZ_HIGH'] = pr_window_calc_para(pc_fa_df['[M+HCOO]-_MZ'].values, pr_window)
+            pc_fa_df.loc[:, 'MS1_MZ_LOW'] = ppm_window_para(pc_fa_df['[M+HCOO]-_MZ'].values, -1 * ms1_ppm)
+            pc_fa_df.loc[:, 'MS1_MZ_HIGH'] = ppm_window_para(pc_fa_df['[M+HCOO]-_MZ'].values, ms1_ppm)
             pc_fa_df.loc[:, 'Formula'] = pc_fa_df['[M+HCOO]-_FORMULA'].str.strip('-')
             pc_fa_df.loc[:, 'Ion'] = '[M+HCOO]-'
             pc_fa_df.loc[:, 'Lib_mz'] = pc_fa_df.loc[:, '[M+HCOO]-_MZ']
             if pc_h_df.shape[0] > 0:
-                pc_h_df.loc[:, 'PR_MZ_LOW'] = pc_h_df.loc[:, '[M-H]-_MZ'] - pr_window
-                pc_h_df.loc[:, 'PR_MZ_HIGH'] = pc_h_df.loc[:, '[M-H]-_MZ'] + pr_window
-                pc_h_df.loc[:, 'MS1_MZ_LOW'] = pc_h_df['[M-H]-_MZ'] * (1 - 0.000001 * ms1_ppm)
-                pc_h_df.loc[:, 'MS1_MZ_HIGH'] = pc_h_df['[M-H]-_MZ'] * (1 + 0.000001 * ms1_ppm)
+                pc_h_df.loc[:, 'PR_MZ_LOW'] = pr_window_calc_para(pc_h_df['[M-H]-_MZ'].values, -1 * pr_window)
+                pc_h_df.loc[:, 'PR_MZ_HIGH'] = pr_window_calc_para(pc_h_df['[M-H]-_MZ'].values, pr_window)
+                pc_h_df.loc[:, 'MS1_MZ_LOW'] = ppm_window_para(pc_h_df['[M-H]-_MZ'].values, -1 * ms1_ppm)
+                pc_h_df.loc[:, 'MS1_MZ_HIGH'] = ppm_window_para(pc_h_df['[M-H]-_MZ'].values, ms1_ppm)
                 pc_h_df.loc[:, 'Formula'] = pc_h_df['[M-H]-_FORMULA'].str.strip('-')
                 pc_h_df.loc[:, 'Ion'] = '[M-H]-'
                 pc_h_df.loc[:, 'Lib_mz'] = pc_h_df.loc[:, '[M-H]-_MZ']
@@ -72,10 +72,12 @@ class PrecursorHunter(object):
             self.lpp_info_df = self.lpp_info_df.sort_values(by='PR_MZ_LOW')
 
         else:
-            self.lpp_info_df.loc[:, 'PR_MZ_LOW'] = self.lpp_info_df.loc[:, '[M-H]-_MZ'] - pr_window
-            self.lpp_info_df.loc[:, 'PR_MZ_HIGH'] = self.lpp_info_df.loc[:, '[M-H]-_MZ'] + pr_window
-            self.lpp_info_df.loc[:, 'MS1_MZ_LOW'] = self.lpp_info_df['[M-H]-_MZ'] * (1 - 0.000001 * ms1_ppm)
-            self.lpp_info_df.loc[:, 'MS1_MZ_HIGH'] = self.lpp_info_df['[M-H]-_MZ'] * (1 + 0.000001 * ms1_ppm)
+            self.lpp_info_df.loc[:, 'PR_MZ_LOW'] = pr_window_calc_para(self.lpp_info_df['[M-H]-_MZ'].values,
+                                                                       -1 * pr_window)
+            self.lpp_info_df.loc[:, 'PR_MZ_HIGH'] = pr_window_calc_para(self.lpp_info_df['[M-H]-_MZ'].values,
+                                                                        pr_window)
+            self.lpp_info_df.loc[:, 'MS1_MZ_LOW'] = ppm_window_para(self.lpp_info_df['[M-H]-_MZ'].values, -1 * ms1_ppm)
+            self.lpp_info_df.loc[:, 'MS1_MZ_HIGH'] = ppm_window_para(self.lpp_info_df['[M-H]-_MZ'].values, ms1_ppm)
             self.lpp_info_df.loc[:, 'Formula'] = self.lpp_info_df.loc[:, '[M-H]-_FORMULA'].str.strip('-')
             self.lpp_info_df.loc[:, 'Ion'] = '[M-H]-'
             self.lpp_info_df.loc[:, 'Lib_mz'] = self.lpp_info_df.loc[:, '[M-H]-_MZ']
@@ -112,8 +114,9 @@ class PrecursorHunter(object):
                             if pr_ms1_df.shape[0] > 0:
 
                                 # find the best ms1 pr with min abs_ppm
-                                pr_ms1_df.loc[:, 'ppm'] = (1e6 * (pr_ms1_df.loc[:, 'mz'] - _samemz_se['Lib_mz']) /
-                                                           _samemz_se['Lib_mz'])
+                                # pr_ms1_df.loc[:, 'ppm'] = (1e6 * (pr_ms1_df.loc[:, 'mz'] - _samemz_se['Lib_mz']) /
+                                #                            _samemz_se['Lib_mz'])
+                                pr_ms1_df.loc[:, 'ppm'] = ppm_calc_para(pr_ms1_df['mz'].values, _samemz_se['Lib_mz'])
                                 pr_ms1_df.loc[:, 'abs_ppm'] = abs(pr_ms1_df.loc[:, 'ppm'])
                                 pr_info_df = pr_ms1_df.query('abs_ppm <= %i' % ms1_ppm)
                                 if pr_info_df.shape[0] > 0:
@@ -141,49 +144,3 @@ class PrecursorHunter(object):
 
         else:
             return '!! NO suitable precursor --> Check settings!!'
-
-
-@jitclass([
-    ('xmin', float64),
-    ('xmax', float64),
-    ('nbins', int64),
-    ('xstep', float64),
-    ('xcenter', float64[:]),
-    ('bins', int64[:]),
-    ('moments', float64[:])
-])
-class PrecursorHunterNumba(object):
-    def __init__(self, lpp_info_df, mzml_path, param_dct):
-        self.lpp_info_df = lpp_info_df
-        self.mzml_path = mzml_path
-        self.param_dct = param_dct
-
-    # def __init__(self, xmin, xmax, nbins):
-    #     self.xmin = xmin
-    #     self.xmax = xmax
-    #     self.nbins = nbins
-    #     self.xstep = (xmax - xmin) / nbins
-    #     self.xcenter = (np.arange(nbins) + 0.5) * self.xstep - self.xmin
-    #     self.bins = np.zeros(self.nbins, dtype=np.int64)
-    #     self.moments = np.zeros(3, dtype=np.float64)
-
-    def fill_many(self, values):
-        for value in values:
-            bin_index = np.int64((value - self.xmin) / self.xstep)
-            if 0 <= bin_index < len(self.bins):
-                self.bins[bin_index] += 1
-                self.moments[0] += 1
-                self.moments[1] += value
-                self.moments[2] += value ** 2
-
-    @property
-    def count(self):
-        return np.int64(self.moments[0])
-
-    @property
-    def mean(self):
-        return self.moments[1] / self.moments[0]
-
-    @property
-    def stddev(self):
-        return np.sqrt(self.moments[2] / self.moments[0] - self.mean ** 2)
