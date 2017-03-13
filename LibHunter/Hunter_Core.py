@@ -170,17 +170,19 @@ def huntlipids(param_dct):
     print('=== ==> --> Start to extract XIC')
     sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
     core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
-    print(core_key_list)
     # Start multiprocessing
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
     xic_dct = {}
     parallel_pool = Pool()
     xic_results_lst = []
+    core_worker_count = 1
     for core_list in core_key_list:
         core_list = filter(lambda x: x is not None, core_list)
+        print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
         xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
                                                                   usr_ms1_precision, usr_ms2_precision,
                                                                   usr_vendor,))
+        core_worker_count += 1
         xic_results_lst.append(xic_result)
 
     parallel_pool.close()
@@ -206,31 +208,54 @@ def huntlipids(param_dct):
     all_group_key_lst = checked_info_groups.groups.keys()
     sub_len = int(math.ceil(len(all_group_key_lst) / usr_core_num))
     core_key_list = map(None, *(iter(all_group_key_lst),) * sub_len)
-    print(core_key_list)
-    # Start multiprocessing
-    print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
-    parallel_pool = Pool()
-    lpp_info_results_lst = []
-    for core_list in core_key_list:
-        core_list = filter(lambda x: x is not None, core_list)
-        lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
-                                                                        checked_info_groups, core_list,
-                                                                        usr_fa_def_df, usr_weight_df, usr_key_frag_df,
-                                                                        usr_scan_info_df, ms1_xic_mz_lst,
-                                                                        usr_spectra_pl, xic_dct, target_ident_lst))
-        lpp_info_results_lst.append(lpp_info_result)
 
-    parallel_pool.close()
-    parallel_pool.join()
+    spectra_pl_idx_lst = usr_spectra_pl.items.tolist()
 
-    for lpp_info_result in lpp_info_results_lst:
-        tmp_lpp_info_df = lpp_info_result.get()
+    if len(spectra_pl_idx_lst) >= (16 * 80):
+        sub_pl_group_list = map(None, *(iter(spectra_pl_idx_lst),) * (16 * 50))
+    else:
+        sub_pl_group_list = [spectra_pl_idx_lst]
 
-        if tmp_lpp_info_df.shape[0] > 0:
+    part_tot = len(sub_pl_group_list)
+    part_counter = 1
 
-            output_df = output_df.append(tmp_lpp_info_df)
+    for sub_idx_lst in sub_pl_group_list:
+        sub_pl = usr_spectra_pl.iloc[sub_idx_lst[0]: sub_idx_lst[-1], :, :]
+        # Start multiprocessing
+        print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
+        if part_tot == 1:
+            print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
+        else:
+            print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
+                  (part_counter, part_tot, usr_core_num))
+        part_counter += 1
+        parallel_pool = Pool()
+        lpp_info_results_lst = []
+        core_worker_count = 1
+        for core_list in core_key_list:
+            core_list = filter(lambda x: x is not None, core_list)
+            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+            lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
+                                                                            checked_info_groups, core_list,
+                                                                            usr_fa_def_df, usr_weight_df,
+                                                                            usr_key_frag_df,
+                                                                            usr_scan_info_df, ms1_xic_mz_lst,
+                                                                            sub_pl, xic_dct, target_ident_lst))
+            core_worker_count += 1
+            lpp_info_results_lst.append(lpp_info_result)
 
-    ident_page_idx += 1
+        parallel_pool.close()
+        parallel_pool.join()
+
+        for lpp_info_result in lpp_info_results_lst:
+            try:
+                tmp_lpp_info_df = lpp_info_result.get()
+                if tmp_lpp_info_df.shape[0] > 0:
+                    output_df = output_df.append(tmp_lpp_info_df)
+            except KeyError:
+                pass
+
+        ident_page_idx += 1
 
     # log_pager.add_info(img_name_core, ident_page_idx, _tmp_output_df)
 

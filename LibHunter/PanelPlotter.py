@@ -518,7 +518,7 @@ def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_ch
     msms_pic.set_ylim([min_msp_i * 1.35, _msms_max * 1.6])
 
     # set title
-    xic_title_str = 'XIC of m/z %.4f | %s @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, abbr, lib_mz, ms1_pr_ppm)
+    xic_title_str = 'XIC of m/z %.4f | @ m/z %.4f ppm=%.2f' % (ms1_pr_mz, lib_mz, ms1_pr_ppm)
     ms_title_str = 'MS @ %.3f min' % ms1_rt
     ms_zoom_title_str = 'Theoretical isotopic distribution for %s %s' % (formula_charged, charge)
     msms_title_str = ('MS/MS for m/z %.4f | DDA rank %d @ %.3f min' % (ms2_pr_mz, func_id, ms2_rt))

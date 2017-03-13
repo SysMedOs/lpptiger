@@ -1,10 +1,4 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 Zhixu Ni, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of oxLPPdb.
-# For more info please contact: zhixu.ni@uni-leipzig.de
-
-# -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
 # A suitable license will be chosen before the official release of LPPsmi.
@@ -141,28 +135,53 @@ class PrecursorHunter(object):
             self.lpp_info_df.loc[:, 'Ion'] = '[M-H]-'
             self.lpp_info_df.loc[:, 'Lib_mz'] = self.lpp_info_df.loc[:, '[M-H]-_MZ']
 
+        # Prepare for multiprocessing
         lpp_info_groups = self.lpp_info_df.groupby(['Lib_mz', 'Formula'])
         all_group_key_lst = lpp_info_groups.groups.keys()
         sub_len = int(math.ceil(len(all_group_key_lst) / core_num))
         core_key_list = map(None,  * (iter(all_group_key_lst),) * sub_len)
-        print(core_key_list)
-        # Start multiprocessing
-        print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % core_num)
-        parallel_pool = Pool()
-        pr_info_results_lst = []
-        for core_list in core_key_list:
-            core_list = filter(lambda x: x is not None, core_list)
-            pr_info_result = parallel_pool.apply_async(find_pr_info, args=(scan_info_df, spectra_pl, lpp_info_groups,
-                                                                           core_list, ms1_th, ms1_ppm))
-            pr_info_results_lst.append(pr_info_result)
 
-        parallel_pool.close()
-        parallel_pool.join()
+        spectra_pl_idx_lst = spectra_pl.items.tolist()
 
-        for pr_info_result in pr_info_results_lst:
-            sub_df = pr_info_result.get()
-            if sub_df.shape[0] > 0:
-                ms1_obs_pr_df = ms1_obs_pr_df.append(sub_df)
+        if len(spectra_pl_idx_lst) >= (16 * 80):
+            sub_pl_group_list = map(None, *(iter(spectra_pl_idx_lst),) * (16 * 50))
+        else:
+            sub_pl_group_list = [spectra_pl_idx_lst]
+
+        part_tot = len(sub_pl_group_list)
+        part_counter = 1
+
+        for sub_idx_lst in sub_pl_group_list:
+
+            sub_pl = spectra_pl.iloc[sub_idx_lst[0]: sub_idx_lst[-1], :, :]
+
+            # Start multiprocessing
+            if part_tot == 1:
+                print('>>> Start multiprocessing ==> Number of Cores: %i' % core_num)
+            else:
+                print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
+                      (part_counter, part_tot, core_num))
+            part_counter += 1
+
+            parallel_pool = Pool()
+            pr_info_results_lst = []
+            core_worker_count = 1
+            for core_list in core_key_list:
+                core_list = filter(lambda x: x is not None, core_list)
+                print('>>> >>> ...... Core #%i ==> processing ......' % core_worker_count)
+                pr_info_result = parallel_pool.apply_async(find_pr_info, args=(scan_info_df, sub_pl,
+                                                                               lpp_info_groups,
+                                                                               core_list, ms1_th, ms1_ppm))
+                core_worker_count += 1
+                pr_info_results_lst.append(pr_info_result)
+
+            parallel_pool.close()
+            parallel_pool.join()
+
+            for pr_info_result in pr_info_results_lst:
+                sub_df = pr_info_result.get()
+                if sub_df.shape[0] > 0:
+                    ms1_obs_pr_df = ms1_obs_pr_df.append(sub_df)
 
         # End multiprocessing
 
