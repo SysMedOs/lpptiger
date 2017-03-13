@@ -27,6 +27,7 @@ from LibHunter.PanelPlotter import plot_spectra
 from LibHunter.IsotopeHunter import IsotopeHunter
 from LibHunter.LogPageCreator import LogPageCreator
 from LibHunter.PrecursorHunter import PrecursorHunter
+from LibHunter.ScoreHunter import get_lpp_info
 
 
 def huntlipids(param_dct):
@@ -174,19 +175,19 @@ def huntlipids(param_dct):
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
     xic_dct = {}
     parallel_pool = Pool()
-    pr_info_results_lst = []
+    xic_results_lst = []
     for core_list in core_key_list:
         core_list = filter(lambda x: x is not None, core_list)
-        pr_info_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
-                                                                      usr_ms1_precision, usr_ms2_precision,
-                                                                      usr_vendor,))
-        pr_info_results_lst.append(pr_info_result)
+        xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
+                                                                  usr_ms1_precision, usr_ms2_precision,
+                                                                  usr_vendor,))
+        xic_results_lst.append(xic_result)
 
     parallel_pool.close()
     parallel_pool.join()
 
-    for pr_info_result in pr_info_results_lst:
-        sub_xic_dct = pr_info_result.get()
+    for xic_result in xic_results_lst:
+        sub_xic_dct = xic_result.get()
         if len(sub_xic_dct.keys()) > 0:
             if len(xic_dct.keys()) > 0:
                 xic_dct = dict(xic_dct, **sub_xic_dct)
@@ -200,249 +201,38 @@ def huntlipids(param_dct):
     checked_info_df.sort_values(by=['Lib_mz', 'scan_time', 'MS2_PR_mz'],
                                 ascending=[True, True, True], inplace=True)
 
-    score_calc = ScoreGenerator(usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type, checked_info_df,
-                                ion_charge=charge_mode, ms2_ppm=param_dct['ms2_ppm'])
+    print('=== ==> --> Start to Hunt for LPPs !!')
+    checked_info_groups = checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time'])
+    all_group_key_lst = checked_info_groups.groups.keys()
+    sub_len = int(math.ceil(len(all_group_key_lst) / usr_core_num))
+    core_key_list = map(None, *(iter(all_group_key_lst),) * sub_len)
+    print(core_key_list)
+    # Start multiprocessing
+    print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
+    parallel_pool = Pool()
+    lpp_info_results_lst = []
+    for core_list in core_key_list:
+        core_list = filter(lambda x: x is not None, core_list)
+        lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
+                                                                        checked_info_groups, core_list,
+                                                                        usr_fa_def_df, usr_weight_df, usr_key_frag_df,
+                                                                        usr_scan_info_df, ms1_xic_mz_lst,
+                                                                        usr_spectra_pl, xic_dct, target_ident_lst))
+        lpp_info_results_lst.append(lpp_info_result)
 
-    # get spectra of one ABBR and plot
-    for _n, _subgroup_df in checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time']):
-        _samemz_se = _subgroup_df.iloc[0, :].squeeze()
-        _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
-        # _usr_ms1_obs_mz = _samemz_se['MS1_obs_mz']
-        _usr_ms2_rt = _samemz_se['scan_time']
-        # _usr_formula_charged = _samemz_se['Formula']
-        _usr_charge = _samemz_se['Ion']
-        _usr_ms2_dda_rank = _samemz_se['DDA_rank']
-        _usr_ms2_scan_id = _samemz_se['scan_number']
-        _usr_mz_lib = _samemz_se['Lib_mz']
-        _usr_abbr_bulk_lst = set(_subgroup_df['Abbreviation'].tolist())
-        _tmp_chk_df = usr_scan_info_df.query('MS2_PR_mz == %.6f and DDA_rank == %i and scan_number == %i'
-                                             % (_usr_ms2_pr_mz, _usr_ms2_dda_rank, _usr_ms2_scan_id))
+    parallel_pool.close()
+    parallel_pool.join()
 
-        _usr_formula = _samemz_se['FORMULA_NEUTRAL']
-        _usr_formula_charged = _samemz_se['Formula']
+    for lpp_info_result in lpp_info_results_lst:
+        tmp_lpp_info_df = lpp_info_result.get()
 
-        # if usr_lipid_type == 'PC' and charge_mode == '[M+HCOO]-':
-        #     usr_lib_pr_mz = _samemz_se['[M+HCOO]-_mz']
-        # else:
-        #     usr_lib_pr_mz = _samemz_se['[M-H]-_mz']
+        if tmp_lpp_info_df.shape[0] > 0:
 
-        if _tmp_chk_df.shape[0] == 1:
-            print('>>> >>> >>> Processing MS2/MS scan of:')
-            print(_tmp_chk_df.head())
-            usr_spec_info_dct = get_spectra(_usr_ms2_pr_mz, _usr_mz_lib, _usr_ms2_dda_rank, _usr_ms2_scan_id,
-                                            ms1_xic_mz_lst, usr_scan_info_df, usr_spectra_pl,
-                                            dda_top=usr_dda_top, ms1_precision=usr_ms1_precision, vendor=usr_vendor
-                                            )
-            _ms1_pr_i = usr_spec_info_dct['ms1_i']
-            _ms1_pr_mz = usr_spec_info_dct['ms1_mz']
-            _ms1_df = usr_spec_info_dct['ms1_df']
-            _ms2_df = usr_spec_info_dct['ms2_df']
+            output_df = output_df.append(tmp_lpp_info_df)
 
-            # use the max threshold from abs & relative intensity settings
-            _ms2_max_i = _ms2_df['i'].max()
-            ms2_threshold = max(usr_ms2_threshold, _ms2_max_i * usr_ms2_info_th)
-            _score_ms2_df = _ms2_df.query('i > %f' % ms2_threshold)
+    ident_page_idx += 1
 
-            if _ms1_pr_mz > 0.0 and _ms1_df.shape[0] > 0 and _ms2_df.shape[0] > 0 and _ms1_pr_i > 0.0:
-
-                print('>>> >>> >>> >>> Best PR on MS1: %f' % _ms1_pr_mz)
-
-                isotope_score_info_dct = isotope_hunter.get_isotope_score(_ms1_pr_mz, _ms1_pr_i,
-                                                                          _usr_formula_charged, _ms1_df,
-                                                                          isotope_number=2,
-                                                                          only_c=usr_fast_isotope,
-                                                                          score_filter=usr_isotope_score_filter)
-
-                isotope_score = isotope_score_info_dct['isotope_score']
-
-                print('isotope_score: %f' % isotope_score)
-                if isotope_score >= usr_isotope_score_filter:
-                    print('>>> isotope_check PASSED! >>> >>> >>>')
-                    print('>>> >>> >>> >>> Entry Info >>> >>> >>> >>> ')
-                    _samemz_se.set_value('MS1_obs_mz', _ms1_pr_mz)
-                    _exact_ppm = 1e6 * (_ms1_pr_mz - _usr_mz_lib) / _usr_mz_lib
-                    _samemz_se.set_value('ppm', _exact_ppm)
-                    _samemz_se.set_value('abs_ppm', abs(_exact_ppm))
-
-                    other_signals_dct = score_calc.get_fa_possibilities(_usr_mz_lib, _usr_charge, _score_ms2_df)
-                    if len(other_signals_dct.keys()) > 0:
-                        for _i_abbr, _r_abbr in _subgroup_df.iterrows():
-                            _usr_abbr_bulk = _r_abbr['Abbreviation']
-                            print('Check_proposed_structure:', _usr_abbr_bulk)
-
-                            match_info_dct, matched_checker = score_calc.get_rankscore(_usr_abbr_bulk, charge_mode,
-                                                                                       _usr_mz_lib, _score_ms2_df,
-                                                                                       other_signals_dct, _ms2_max_i)
-                            rank_score = match_info_dct['Rank_score']
-
-                            if matched_checker > 0 and rank_score > usr_rankscore_filter:
-                                print('Rank_score: %.f --> passed' % rank_score)
-
-                                _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
-                                _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df,
-                                                                                                  _score_ms2_df,
-                                                                                                  ms2_precision=
-                                                                                                  usr_ms2_precision)
-
-                                if _cosine_score > 20:
-                                    print('==> --> Cosine similarity score: %f' % _cosine_score)
-
-                                    fingerprint_lst = json.loads(_r_abbr['FINGERPRINT'])
-                                    if 'MIN_INFO_i' in match_info_dct.keys():
-                                        min_info_i = match_info_dct['MIN_INFO_i']
-                                    else:
-                                        min_info_i = 0
-                                    fp_info_dct = score_calc.get_fingerprint_score(fingerprint_lst, _score_ms2_df,
-                                                                                   min_info_i, _ms2_max_i,
-                                                                                   ms2_precision=usr_ms2_precision)
-                                    _fp_score = fp_info_dct['fingerprint_score']
-                                    _obs_fp_df = fp_info_dct['obs_score_df']
-                                    obs_fp_lst = fp_info_dct['obs_mz']
-                                    missed_fp_lst = fp_info_dct['missed_mz']
-
-                                    if _fp_score > 20:
-
-                                        specific_check_dct = score_calc.get_specific_peaks(_usr_mz_lib, _score_ms2_df,
-                                                                                           _ms2_max_i,
-                                                                                           ms2_precision=
-                                                                                           usr_ms2_precision,
-                                                                                           vendor=usr_vendor)
-
-                                        snr_score, sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(match_info_dct,
-                                                                                                             specific_check_dct,
-                                                                                                             _obs_msp_df,
-                                                                                                             _obs_fp_df,
-                                                                                                             amplify_factor=
-                                                                                                             usr_amp_factor)
-
-                                        if sn_ratio >= 1.0:
-
-                                            overall_score = sum([rank_score, _cosine_score, _fp_score,
-                                                                 snr_score, isotope_score]) / 5
-                                            overall_score = round(overall_score, 1)
-
-                                            if overall_score >= 40:
-                                                match_info_dct['Cosine_score'] = _cosine_score
-                                                match_info_dct['Fingerprint'] = _fp_score
-                                                match_info_dct['Isotope_score'] = isotope_score
-                                                match_info_dct['SNR_score'] = snr_score
-                                                match_info_dct['Overall_score'] = overall_score
-
-                                                # format abbr. for file names
-                                                _save_abbr_bulk = _usr_abbr_bulk
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r'(', r'[')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r')', r']')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r'<', r'[')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r'>', r']')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r':', r'-')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r'@', r'-')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace('\\', r'_')
-                                                _save_abbr_bulk = _save_abbr_bulk.replace(r'/', r'_')
-
-                                                img_name_core = ('\%.4f_rt%.3f_DDAtop%.0f_scan%.0f_%s.png'
-                                                                 % (_usr_ms2_pr_mz, _usr_ms2_rt, _usr_ms2_dda_rank,
-                                                                    _usr_ms2_scan_id, _save_abbr_bulk)
-                                                                 )
-                                                img_name = (output_folder +
-                                                            r'\LPPtiger_Results_Figures_%s'
-                                                            % hunter_start_time_str + img_name_core)
-
-                                                isotope_checker, isotope_score = plot_spectra(_usr_abbr_bulk,
-                                                                                              _samemz_se, xic_dct,
-                                                                                              match_info_dct,
-                                                                                              usr_spec_info_dct,
-                                                                                              specific_check_dct,
-                                                                                              isotope_score_info_dct,
-                                                                                              _usr_formula_charged,
-                                                                                              _usr_charge,
-                                                                                              save_img_as=img_name,
-                                                                                              ms1_precision=
-                                                                                              usr_ms1_precision,
-                                                                                              msp_info=_msp_df,
-                                                                                              obs_fp=obs_fp_lst,
-                                                                                              missed_fp=missed_fp_lst,
-                                                                                              snr_i_info=snr_i_info
-                                                                                              )
-
-                                                print('==> check for output -->')
-
-                                                if _ms1_pr_i > 0 and isotope_checker == 0 \
-                                                        and isotope_score > usr_isotope_score_filter:
-
-                                                    if 'OTHER_FRAG' in specific_check_dct.keys():
-                                                        other_frag_df = specific_check_dct['OTHER_FRAG']
-                                                        other_frag_count = other_frag_df.shape[0]
-                                                    else:
-                                                        other_frag_count = 0
-                                                    if 'OTHER_NL' in specific_check_dct.keys():
-                                                        other_nl_df = specific_check_dct['OTHER_NL']
-                                                        other_nl_count = other_nl_df.shape[0]
-                                                    else:
-                                                        other_nl_count = 0
-                                                    if 'TARGET_FRAG' in specific_check_dct.keys():
-                                                        target_frag_df = specific_check_dct['TARGET_FRAG']
-                                                        target_frag_count = target_frag_df.shape[0]
-                                                        target_frag_col_lst = target_frag_df.columns.tolist()
-                                                        for _frag_abbr in target_frag_col_lst:
-                                                            if _frag_abbr not in ['mz', 'i', 'LABEL', 'CLASS']:
-                                                                for _i, _f_se in target_frag_df.iterrows():
-                                                                    if _f_se['LABEL'] == _frag_abbr:
-                                                                        match_info_dct[_frag_abbr] = _f_se[_frag_abbr]
-                                                                        if _frag_abbr not in target_ident_lst:
-                                                                            target_ident_lst.append(_frag_abbr)
-                                                    else:
-                                                        target_frag_count = 0
-                                                    if 'TARGET_NL' in specific_check_dct.keys():
-                                                        target_nl_df = specific_check_dct['TARGET_NL']
-                                                        target_nl_count = target_nl_df.shape[0]
-                                                        target_nl_col_lst = target_nl_df.columns.tolist()
-                                                        for _nl_abbr in target_nl_col_lst:
-                                                            if _nl_abbr not in ['mz', 'i', 'LABEL', 'CLASS']:
-                                                                for _i, _n_se in target_nl_df.iterrows():
-                                                                    if _n_se['LABEL'] == _nl_abbr:
-                                                                        match_info_dct[_nl_abbr] = _n_se[_nl_abbr]
-                                                                        if _nl_abbr not in target_ident_lst:
-                                                                            target_ident_lst.append(_nl_abbr)
-                                                    else:
-                                                        target_nl_count = 0
-
-                                                    match_info_dct['Proposed_structures'] = _usr_abbr_bulk
-                                                    match_info_dct['Bulk_identification'] = _usr_abbr_bulk
-                                                    match_info_dct['Formula_neutral'] = _usr_formula
-                                                    match_info_dct['Formula_ion'] = _usr_formula_charged
-                                                    match_info_dct['Charge'] = _usr_charge
-                                                    match_info_dct['MS1_obs_mz'] = _ms1_pr_mz
-                                                    match_info_dct['MS1_obs_i'] = '%.2e' % float(_ms1_pr_i)
-                                                    match_info_dct['Lib_mz'] = _usr_mz_lib
-                                                    match_info_dct['MS2_scan_time'] = _usr_ms2_rt
-                                                    match_info_dct['DDA#'] = _usr_ms2_dda_rank
-                                                    match_info_dct['MS2_PR_mz'] = _usr_ms2_pr_mz
-                                                    match_info_dct['Scan#'] = _usr_ms2_scan_id
-                                                    match_info_dct['#Specific_peaks'] = (target_frag_count +
-                                                                                         target_nl_count)
-                                                    match_info_dct['#Contaminated_peaks'] = (other_frag_count +
-                                                                                             other_nl_count)
-                                                    match_info_dct['ppm'] = _exact_ppm
-                                                    match_info_dct['SN_ratio'] = '%.1f' % sn_ratio
-
-                                                    try:
-                                                        del match_info_dct['MATCH_INFO']
-                                                        del match_info_dct['OTHER_SIGNALS_INFO']
-                                                        del match_info_dct['MATCHED_FA_INFO']
-                                                        del match_info_dct['MATCHED_LYSO_INFO']
-                                                    except KeyError:
-                                                        pass
-
-                                                    print('match_info_dct')
-                                                    print(match_info_dct)
-
-                                                    _tmp_output_df = pd.DataFrame(data=match_info_dct,
-                                                                                  index=[ident_page_idx])
-
-                                                    output_df = output_df.append(_tmp_output_df)
-
-                                                    log_pager.add_info(img_name_core, ident_page_idx, _tmp_output_df)
-                                                    ident_page_idx += 1
+    # log_pager.add_info(img_name_core, ident_page_idx, _tmp_output_df)
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:
