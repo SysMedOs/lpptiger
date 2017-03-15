@@ -9,14 +9,12 @@
 #
 from __future__ import division
 
-try:  # python3
-    import configparser
-except NameError:  # python2
-    import ConfigParser as configparser
+import ConfigParser as configparser
 
 import os
 import re
 import time
+import multiprocessing
 
 import xlrd
 from PySide import QtCore, QtGui
@@ -416,31 +414,23 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane.xlsx')
         # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane_FA_SUM.xlsx')
-        # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std.xlsx')
-        # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\PLstd\PC_std_FA_SUM.xlsx')
-        # self.ui.tab_b_loadsdfpath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.sdf')
-        # self.ui.tab_b_loadmsppath_le.setText(r'D:\Project_lpptiger\output_sdf\PC_FP.msp')
         # self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
-        # # self.ui.tab_b_ms2mzml_le.setText(r'D:\Project_lpptiger\mzML\131015_PLPC_400ng_new_neg_LMQ15.mzML')
-        # # self.ui.tab_b_ms2mzml_le.setText(r'D:\Synapt_rawspectra\oxPLstd\180816_oxPC_10ng.mzML')
-        # # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\')
         # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
-        # # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\hunter_output\test_PC_FP_CM_C18.xlsx')
         # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_Lv12.xlsx')
         # self.ui.tab_b_rtstart_dspb.setValue(24.0)
-        # self.ui.tab_b_rtend_dspb.setValue(29.0)
+        # self.ui.tab_b_rtend_dspb.setValue(26.0)
         # self.ui.tab_b_msppm_spb.setValue(20)
         # self.ui.tab_b_ms2ppm_spb.setValue(50)
         # self.ui.tab_b_hgppm_spb.setValue(50)
         # self.ui.tab_b_dda_spb.setValue(12)
         # self.ui.tab_b_msthreshold_spb.setValue(2000)
-        # self.ui.tab_b_ms2threshold_spb.setValue(5)
-        # self.ui.tab_b_score_spb.setValue(27.5)
-        # self.ui.tab_b_isotopescore_spb.setValue(80.0)
-        # self.ui.tab_b_mzstart_dspb.setValue(300.0)
-        # self.ui.tab_b_mzend_dspb.setValue(1000.0)
+        # self.ui.tab_b_ms2threshold_spb.setValue(1)
+        # self.ui.tab_b_mzstart_dspb.setValue(700.0)
+        # self.ui.tab_b_mzend_dspb.setValue(900.0)
         # self.ui.tab_b_ms2infoth_dspb.setValue(0)
         # self.ui.tab_b_ms2hginfoth_dspb.setValue(0)
+        # self.ui.tab_c_snratio_spb.setValue(5)
+        # self.ui.tab_c_ram_spb.setValue(16)
 
         if self.ui.vendor_waters_rb.isChecked():
             usr_vendor = 'waters'
@@ -472,12 +462,11 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
 
         lpp_sum_info_path_str = str(self.ui.tab_b_loadlpppath_le.text())
         fa_sum_path_str = str(self.ui.tab_b_loadfapath_le.text())
-        # sdf_path_str = str(self.ui.tab_b_loadsdfpath_le.text())
-        # msp_path_str = str(self.ui.tab_b_loadmsppath_le.text())
         mzml_path_str = str(self.ui.tab_b_ms2mzml_le.text())
         img_output_folder_str = str(self.ui.tab_b_saveimgfolder_le.text())
         xlsx_output_path_str = str(self.ui.tab_b_sumxlsxpath_le.text())
 
+        # tab_b_params
         rt_start = self.ui.tab_b_rtstart_dspb.value()
         rt_end = self.ui.tab_b_rtend_dspb.value()
         mz_start = self.ui.tab_b_mzstart_dspb.value()
@@ -490,15 +479,41 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         pr_window = self.ui.tab_b_prwindow_spb.value()
         hg_th = self.ui.tab_b_hgthreshold_spb.value()
         hg_ppm = self.ui.tab_b_hgppm_spb.value()
-        score_filter = self.ui.tab_b_score_spb.value()
-        isotope_score_filter = self.ui.tab_b_isotopescore_spb.value()
         ms2_info_threshold = self.ui.tab_b_ms2infoth_dspb.value() * 0.01
         hgms2_info_threshold = self.ui.tab_b_ms2hginfoth_dspb.value() * 0.01
-
+        overall_score_filter = self.ui.tab_b_score_spb.value()
         # from settings tab
         lipid_specific_cfg = self.ui.tab_c_hgcfg_le.text()
         score_cfg = self.ui.tab_c_scorecfg_le.text()
         sn_ratio = self.ui.tab_c_snratio_spb.value()
+        isotope_score_filter = self.ui.tab_c_iso_score_spb.value()
+        rank_score_filter = self.ui.tab_c_rank_score_spb.value()
+        msp_score_filter = self.ui.tab_c_msp_score_spb.value()
+        fp_score_filter = self.ui.tab_c_fp_score_spb.value()
+        snr_score_filter = self.ui.tab_c_snr_score_spb.value()
+        core_num = self.ui.tab_c_cores_spb.value()
+        max_ram = self.ui.tab_c_ram_spb.value()
+        img_typ = self.ui.tab_c_imagetype_cmb.currentText()[1:]
+        img_dpi = self.ui.tab_c_dpi_spb.value()
+
+        usr_parallelization_mode = self.ui.comboBox.currentIndex()
+        if usr_parallelization_mode == 0:
+            print('parallelization_mode: ', self.ui.comboBox.currentText())
+            parallelization_mode = 'cpu'
+        elif usr_parallelization_mode == 1:
+            print('parallelization_mode: ', self.ui.comboBox.currentText())
+            parallelization_mode = 'gpu'
+        else:
+            print('parallization_mode: ', self.ui.comboBox.currentText())
+            parallelization_mode = 'cpu'
+
+        usr_isotope_score_mode = self.ui.tab_c_isotopescoremode_cmb.currentIndex()
+        if usr_isotope_score_mode == 0:
+            print(self.ui.tab_c_isotopescoremode_cmb.currentText())
+            fast_isotope = False
+        else:
+            print(self.ui.tab_c_isotopescoremode_cmb.currentText())
+            fast_isotope = True
 
         try:
             if os.path.isfile(lipid_specific_cfg):
@@ -513,42 +528,26 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
             self.ui.tab_b_statusrun_pte.insertPlainText('!! Failed to load score configuration',
                                                         'please check your settings!!')
 
-        usr_score_mode = self.ui.tab_b_scoremode_cmb.currentIndex()
-        if usr_score_mode == 0:
-            print(self.ui.tab_b_scoremode_cmb.currentText())
-            rank_score = True
-        else:
-            print(self.ui.tab_b_scoremode_cmb.currentText())
-            rank_score = False
-
-        usr_isotope_score_mode = self.ui.tab_b_isotopescoremode_cmb.currentIndex()
-        if usr_isotope_score_mode == 0:
-            print(self.ui.tab_b_isotopescoremode_cmb.currentText())
-            fast_isotope = False
-        else:
-            print(self.ui.tab_b_isotopescoremode_cmb.currentText())
-            fast_isotope = True
-
         start_time_str = time.strftime("%Y-%m-%d_%H-%M", time.localtime())
 
-        # 'sdf_path_str': sdf_path_str,
-        # 'msp_path_str': msp_path_str,
-
-        hunter_param_dct = {'lpp_sum_info_path_str': lpp_sum_info_path_str,
-                            'fa_sum_path_str': fa_sum_path_str,
-                            'mzml_path_str': mzml_path_str,
-                            'img_output_folder_str': img_output_folder_str,
-                            'xlsx_output_path_str': xlsx_output_path_str, 'rt_start': rt_start, 'rt_end': rt_end,
-                            'mz_start': mz_start, 'mz_end': mz_end, 'dda_top': dda_top, 'ms_th': ms_th,
-                            'ms2_th': ms2_th, 'ms_ppm': ms_ppm, 'ms2_ppm': ms2_ppm, 'hg_th': hg_th, 'hg_ppm': hg_ppm,
-                            'score_filter': score_filter, 'isotope_score_filter': isotope_score_filter,
-                            'lipid_type': _pl_class, 'charge_mode': _pl_charge, 'pr_window': pr_window,
-                            'lipid_specific_cfg': lipid_specific_cfg, 'score_cfg': score_cfg, 'vendor': usr_vendor,
-                            'ms2_infopeak_threshold': ms2_info_threshold,
-                            'ms2_hginfopeak_threshold': hgms2_info_threshold,
-                            'rank_score': rank_score, 'fast_isotope': fast_isotope, 'sn_ratio': sn_ratio,
-                            'hunter_folder': self.theolpp_cwd,
-                            'hunter_start_time': start_time_str, 'Experiment_mode': usr_exp_mode}
+        hunter_param_dct = {'hunter_folder': self.theolpp_cwd, 'hunter_start_time': start_time_str,
+                            'vendor': usr_vendor, 'Experiment_mode': usr_exp_mode,
+                            'lipid_type': _pl_class, 'charge_mode': _pl_charge,
+                            'lpp_sum_info_path_str': lpp_sum_info_path_str, 'fa_sum_path_str': fa_sum_path_str,
+                            'mzml_path_str': mzml_path_str, 'img_output_folder_str': img_output_folder_str,
+                            'xlsx_output_path_str': xlsx_output_path_str,
+                            'rt_start': rt_start, 'rt_end': rt_end, 'mz_start': mz_start, 'mz_end': mz_end,
+                            'ms_th': ms_th, 'ms_ppm': ms_ppm, 'pr_window': pr_window, 'dda_top': dda_top,
+                            'ms2_th': ms2_th, 'ms2_ppm': ms2_ppm, 'ms2_infopeak_threshold': ms2_info_threshold,
+                            'hg_th': hg_th, 'hg_ppm': hg_ppm, 'ms2_hginfopeak_threshold': hgms2_info_threshold,
+                            'score_filter': overall_score_filter,
+                            'lipid_specific_cfg': lipid_specific_cfg, 'score_cfg': score_cfg, 'sn_ratio': sn_ratio,
+                            'isotope_score_filter': isotope_score_filter, 'rank_score_filter': rank_score_filter,
+                            'msp_score_filter': msp_score_filter, 'fp_score_filter': fp_score_filter,
+                            'snr_score_filter': snr_score_filter,
+                            'parallization_mode': parallelization_mode, 'core_number': core_num, 'max_ram': max_ram,
+                            'img_type': img_typ, 'img_dpi': img_dpi, 'fast_isotope': fast_isotope,
+                            }
 
         param_log_output_path_str = (str(self.ui.tab_b_saveimgfolder_le.text()) +
                                      '/LPPtiger_Params-Log_%s.txt' % start_time_str
@@ -589,8 +588,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_c_ampsnr_le.setText('%.1f' % amp_snr_score)
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     import sys
-
     app = QtGui.QApplication(sys.argv)
     window = LPPtiger_Main()
     window.show()

@@ -32,69 +32,53 @@ from LibHunter.ScoreHunter import get_lpp_info
 
 def huntlipids(param_dct):
     """
-
+    hunter_param_dct = {'hunter_folder': self.theolpp_cwd, 'hunter_start_time': start_time_str,
+                            'vendor': usr_vendor, 'Experiment_mode': usr_exp_mode,
+                            'lipid_type': _pl_class, 'charge_mode': _pl_charge,
+                            'lpp_sum_info_path_str': lpp_sum_info_path_str, 'fa_sum_path_str': fa_sum_path_str,
+                            'mzml_path_str': mzml_path_str, 'img_output_folder_str': img_output_folder_str,
+                            'xlsx_output_path_str': xlsx_output_path_str,
+                            'rt_start': rt_start, 'rt_end': rt_end, 'mz_start': mz_start, 'mz_end': mz_end,
+                            'ms_th': ms_th, 'ms_ppm': ms_ppm, 'pr_window': pr_window, 'dda_top': dda_top,
+                            'ms2_th': ms2_th, 'ms2_ppm': ms2_ppm, 'ms2_infopeak_threshold': ms2_info_threshold,
+                            'hg_th': hg_th, 'hg_ppm': hg_ppm, 'ms2_hginfopeak_threshold': hgms2_info_threshold,
+                            'score_filter': overall_score_filter,
+                            'lipid_specific_cfg': lipid_specific_cfg, 'score_cfg': score_cfg, 'sn_ratio': sn_ratio,
+                            'isotope_score_filter': isotope_score_filter, 'rank_score_filter': rank_score_filter,
+                            'msp_score_filter': msp_score_filter, 'fp_score_filter': fp_score_filter,
+                            'snr_score_filter': snr_score_filter,
+                            'parallization_mode': parallization_mode, 'core_number': core_num, 'max_ram': max_ram,
+                            'img_type': img_typ, 'img_dpi': img_dpi, 'fast_isotope': fast_isotope,
+                            }
     :param param_dct:
     :return:
     """
 
     start_time = time.clock()
 
-    usr_core_num = 4
-
-    usr_lipid_type = param_dct['lipid_type']
-    charge_mode = param_dct['charge_mode']
+    hunter_start_time_str = param_dct['hunter_start_time']
     usr_vendor = param_dct['vendor']
 
+    usr_lipid_type = param_dct['lipid_type']
     usr_xlsx = param_dct['lpp_sum_info_path_str']
-    # usr_sdf = param_dct['sdf_path_str']
-    # usr_msp = param_dct['msp_path_str']
     usr_mzml = param_dct['mzml_path_str']
     output_folder = param_dct['img_output_folder_str']
     output_sum_xlsx = param_dct['xlsx_output_path_str']
-
     fa_list_cfg = param_dct['fa_sum_path_str']
     key_frag_cfg = param_dct['lipid_specific_cfg']
     score_cfg = param_dct['score_cfg']
-
     usr_rt_range = [param_dct['rt_start'], param_dct['rt_end']]
     mz_start = param_dct['mz_start']
     mz_end = param_dct['mz_end']
-    usr_pr_mz_range = [mz_start, mz_end]
     usr_dda_top = param_dct['dda_top']
     usr_ms1_threshold = param_dct['ms_th']
     usr_ms2_threshold = param_dct['ms2_th']
-    usr_ms2_hg_threshold = param_dct['hg_th']
     usr_ms1_precision = param_dct['ms_ppm'] * 1e-6
     usr_ms2_precision = param_dct['ms2_ppm'] * 1e-6
-    usr_ms2_hg_precision = param_dct['hg_ppm'] * 1e-6
-    usr_pr_window = param_dct['pr_window']
 
-    usr_rankscore_filter = param_dct['score_filter']
-    usr_isotope_score_filter = param_dct['isotope_score_filter']
-    usr_ms2_info_th = param_dct['ms2_infopeak_threshold']
-    usr_ms2_hginfo_th = param_dct['ms2_hginfopeak_threshold']
-    usr_rank_mode = param_dct['rank_score']
-    usr_fast_isotope = param_dct['fast_isotope']
-
-    # use the SNR equation SNR = 20 * log10(signal/noise)
-    # snr_score = 20 * math.log10((signal_sum_i / noise_sum_i))
-    # set s/n == 20 --> SNR_SCORE = 100
-    # default 6.5051 = 100 / (20 * math.log10(20)) --> 6.5051
-    usr_max_sn_ratio = param_dct['sn_ratio']
-    if usr_max_sn_ratio == 20 or usr_max_sn_ratio == 0:
-        usr_amp_factor = 6.5051
-    else:
-        usr_amp_factor = 100 / (20 * math.log10(usr_max_sn_ratio))
-
-    if usr_fast_isotope is True:
-        isotope_score_mode = '(Fast mode)'
-    else:
-        isotope_score_mode = ''
-
-    usr_ms1_ppm = int(param_dct['ms_ppm'])
-
-    hunter_start_time_str = param_dct['hunter_start_time']
-    isotope_hunter = IsotopeHunter()
+    # parameters from settings tab
+    usr_core_num = param_dct['core_number']
+    usr_max_ram = param_dct['max_ram']
 
     lpp_info_df = pd.read_excel(usr_xlsx)
 
@@ -129,8 +113,6 @@ def huntlipids(param_dct):
     # generate the indicator table
 
     usr_fa_def_df = pd.read_excel(fa_list_cfg)
-    # usr_fa_def_df.loc[:, 'C'] = usr_fa_def_df['C'].astype(int)
-    # usr_fa_def_df.loc[:, 'DB'] = usr_fa_def_df['DB'].astype(int)
 
     usr_weight_df = pd.read_excel(score_cfg, index_col='Type')
     usr_weight_df = usr_weight_df.loc[:, 'Weight']
@@ -149,7 +131,8 @@ def huntlipids(param_dct):
                                                     vendor=usr_vendor
                                                     )
 
-    ms1_obs_pr_df = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl, core_num=usr_core_num)
+    ms1_obs_pr_df, sub_pl_group_lst = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl,
+                                                               core_num=usr_core_num, max_ram=usr_max_ram)
 
     if isinstance(ms1_obs_pr_df, str):
         return '!! NO suitable precursor --> Check settings!!\n'
@@ -164,8 +147,10 @@ def huntlipids(param_dct):
         _tmp_usr_df = ms1_obs_pr_df.query('DDA_rank == %f and scan_number == %f' % (_dda_rank, _scan_id))
         checked_info_df = checked_info_df.append(_tmp_usr_df)
 
+    checked_info_df.sort_values(by='MS2_PR_mz')
+
     ms1_xic_mz_lst = ms1_obs_pr_df['MS1_XIC_mz'].tolist()
-    ms1_xic_mz_lst = set(ms1_xic_mz_lst)
+    ms1_xic_mz_lst = sorted(set(ms1_xic_mz_lst))
 
     print('=== ==> --> Start to extract XIC')
     sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
@@ -205,38 +190,31 @@ def huntlipids(param_dct):
 
     print('=== ==> --> Start to Hunt for LPPs !!')
     checked_info_groups = checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time'])
-    all_group_key_lst = checked_info_groups.groups.keys()
-    sub_len = int(math.ceil(len(all_group_key_lst) / usr_core_num))
-    core_key_list = map(None, *(iter(all_group_key_lst),) * sub_len)
+    lpp_all_group_key_lst = checked_info_groups.groups.keys()
+    lpp_sub_len = int(math.ceil(len(lpp_all_group_key_lst) / usr_core_num))
+    lpp_sub_key_lst = map(None, *(iter(lpp_all_group_key_lst),) * lpp_sub_len)
 
-    spectra_pl_idx_lst = usr_spectra_pl.items.tolist()
-
-    if len(spectra_pl_idx_lst) >= (16 * 80):
-        sub_pl_group_list = map(None, *(iter(spectra_pl_idx_lst),) * (16 * 50))
-    else:
-        sub_pl_group_list = [spectra_pl_idx_lst]
-
-    part_tot = len(sub_pl_group_list)
+    part_tot = len(sub_pl_group_lst)
     part_counter = 1
 
-    for sub_idx_lst in sub_pl_group_list:
-        sub_pl = usr_spectra_pl.iloc[sub_idx_lst[0]: sub_idx_lst[-1], :, :]
-        # Start multiprocessing
-        print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
+    print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
+    for sub_idx_lst in sub_pl_group_lst:
+        sub_pl = usr_spectra_pl.loc[sub_idx_lst, :, :]
         if part_tot == 1:
             print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
         else:
             print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
                   (part_counter, part_tot, usr_core_num))
         part_counter += 1
+        # Start multiprocessing
         parallel_pool = Pool()
         lpp_info_results_lst = []
         core_worker_count = 1
-        for core_list in core_key_list:
-            core_list = filter(lambda x: x is not None, core_list)
+        for lpp_sub_list in lpp_sub_key_lst:
+            lpp_sub_list = filter(lambda x: x is not None, lpp_sub_list)
             print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
             lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
-                                                                            checked_info_groups, core_list,
+                                                                            checked_info_groups, lpp_sub_list,
                                                                             usr_fa_def_df, usr_weight_df,
                                                                             usr_key_frag_df,
                                                                             usr_scan_info_df, ms1_xic_mz_lst,
@@ -250,12 +228,16 @@ def huntlipids(param_dct):
         for lpp_info_result in lpp_info_results_lst:
             try:
                 tmp_lpp_info_df = lpp_info_result.get()
+            except KeyError:
+                tmp_lpp_info_df = 'error'
+                print('!!error!!')
+            if isinstance(tmp_lpp_info_df, str):
+                pass
+            else:
                 if tmp_lpp_info_df.shape[0] > 0:
                     output_df = output_df.append(tmp_lpp_info_df)
-            except KeyError:
-                pass
 
-        ident_page_idx += 1
+            ident_page_idx += 1
 
     # log_pager.add_info(img_name_core, ident_page_idx, _tmp_output_df)
 
@@ -296,7 +278,7 @@ def huntlipids(param_dct):
         print(output_sum_xlsx)
         print('=== ==> --> saved >>> >>> >>>')
 
-    log_pager.close_page()
+    # log_pager.close_page()
 
     tot_run_time = time.clock() - start_time
 

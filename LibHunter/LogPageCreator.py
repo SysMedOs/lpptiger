@@ -28,11 +28,6 @@ class LogPageCreator(object):
         self.lipid_type = params['lipid_type']
         hunter_folder = params['hunter_folder']
 
-        if params['rank_score'] is True:
-            score_mode = '(Rank mode)'
-        else:
-            score_mode = '(Intensity mode)'
-
         if params['fast_isotope'] is True:
             isotope_score_mode = '(Fast mode)'
         else:
@@ -76,7 +71,7 @@ class LogPageCreator(object):
                                 <li><i>m/z</i> range: %.1f - %.1f <i>m/z</i></li>\n<li>RT range: %.1f - %.1f min</li>\n
                                 <li>MS1 Threshold: %i</li>\n<li>MS2 Threshold: %i</li>\n
                                 <li>MS1 ppm: %i</li>\n<li>MS2 ppm: %i</li>\n
-                                <li>LPPtiger score > %.1f %s</li>\n<li>Isotope score > %.1f %s</li>\n
+                                <li>LPPtiger score > %.1f </li>\n<li>Isotope score > %.1f %s</li>\n
                                 </ul>\n<hr>\n<h3>Lipid identification list:</h3><font size="1">\n<table>\n<thead>\n
                                 <tr style="text-align: center;">\n
                                 <th>ID#</th>\n<th> MS1_obs_mz </th>\n<th>RT(min)</th>\n<th>Discrete</th>\n
@@ -85,8 +80,7 @@ class LogPageCreator(object):
                                 ''' % ('%', params['hunter_start_time'], self.lipid_type, params['charge_mode'],
                                        params['mz_start'], params['mz_end'], params['rt_start'], params['rt_end'],
                                        params['ms_th'], params['ms2_th'], params['ms_ppm'], params['ms2_ppm'],
-                                       params['score_filter'], score_mode,
-                                       params['isotope_score_filter'], isotope_score_mode))
+                                       params['score_filter'], params['isotope_score_filter'], isotope_score_mode))
 
         with open(self.idx_lst_page, 'w') as _idx_page:
             _idx_page.write('''

@@ -38,21 +38,35 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
     usr_ms1_precision = param_dct['ms_ppm'] * 1e-6
     usr_ms2_precision = param_dct['ms2_ppm'] * 1e-6
 
-    usr_rankscore_filter = param_dct['score_filter']
-    usr_isotope_score_filter = param_dct['isotope_score_filter']
+    usr_overallscore_filter = param_dct['score_filter']
     usr_ms2_info_th = param_dct['ms2_infopeak_threshold']
 
+    usr_fast_isotope = param_dct['fast_isotope']
+
+    usr_sn_ratio = param_dct['sn_ratio']
+    usr_isotope_score_filter = param_dct['isotope_score_filter']
+    usr_rank_score_filter = param_dct['rank_score_filter']
+    usr_msp_score_filter = param_dct['msp_score_filter']
+    usr_fp_score_filter = param_dct['fp_score_filter']
+    usr_snr_score_filter = param_dct['snr_score_filter']
+
+    img_typ = param_dct['img_type']
+    img_dpi = param_dct['img_dpi']
     usr_fast_isotope = param_dct['fast_isotope']
 
     # use the SNR equation SNR = 20 * log10(signal/noise)
     # snr_score = 20 * math.log10((signal_sum_i / noise_sum_i))
     # set s/n == 20 --> SNR_SCORE = 100
-    # default 6.5051 = 100 / (20 * math.log10(20)) --> 6.5051
-    usr_max_sn_ratio = param_dct['sn_ratio']
-    if usr_max_sn_ratio == 20 or usr_max_sn_ratio == 0:
-        usr_amp_factor = 6.5051
+    # default 7.1534 = 100 / (20 * math.log10(5)) --> 7.1534
+    if usr_sn_ratio == 5 or usr_sn_ratio == 0:
+        usr_amp_factor = 7.1534
     else:
-        usr_amp_factor = 100 / (20 * math.log10(usr_max_sn_ratio))
+        usr_amp_factor = 100 / (20 * math.log10(usr_sn_ratio))
+
+    if usr_fast_isotope is True:
+        isotope_score_mode = '(Fast mode)'
+    else:
+        isotope_score_mode = ''
 
     hunter_start_time_str = param_dct['hunter_start_time']
     isotope_hunter = IsotopeHunter()
@@ -64,17 +78,13 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
         _subgroup_df = checked_info_groups.get_group(group_key)
         _samemz_se = _subgroup_df.iloc[0, :].squeeze()
         _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
-        # _usr_ms1_obs_mz = _samemz_se['MS1_obs_mz']
         _usr_ms2_rt = _samemz_se['scan_time']
-        # _usr_formula_charged = _samemz_se['Formula']
         _usr_charge = _samemz_se['Ion']
         _usr_ms2_dda_rank = _samemz_se['DDA_rank']
         _usr_ms2_scan_id = _samemz_se['scan_number']
         _usr_mz_lib = _samemz_se['Lib_mz']
-        _usr_abbr_bulk_lst = set(_subgroup_df['Abbreviation'].tolist())
         _tmp_chk_df = usr_scan_info_df.query('MS2_PR_mz == %.6f and DDA_rank == %i and scan_number == %i'
                                              % (_usr_ms2_pr_mz, _usr_ms2_dda_rank, _usr_ms2_scan_id))
-
         _usr_formula = _samemz_se['FORMULA_NEUTRAL']
         _usr_formula_charged = _samemz_se['Formula']
 
@@ -127,7 +137,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                                                        other_signals_dct, _ms2_max_i)
                             rank_score = match_info_dct['Rank_score']
 
-                            if matched_checker > 0 and rank_score > usr_rankscore_filter:
+                            if matched_checker > 0 and rank_score > usr_rank_score_filter:
                                 print('Rank_score: %.f --> passed' % rank_score)
 
                                 _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
@@ -136,7 +146,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                                                                   ms2_precision=
                                                                                                   usr_ms2_precision)
 
-                                if _cosine_score > 20:
+                                if _cosine_score > usr_msp_score_filter:
                                     print('==> --> Cosine similarity score: %f' % _cosine_score)
 
                                     fingerprint_lst = json.loads(_r_abbr['FINGERPRINT'])
@@ -152,7 +162,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                     obs_fp_lst = fp_info_dct['obs_mz']
                                     missed_fp_lst = fp_info_dct['missed_mz']
 
-                                    if _fp_score > 20:
+                                    if _fp_score > usr_fp_score_filter:
 
                                         specific_check_dct = score_calc.get_specific_peaks(_usr_mz_lib, _score_ms2_df,
                                                                                            _ms2_max_i,
@@ -160,20 +170,20 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                                                            usr_ms2_precision,
                                                                                            vendor=usr_vendor)
 
-                                        snr_score, sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(match_info_dct,
+                                        snr_score, usr_sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(match_info_dct,
                                                                                                              specific_check_dct,
                                                                                                              _obs_msp_df,
                                                                                                              _obs_fp_df,
                                                                                                              amplify_factor=
                                                                                                              usr_amp_factor)
 
-                                        if sn_ratio >= 1.0:
+                                        if usr_sn_ratio >= 1.0 and snr_score >= usr_snr_score_filter:
 
                                             overall_score = sum([rank_score, _cosine_score, _fp_score,
                                                                  snr_score, isotope_score]) / 5
                                             overall_score = round(overall_score, 1)
 
-                                            if overall_score >= 40:
+                                            if overall_score >= usr_overallscore_filter:
                                                 match_info_dct['Cosine_score'] = _cosine_score
                                                 match_info_dct['Fingerprint'] = _fp_score
                                                 match_info_dct['Isotope_score'] = isotope_score
@@ -191,9 +201,9 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                 _save_abbr_bulk = _save_abbr_bulk.replace('\\', r'_')
                                                 _save_abbr_bulk = _save_abbr_bulk.replace(r'/', r'_')
 
-                                                img_name_core = ('\%.4f_rt%.3f_DDAtop%.0f_scan%.0f_%s.png'
+                                                img_name_core = ('\%.4f_rt%.3f_DDAtop%.0f_scan%.0f_%s.%s'
                                                                  % (_usr_ms2_pr_mz, _usr_ms2_rt, _usr_ms2_dda_rank,
-                                                                    _usr_ms2_scan_id, _save_abbr_bulk)
+                                                                    _usr_ms2_scan_id, _save_abbr_bulk, img_typ)
                                                                  )
                                                 img_name = (output_folder +
                                                             r'\LPPtiger_Results_Figures_%s'
@@ -208,6 +218,8 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                                                               _usr_formula_charged,
                                                                                               _usr_charge,
                                                                                               save_img_as=img_name,
+                                                                                              img_type=img_typ,
+                                                                                              dpi=img_dpi,
                                                                                               ms1_precision=
                                                                                               usr_ms1_precision,
                                                                                               msp_info=_msp_df,
@@ -275,7 +287,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                     match_info_dct['#Contaminated_peaks'] = (other_frag_count +
                                                                                              other_nl_count)
                                                     match_info_dct['ppm'] = _exact_ppm
-                                                    match_info_dct['SN_ratio'] = '%.1f' % sn_ratio
+                                                    match_info_dct['SN_ratio'] = '%.1f' % usr_sn_ratio
 
                                                     try:
                                                         del match_info_dct['MATCH_INFO']
@@ -287,5 +299,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                     _tmp_output_df = pd.DataFrame(data=match_info_dct, index=[tmp_idx])
                                                     tmp_df = tmp_df.append(_tmp_output_df)
                                                     tmp_idx += 1
-
-    return tmp_df
+    if tmp_df.shape[0] > 0:
+        return tmp_df
+    else:
+        return 'empty_df'

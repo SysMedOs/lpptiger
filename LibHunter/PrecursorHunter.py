@@ -81,7 +81,7 @@ class PrecursorHunter(object):
         self.lpp_info_df = lpp_info_df
         self.param_dct = param_dct
 
-    def get_matched_pr(self, scan_info_df, spectra_pl, core_num=4):
+    def get_matched_pr(self, scan_info_df, spectra_pl, core_num=4, max_ram=8):
 
         print('Start match!!!!')
 
@@ -141,19 +141,21 @@ class PrecursorHunter(object):
         sub_len = int(math.ceil(len(all_group_key_lst) / core_num))
         core_key_list = map(None,  * (iter(all_group_key_lst),) * sub_len)
 
-        spectra_pl_idx_lst = spectra_pl.items.tolist()
+        spectra_pl_idx_lst = sorted(spectra_pl.items.tolist())
 
-        if len(spectra_pl_idx_lst) >= (16 * 80):
-            sub_pl_group_list = map(None, *(iter(spectra_pl_idx_lst),) * (16 * 50))
+        if len(spectra_pl_idx_lst) >= (max_ram * 80):
+            sub_pl_group_lst = map(None, *(iter(spectra_pl_idx_lst),) * (max_ram * 50))
         else:
-            sub_pl_group_list = [spectra_pl_idx_lst]
+            sub_pl_group_lst = [spectra_pl_idx_lst]
 
-        part_tot = len(sub_pl_group_list)
+        part_tot = len(sub_pl_group_lst)
         part_counter = 1
+        opt_sub_pl_group_lst = []
+        for sub_idx_lst in sub_pl_group_lst:
+            sub_idx_lst = filter(lambda x: x is not None, sub_idx_lst)
+            opt_sub_pl_group_lst.append(sub_idx_lst)
 
-        for sub_idx_lst in sub_pl_group_list:
-
-            sub_pl = spectra_pl.iloc[sub_idx_lst[0]: sub_idx_lst[-1], :, :]
+            sub_pl = spectra_pl.loc[sub_idx_lst, :, :]
 
             # Start multiprocessing
             if part_tot == 1:
@@ -189,7 +191,7 @@ class PrecursorHunter(object):
         if ms1_obs_pr_df.shape[0] > 0:
             ms1_obs_pr_df = ms1_obs_pr_df.sort_values(by=['Lib_mz', 'abs_ppm'], ascending=[True, True])
             ms1_obs_pr_df = ms1_obs_pr_df.reset_index(drop=True)
-            return ms1_obs_pr_df
+            return ms1_obs_pr_df, opt_sub_pl_group_lst
 
         else:
-            return '!! NO suitable precursor --> Check settings!!'
+            return '!! NO suitable precursor --> Check settings!!', 'Empty spec_lst'

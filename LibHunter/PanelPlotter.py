@@ -26,8 +26,8 @@ import pandas as pd
 
 
 def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_check_dct, isotope_score_info_dct,
-                 formula_charged, charge, save_img_as=None, ms1_precision=50e-6, msp_info=pd.DataFrame(),
-                 obs_fp=[], missed_fp=[], snr_i_info={}):
+                 formula_charged, charge, save_img_as=None, img_type='png', dpi=300,
+                 ms1_precision=50e-6, msp_info=pd.DataFrame(), obs_fp=[], missed_fp=[], snr_i_info={}):
     ms2_pr_mz = mz_se['MS2_PR_mz']
     ms1_obs = mz_se['MS1_obs_mz']
     ms1_xic_mz = mz_se['MS1_XIC_mz']
@@ -534,7 +534,7 @@ def plot_spectra(abbr,mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_ch
 
     print ('>>> >>> >>> try to plot >>> >>> >>>')
 
-    plt.savefig(save_img_as, dpi=300)
+    plt.savefig(save_img_as, type=img_type, dpi=dpi)
     print ('=====> Image saved as: %s' % save_img_as)
     plt.close()
     isotope_checker = 0
