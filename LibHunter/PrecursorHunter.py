@@ -154,7 +154,6 @@ class PrecursorHunter(object):
         for sub_idx_lst in sub_pl_group_lst:
             sub_idx_lst = filter(lambda x: x is not None, sub_idx_lst)
             opt_sub_pl_group_lst.append(sub_idx_lst)
-
             sub_pl = spectra_pl.loc[sub_idx_lst, :, :]
 
             # Start multiprocessing
@@ -165,7 +164,7 @@ class PrecursorHunter(object):
                       (part_counter, part_tot, core_num))
             part_counter += 1
 
-            parallel_pool = Pool()
+            parallel_pool = Pool(core_num)
             pr_info_results_lst = []
             core_worker_count = 1
             for core_list in core_key_list:

@@ -158,7 +158,7 @@ def huntlipids(param_dct):
     # Start multiprocessing
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
     xic_dct = {}
-    parallel_pool = Pool()
+    parallel_pool = Pool(usr_core_num)
     xic_results_lst = []
     core_worker_count = 1
     for core_list in core_key_list:
@@ -207,7 +207,7 @@ def huntlipids(param_dct):
                   (part_counter, part_tot, usr_core_num))
         part_counter += 1
         # Start multiprocessing
-        parallel_pool = Pool()
+        parallel_pool = Pool(usr_core_num)
         lpp_info_results_lst = []
         core_worker_count = 1
         for lpp_sub_list in lpp_sub_key_lst:
@@ -239,7 +239,7 @@ def huntlipids(param_dct):
 
             ident_page_idx += 1
 
-    # log_pager.add_info(img_name_core, ident_page_idx, _tmp_output_df)
+    log_pager.add_all_info(output_df)
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:

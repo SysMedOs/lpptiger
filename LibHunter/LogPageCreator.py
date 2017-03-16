@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
 # The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPsmi.
+# A suitable license will be chosen before the official release of LPPtiger.
 # For more info please contact:
 #     SysMedOs team oxlpp@bbz.uni-leipzig.de
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
@@ -35,8 +35,8 @@ class LogPageCreator(object):
 
         with open(self.main_page, 'w') as _m_page:
             m_info_lst = ['<html>\n', '<link rel="icon" href="', self.logo, '" type="image/x-icon"/>\n'
-                          '<title>LPPtiger_Results ', start_time,
-                          '</title>\n<frameset cols="390,*">\n<frameset rows="400,*">\n',
+                                                                            '<title>LPPtiger_Results ', start_time,
+                          '</title>\n<frameset cols="390,*">\n<frameset rows="430,*">\n',
                           '<frame src="', _params_lst_page, '" frameborder="0" >\n',
                           '<frame src="', _idx_lst_page, '" frameborder="0" >\n</frameset>\n',
                           '<frame src="', _image_lst_page, '"name ="results_frame">\n</frameset>\n</html>\n'
@@ -99,25 +99,24 @@ class LogPageCreator(object):
         except IOError:
             pass
 
-    def add_info(self, img_name, ident_idx, ident_info_df):
+    def add_info(self, img_path, ident_idx, ident_info_se):
 
         print('try to add identification to report html')
 
-        img_path = img_name[1:]
-
-        ms1_pr_mz = ident_info_df.get_value(ident_idx, r'MS1_obs_mz')
-        # ms2_pr_mz = ident_info_df.get_value(1, r'MS2_PR_mz')
-        ms2_rt = ident_info_df.get_value(ident_idx, 'MS2_scan_time')
-        dda = ident_info_df.get_value(ident_idx, 'DDA#')
-        ms2_scan_id = ident_info_df.get_value(ident_idx, 'Scan#')
-        # abbr_bulk = ident_info_df.get_value(ident_idx, 'Bulk_identification')
-        ident_abbr = ident_info_df.get_value(ident_idx, 'Proposed_structures')
+        ms1_pr_mz = ident_info_se['MS1_obs_mz']
+        ms2_rt = ident_info_se['MS2_scan_time']
+        dda = ident_info_se['DDA#']
+        ms2_scan_id = ident_info_se['Scan#']
+        ident_abbr = ident_info_se['Proposed_structures']
         ident_abbr = ident_abbr.replace('<', '&lt;')
         ident_abbr = ident_abbr.replace('>', '&gt;')
-        score = ident_info_df.get_value(ident_idx, 'Overall_score')
-        formula_ion = ident_info_df.get_value(ident_idx, 'Formula_ion')
-        charge = ident_info_df.get_value(ident_idx, 'Charge')
+        score = ident_info_se['Overall_score']
+        formula_ion = ident_info_se['Formula_ion']
+        charge = ident_info_se['Charge']
         ident_idx = str(ident_idx)
+
+        ident_info_df = pd.DataFrame()
+        ident_info_df = ident_info_df.append(ident_info_se, ignore_index=True)
 
         with open(self.image_lst_page, 'a') as img_page:
             # convert info df to html table code
@@ -131,12 +130,13 @@ class LogPageCreator(object):
             else:
                 plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2',
                                 'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', 'SN_ratio']
+
             ident_col = ident_info_df.columns.tolist()
 
             for _col in plot_df_cols:
                 if _col not in ident_col:
                     ident_info_df.loc[:, _col] = ''
-            table_buf_code = ident_info_df.to_html(columns=plot_df_cols, float_format='%.1f', border=0)
+            table_buf_code = ident_info_df.to_html(columns=plot_df_cols, float_format='%.1f', border=0, index=False)
             table_buf_code = table_buf_code.replace('NaN', '')
             img_title_str = ('{mz}_RT{rt:.3}_DDArank{dda}_Scan{scan}_{ident}_{f}_{chg}_score{score}'
                              .format(mz='%.4f' % ms1_pr_mz, rt=ms2_rt, dda=dda, scan=ms2_scan_id,
@@ -161,6 +161,78 @@ class LogPageCreator(object):
             idx_page.write(idx_str)
 
         print('==> info added to report html -->')
+
+    def add_all_info(self, ident_info_df):
+
+        with open(self.image_lst_page, 'a') as img_page:
+            with open(self.idx_lst_page, 'a') as idx_page:
+
+                for _idx, _row_se in ident_info_df.iterrows():
+                    img_path = _row_se['img_name']
+                    ms1_pr_mz = _row_se['MS1_obs_mz']
+                    ms2_rt = _row_se['MS2_scan_time']
+                    dda = _row_se['DDA#']
+                    ms2_scan_id = _row_se['Scan#']
+                    ident_abbr = _row_se['Proposed_structures']
+                    ident_abbr = ident_abbr.replace('<', '&lt;')
+                    ident_abbr = ident_abbr.replace('>', '&gt;')
+                    score = _row_se['Overall_score']
+                    formula_ion = _row_se['Formula_ion']
+                    charge = _row_se['Charge']
+                    ident_idx = str(_row_se['img_idx'])
+
+                    ident_info_df = pd.DataFrame()
+                    ident_info_df = ident_info_df.append(_row_se, ignore_index=True)
+
+                    # convert info df to html table code
+                    if self.lipid_type in ['PA', 'PC', 'PE', 'PG', 'PI', 'PIP', 'PS']:
+                        plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1',
+                                        'i_[M-H]-sn2',
+                                        'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', 'SN_ratio']
+                    elif self.lipid_type in ['TG', 'TAG', 'DG', 'DAG', 'MG', 'MAG']:
+                        plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_sn3',
+                                        'i_M-sn1', 'i_M-sn2', 'i_M-sn3',
+                                        'i_M-(sn1+sn2)', 'i_M-(sn1+sn3)', 'i_M-(sn2+sn3)', 'SN_ratio']
+                    else:
+                        plot_df_cols = ['Proposed_structures', 'Overall_score', 'i_sn1', 'i_sn2', 'i_[M-H]-sn1',
+                                        'i_[M-H]-sn2',
+                                        'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', 'SN_ratio']
+
+                    ident_col = ident_info_df.columns.tolist()
+
+                    for _col in plot_df_cols:
+                        if _col not in ident_col:
+                            ident_info_df.loc[:, _col] = ''
+                    table_buf_code = ident_info_df.to_html(columns=plot_df_cols, float_format='%.1f', border=0,
+                                                           index=False)
+                    table_buf_code = table_buf_code.replace('NaN', '')
+                    img_title_str = ('{mz}_RT{rt:.3}_DDArank{dda}_Scan{scan}_{ident}_{f}_{chg}_score{score}'
+                                     .format(mz='%.4f' % ms1_pr_mz, rt=ms2_rt, dda=dda, scan=ms2_scan_id,
+                                             ident=ident_abbr, score=score, f=formula_ion, chg=charge))
+                    img_info_lst = ['<a name="', ident_idx, '"><h3>', '<a href="', img_path, '" target="blank">',
+                                    img_title_str,
+                                    '</a></h3></a>', '<a href="', img_path, '" target="blank">',
+                                    '<img src="', img_path, '" height="800" /></a>', table_buf_code, '\n<hr>\n']
+                    img_page.write(''.join(img_info_lst))
+
+                    idx_str = ('''
+                            <tr>\n
+                            <td>
+                            <a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{id}
+                            </td>\n<td>
+                            <a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{mz}
+                            </td>\n<td>
+                            <a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{rt}
+                            </td>\n<td>
+                            <a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{ident}
+                            </td>\n<td>
+                            <a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{score}
+                            </td>\n</tr>\n
+                            '''.format(id=ident_idx, mz='%.4f' % ms1_pr_mz, rt='%.1f' % ms2_rt,
+                                       ident=ident_abbr, score=score))
+                    idx_page.write(idx_str)
+
+            print('==> info added to report html -->')
 
     def close_page(self):
         with open(self.main_page, 'a') as _m_page:

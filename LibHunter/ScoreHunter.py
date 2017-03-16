@@ -288,6 +288,8 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                                                              other_nl_count)
                                                     match_info_dct['ppm'] = _exact_ppm
                                                     match_info_dct['SN_ratio'] = '%.1f' % usr_sn_ratio
+                                                    match_info_dct['img_name'] = img_name
+                                                    match_info_dct['img_idx'] = tmp_idx
 
                                                     try:
                                                         del match_info_dct['MATCH_INFO']
