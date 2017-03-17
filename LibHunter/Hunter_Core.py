@@ -158,7 +158,12 @@ def huntlipids(param_dct):
     # Start multiprocessing
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
     xic_dct = {}
-    parallel_pool = Pool(usr_core_num)
+
+    if usr_core_num >= 4:
+        xic_core_num = 4
+    else:
+        xic_core_num = usr_core_num
+    parallel_pool = Pool(xic_core_num)
     xic_results_lst = []
     core_worker_count = 1
     for core_list in core_key_list:

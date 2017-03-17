@@ -12,9 +12,11 @@ from __future__ import division
 import ConfigParser as configparser
 
 import os
+import glob
 import re
 import time
 import multiprocessing
+import multiprocessing.pool
 
 import xlrd
 from PySide import QtCore, QtGui
@@ -24,7 +26,7 @@ from LibHunter.Hunter_Core import huntlipids
 from LibTheoLPP.TheoLPP_Core import theolpp
 
 
-class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
+class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None, cwd=os.getcwd()):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
@@ -50,8 +52,6 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         prostane_group.addButton(self.ui.prostane_no_rb)
 
         prostane_ox_group = QtGui.QButtonGroup(self.ui.tabWidget)
-        prostane_ox_group.addButton(self.ui.prostane_ox_yes_rb)
-        prostane_ox_group.addButton(self.ui.prostane_ox_no_rb)
 
         msp_group = QtGui.QButtonGroup(self.ui.tabWidget)
         msp_group.addButton(self.ui.spectra_yes_rb)
@@ -66,8 +66,8 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         # self.ui.prostane_ox_no_rb.hide()
         QtCore.QObject.connect(self.ui.spectra_yes_rb, QtCore.SIGNAL("clicked()"), self.set_spec_t)
         QtCore.QObject.connect(self.ui.spectra_no_rb, QtCore.SIGNAL("clicked()"), self.set_spec_f)
-        QtCore.QObject.connect(self.ui.prostane_yes_rb, QtCore.SIGNAL("clicked()"), self.set_prostane_t)
-        QtCore.QObject.connect(self.ui.prostane_no_rb, QtCore.SIGNAL("clicked()"), self.set_prostane_f)
+        # QtCore.QObject.connect(self.ui.prostane_yes_rb, QtCore.SIGNAL("clicked()"), self.set_prostane_t)
+        # QtCore.QObject.connect(self.ui.prostane_no_rb, QtCore.SIGNAL("clicked()"), self.set_prostane_f)
         QtCore.QObject.connect(self.ui.load_lipid_pb, QtCore.SIGNAL("clicked()"), self.load_lipid_list)
         QtCore.QObject.connect(self.ui.save_sdf_pb, QtCore.SIGNAL("clicked()"), self.save_sdf)
         QtCore.QObject.connect(self.ui.save_msp_pb, QtCore.SIGNAL("clicked()"), self.save_msp)
@@ -93,7 +93,14 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         QtCore.QObject.connect(self.ui.tab_c_hgcfg_pb, QtCore.SIGNAL("clicked()"), self.set_hg_specifc_pattern)
         QtCore.QObject.connect(self.ui.tab_c_scorecfg_pb, QtCore.SIGNAL("clicked()"), self.set_wfrag)
         QtCore.QObject.connect(self.ui.set_default_pb, QtCore.SIGNAL("clicked()"), self.set_default_cfg)
-        QtCore.QObject.connect(self.ui.pushButton, QtCore.SIGNAL("clicked()"), self.calc_snr_amp)
+        QtCore.QObject.connect(self.ui.tab_c_calcsnr_pb, QtCore.SIGNAL("clicked()"), self.c_calc_snr_amp)
+
+        # slots for tab d
+        self.ui.tab_d_mutlimode_cmb.currentIndexChanged['QString'].connect(self.d_set_multi_mode)
+        QtCore.QObject.connect(self.ui.tab_d_addcfg_pb, QtCore.SIGNAL("clicked()"), self.d_load_batchcfg)
+        QtCore.QObject.connect(self.ui.tab_d_addcfgfolder_pb, QtCore.SIGNAL("clicked()"), self.d_load_batchcfgfolder)
+        QtCore.QObject.connect(self.ui.tab_d_clearall_pb, QtCore.SIGNAL("clicked()"), self.ui.tab_d_infiles_pte.clear)
+        QtCore.QObject.connect(self.ui.tab_d_runbatch_pb, QtCore.SIGNAL("clicked()"), self.d_run_batchmode)
 
         # load configurations
         config = configparser.ConfigParser()
@@ -134,15 +141,15 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.save_msp_pb.hide()
         self.ui.save_msp_lb.hide()
 
-    def set_prostane_t(self):
-        self.ui.label_12.show()
-        self.ui.prostane_ox_yes_rb.show()
-        self.ui.prostane_ox_no_rb.show()
-
-    def set_prostane_f(self):
-        self.ui.label_12.hide()
-        self.ui.prostane_ox_yes_rb.hide()
-        self.ui.prostane_ox_no_rb.hide()
+    # def set_prostane_t(self):
+    #     self.ui.label_12.show()
+    #     self.ui.prostane_ox_yes_rb.show()
+    #     self.ui.prostane_ox_no_rb.show()
+    #
+    # def set_prostane_f(self):
+    #     self.ui.label_12.hide()
+    #     self.ui.prostane_ox_yes_rb.hide()
+    #     self.ui.prostane_ox_no_rb.hide()
 
     def set_ox_max(self):
         _ox_max = self.ui.max_ox_spb.value()
@@ -365,26 +372,6 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
             b_load_xlsx_str = b_load_lipidstable_dialog.selectedFiles()[0]
             b_load_xlsx_str = os.path.abspath(b_load_xlsx_str)
             self.ui.tab_b_loadfapath_le.setText(b_load_xlsx_str)
-    #
-    # def b_load_sdf(self):
-    #     b_load_lipidstable_dialog = QtGui.QFileDialog(self)
-    #     b_load_lipidstable_dialog.setNameFilters([u'SDF files (*.sdf *.SDF)'])
-    #     b_load_lipidstable_dialog.selectNameFilter(u'SDF files (*.sdf *.SDF)')
-    #     if b_load_lipidstable_dialog.exec_():
-    #         self.ui.tab_b_loadsdfpath_le.clear()
-    #         b_load_sdf_str = b_load_lipidstable_dialog.selectedFiles()[0]
-    #         b_load_sdf_str = os.path.abspath(b_load_sdf_str)
-    #         self.ui.tab_b_loadsdfpath_le.setText(unicode(b_load_sdf_str))
-    #
-    # def b_load_msp(self):
-    #     b_load_lipidstable_dialog = QtGui.QFileDialog(self)
-    #     b_load_lipidstable_dialog.setNameFilters([u'SDF files (*.msp *.MSP)'])
-    #     b_load_lipidstable_dialog.selectNameFilter(u'SDF files (*.msp *.MSP)')
-    #     if b_load_lipidstable_dialog.exec_():
-    #         self.ui.tab_b_loadmsppath_le.clear()
-    #         b_load_msp_str = b_load_lipidstable_dialog.selectedFiles()[0]
-    #         b_load_msp_str = os.path.abspath(b_load_msp_str)
-    #         self.ui.tab_b_loadmsppath_le.setText(unicode(b_load_msp_str))
 
     def b_load_mzml(self):
         b_load_mzml_dialog = QtGui.QFileDialog(self)
@@ -432,12 +419,12 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_c_snratio_spb.setValue(5)
         self.ui.tab_c_ram_spb.setValue(16)
 
-        if self.ui.vendor_waters_rb.isChecked():
+        if self.ui.tab_b_vendor_cmb.currentText() == 'Waters':
             usr_vendor = 'waters'
-        elif self.ui.vendor_thermo_rb.isChecked():
+        elif self.ui.tab_b_vendor_cmb.currentText() == 'Thermo':
             usr_vendor = 'thermo'
         else:
-            usr_vendor = 'waters'
+            usr_vendor = ''
         if self.ui.mode_lcms_rb.isChecked():
             usr_exp_mode = 'LC-MS'
         elif self.ui.mode_static_rb.isChecked():
@@ -496,15 +483,15 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         img_typ = self.ui.tab_c_imagetype_cmb.currentText()[1:]
         img_dpi = self.ui.tab_c_dpi_spb.value()
 
-        usr_parallelization_mode = self.ui.comboBox.currentIndex()
+        usr_parallelization_mode = self.ui.tab_c_parallization_cmb.currentIndex()
         if usr_parallelization_mode == 0:
-            print('parallelization_mode: ', self.ui.comboBox.currentText())
+            print('parallelization_mode: ', self.ui.tab_c_parallization_cmb.currentText())
             parallelization_mode = 'cpu'
         elif usr_parallelization_mode == 1:
-            print('parallelization_mode: ', self.ui.comboBox.currentText())
+            print('parallelization_mode: ', self.ui.tab_c_parallization_cmb.currentText())
             parallelization_mode = 'gpu'
         else:
-            print('parallization_mode: ', self.ui.comboBox.currentText())
+            print('parallization_mode: ', self.ui.tab_c_parallization_cmb.currentText())
             parallelization_mode = 'cpu'
 
         usr_isotope_score_mode = self.ui.tab_c_isotopescoremode_cmb.currentIndex()
@@ -528,7 +515,7 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
             self.ui.tab_b_statusrun_pte.insertPlainText('!! Failed to load score configuration',
                                                         'please check your settings!!')
 
-        start_time_str = time.strftime("%Y-%m-%d_%H-%M", time.localtime())
+        start_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
         hunter_param_dct = {'hunter_folder': self.theolpp_cwd, 'hunter_start_time': start_time_str,
                             'vendor': usr_vendor, 'Experiment_mode': usr_exp_mode,
@@ -552,26 +539,30 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         param_log_output_path_str = (str(self.ui.tab_b_saveimgfolder_le.text()) +
                                      '/LPPtiger_Params-Log_%s.txt' % start_time_str
                                      )
+        if usr_vendor != '':
+            config = configparser.ConfigParser()
+            with open(param_log_output_path_str, 'w') as usr_param_cfg:
+                config.add_section('parameters')
+                for param in hunter_param_dct.keys():
+                    config.set('parameters', param, str(hunter_param_dct[param]))
+                config.write(usr_param_cfg)
 
-        config = configparser.ConfigParser()
-        with open(param_log_output_path_str, 'w') as usr_param_cfg:
-            config.add_section('parameters')
-            for param in hunter_param_dct.keys():
-                config.set('parameters', param, str(hunter_param_dct[param]))
-            config.write(usr_param_cfg)
+            print(hunter_param_dct)
 
-        print(hunter_param_dct)
+            tot_run_time = huntlipids(hunter_param_dct)
 
-        tot_run_time = huntlipids(hunter_param_dct)
+            if isinstance(tot_run_time, str):
+                self.ui.tab_b_statusrun_pte.insertPlainText(tot_run_time)
+                self.ui.tab_b_statusrun_pte.insertPlainText('>>> >>> >>> FINISHED <<< <<< <<<')
 
-        if isinstance(tot_run_time, str):
-            self.ui.tab_b_statusrun_pte.insertPlainText(tot_run_time)
-            self.ui.tab_b_statusrun_pte.insertPlainText('>>> >>> >>> FINISHED <<< <<< <<<')
+            else:
+                self.ui.tab_b_statusrun_pte.insertPlainText('!! Failed read input files, '
+                                                            'please check vendor settings!!')
 
         else:
-            self.ui.tab_b_statusrun_pte.insertPlainText('!! Failed read input files, please check vendor settings!!')
+            self.ui.tab_b_statusrun_pte.insertPlainText('Please check your vendor settings!')
 
-    def calc_snr_amp(self):
+    def c_calc_snr_amp(self):
         import math
 
         usr_max_sn_ratio = self.ui.tab_c_testsnratio_spb.value()
@@ -587,10 +578,223 @@ class LPPtiger_Main(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tab_c_originsnr_le.setText('%.1f' % origin_snr_score)
         self.ui.tab_c_ampsnr_le.setText('%.1f' % amp_snr_score)
 
+    def d_set_multi_mode(self):
+
+        multi_mode_idx = self.ui.tab_d_mutlimode_cmb.currentIndex()
+
+        if multi_mode_idx == 0:
+            print('Multi processing mode')
+            self.ui.tab_d_maxbatch_lb.show()
+            self.ui.tab_d_maxbatch_spb.show()
+            self.ui.tab_d_maxsubcore_lb.show()
+            self.ui.tab_d_maxsubcore_spb.show()
+            self.ui.tab_d_maxsubram_lb.show()
+            self.ui.tab_d_maxsubram_spb.show()
+        elif multi_mode_idx == 1:
+            print('Single processing mode')
+            self.ui.tab_d_maxbatch_lb.hide()
+            self.ui.tab_d_maxbatch_spb.hide()
+            self.ui.tab_d_maxsubcore_lb.hide()
+            self.ui.tab_d_maxsubcore_spb.hide()
+            self.ui.tab_d_maxsubram_lb.hide()
+            self.ui.tab_d_maxsubram_spb.hide()
+
+    @staticmethod
+    def d_get_same_files(folder, filetype_lst):
+        """
+        find all files with same type in specified folder
+        :param str folder: absolute file path
+        :param list filetype_lst: e.g. ['*.mzml', '*.mzML']
+        :return: a list of absolute file path
+        :rtype: list
+        """
+        if folder is not u'':
+            os.chdir(folder)
+            _pre_found_lst = []
+            for _filetype in filetype_lst:
+                _tmp_found_lst = glob.glob(_filetype)
+                # merge list
+                _pre_found_lst += [f for f in _tmp_found_lst if f not in _pre_found_lst]
+            filename_lst = _pre_found_lst
+            abs_path_lst = list(os.path.abspath(ff) for ff in _pre_found_lst)
+        else:
+            filename_lst = []
+            abs_path_lst = []
+
+        return filename_lst, abs_path_lst
+
+    def d_load_batchcfg(self):
+        # check existed files
+        _loaded_files = str(self.ui.tab_d_infiles_pte.toPlainText())
+        _loaded_lst = _loaded_files.split('\n')
+
+        b_load_cfg_dialog = QtGui.QFileDialog(self)
+        b_load_cfg_dialog.setNameFilters([u'LPPtiger batch mode files (*.txt)'])
+        b_load_cfg_dialog.selectNameFilter(u'LPPtiger batch mode files (*.txt)')
+        if b_load_cfg_dialog.exec_():
+            b_load_cfg_str = b_load_cfg_dialog.selectedFiles()[0]
+            b_load_cfg_str = os.path.abspath(b_load_cfg_str)
+            if b_load_cfg_str not in _loaded_lst:
+                self.ui.tab_d_infiles_pte.insertPlainText(b_load_cfg_str)  # take unicode only
+                self.ui.tab_d_infiles_pte.insertPlainText(u'\n')
+            else:
+                _msgBox = QtGui.QMessageBox()
+                _msgBox.setText(u'Batch config file has been chosen already.')
+                _msgBox.exec_()
+
+    def d_load_batchcfgfolder(self):
+        # check existed files
+        _loaded_files = str(self.ui.tab_d_infiles_pte.toPlainText())
+        _loaded_lst = _loaded_files.split('\n')
+
+        b_load_cfgfolder_str = QtGui.QFileDialog.getExistingDirectory()
+        _cfg_name_lst, _cfg_path_lst = self.d_get_same_files(b_load_cfgfolder_str, filetype_lst=['*.txt', '*.txt'])
+        _duplicated_str = ''
+        for _cfg in _cfg_path_lst:
+            if _cfg not in _loaded_lst:
+                self.ui.tab_d_infiles_pte.insertPlainText(_cfg)
+                self.ui.tab_d_infiles_pte.insertPlainText('\n')
+            else:
+                _duplicated_str = _duplicated_str + _cfg + '\n'
+        if len(_duplicated_str) > 0:
+            _msgBox = QtGui.QMessageBox()
+            _msgBox.setText(_duplicated_str + u'Already chosen. \n Skipped')
+            _msgBox.exec_()
+
+    @staticmethod
+    def d_read_batch_cfg(batch_cfg):
+        config = configparser.ConfigParser()
+        config.read(batch_cfg)
+        batch_cfg_dct = {}
+        if config.has_section('parameters'):
+            user_cfg = 'parameters'
+            options = config.options(user_cfg)
+            for param in options:
+                batch_cfg_dct[param] = config.get(user_cfg, param)
+        batch_cfg_key_lst = batch_cfg_dct.keys()
+        i_type_key_lst = ['ms_th', 'ms2_th', 'hg_th', 'ms_ppm', 'ms2_ppm', 'hg_ppm', 'dda_top', 'sn_ratio',
+                          'core_number', 'max_ram', 'img_dpi']
+        f_type_key_lst = ['rt_start', 'rt_end', 'mz_start', 'mz_end', 'pr_window',
+                          'ms2_infopeak_threshold', 'ms2_hginfopeak_threshold',
+                          'score_filter', 'isotope_score_filter', 'rank_score_filter',
+                          'msp_score_filter', 'fp_score_filter', 'snr_score_filter']
+
+        if len(batch_cfg_key_lst) > 0:
+            for cfg_key in batch_cfg_key_lst:
+                if cfg_key in i_type_key_lst:
+                    try:
+                        batch_cfg_dct[cfg_key] = int(batch_cfg_dct[cfg_key])
+                    except ValueError:
+                        batch_cfg_dct[cfg_key] = int(float(batch_cfg_dct[cfg_key]))
+                elif cfg_key in f_type_key_lst:
+                    batch_cfg_dct[cfg_key] = float(batch_cfg_dct[cfg_key])
+
+        return batch_cfg_dct
+
+    def d_run_batchmode(self):
+
+        self.ui.tab_d_statusrun_pte.clear()
+
+        loaded_cfg_files = str(self.ui.tab_d_infiles_pte.toPlainText())
+        pre_loaded_cfg_lst = loaded_cfg_files.split('\n')
+
+        loaded_cfg_lst = []
+        for f in pre_loaded_cfg_lst:
+            if len(f) > 4:
+                loaded_cfg_lst.append(f)
+
+        tot_num = len(loaded_cfg_lst)
+        run_counter = 1
+
+        multi_mode_idx = self.ui.tab_d_mutlimode_cmb.currentIndex()
+
+        if multi_mode_idx == 0:  # multi mode
+
+            max_process = self.ui.tab_d_maxbatch_spb.value()
+            sub_max_core = self.ui.tab_d_maxsubcore_spb.value()
+            sub_max_ram = self.ui.tab_d_maxsubram_spb.value()
+
+            cfg_dct_lst = []
+            for cfg_file in loaded_cfg_lst:
+                hunter_param_dct = self.d_read_batch_cfg(cfg_file)
+                if 'vendor' in hunter_param_dct.keys():
+                    hunter_param_dct['batch_cfg_file'] = cfg_file
+                    hunter_param_dct['core_number'] = sub_max_core
+                    hunter_param_dct['max_ram'] = sub_max_ram
+                    cfg_dct_lst.append(hunter_param_dct)
+                else:
+                    hunter_param_dct['batch_cfg_file'] = ''
+
+            if len(cfg_dct_lst) > max_process:
+                sub_part_lst = map(None, *(iter(cfg_dct_lst),) * max_process)
+            else:
+                sub_part_lst = [cfg_dct_lst]
+
+            tot_part = len(sub_part_lst)
+            part_num = 1
+            for sub_cfg_lst in sub_part_lst:
+                sub_cfg_lst = filter(lambda x: x is not None, sub_cfg_lst)
+                parallel_pool = multiprocessing.pool.ThreadPool(max_process)
+                hunter_results_lst = []
+                core_worker_count = 1
+                for _cfg_dct in sub_cfg_lst:
+                    time.sleep(1)
+                    self.ui.tab_d_statusrun_pte.insertPlainText('Start Batch %i / %i file %i / %i ...\n'
+                                                                % (part_num, tot_part, core_worker_count, max_process))
+                    self.ui.tab_d_statusrun_pte.insertPlainText('>>> processing...\n')
+
+                    start_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+                    _cfg_dct['hunter_start_time'] = start_time_str
+                    tot_run_time = parallel_pool.apply_async(huntlipids, args=(_cfg_dct,))
+
+                    core_worker_count += 1
+                    hunter_results_lst.append(tot_run_time)
+
+                parallel_pool.close()
+                parallel_pool.join()
+
+                for hunter_time in hunter_results_lst:
+
+                    run_time = str(hunter_time.get())
+
+                    if isinstance(run_time, str):
+                        self.ui.tab_d_statusrun_pte.appendPlainText('>>> %s' % run_time)
+                        self.ui.tab_d_statusrun_pte.appendPlainText('FINISHED with file %i / %i\n\n' %
+                                                                    (run_counter, tot_num))
+                        run_counter += 1
+                    else:
+                        self.ui.tab_d_statusrun_pte.insertPlainText(
+                            '!! Failed to process batch mode configure file:\n Please check settings!!')
+
+                part_num += 1
+
+        else:  # single mode
+            for _cfg in loaded_cfg_lst:
+                if os.path.isfile(_cfg):
+                    self.ui.tab_d_statusrun_pte.insertPlainText('Start processing...\n%s\n' % _cfg)
+                    hunter_param_dct = self.d_read_batch_cfg(_cfg)
+                    if 'hunter_start_time' in hunter_param_dct.keys():
+                        tot_run_time = huntlipids(hunter_param_dct)
+
+                        if isinstance(tot_run_time, str):
+                            self.ui.tab_d_statusrun_pte.appendPlainText(tot_run_time)
+                            self.ui.tab_d_statusrun_pte.appendPlainText('FINISHED with file %i / %i\n\n' %
+                                                                        (run_counter, tot_num))
+                            run_counter += 1
+                        else:
+                            self.ui.tab_d_statusrun_pte.insertPlainText(
+                                '!! Failed read batch mode configure files:\n %s \n Please check settings!!' % _cfg)
+                    else:
+                        self.ui.tab_d_statusrun_pte.insertPlainText(
+                            '!! Failed read batch mode configure files:\n %s \n Please check settings!!' % _cfg)
+                else:
+                    self.ui.tab_d_statusrun_pte.appendPlainText('Can not find file')
+
+
 if __name__ == '__main__':
     multiprocessing.freeze_support()
     import sys
     app = QtGui.QApplication(sys.argv)
-    window = LPPtiger_Main()
+    window = LPPtigerMain()
     window.show()
     sys.exit(app.exec_())

@@ -15,12 +15,12 @@ import multiprocessing
 
 from PySide import QtGui
 
-from LibLPPtiger.LPPtiger_Main import LPPtiger_Main
+from LibLPPtiger.LPPtiger_Main import LPPtigerMain
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
     usr_cwd = os.getcwd()
     gui = QtGui.QApplication(sys.argv)
-    LPPtiger = LPPtiger_Main(cwd=usr_cwd)
+    LPPtiger = LPPtigerMain(cwd=usr_cwd)
     LPPtiger.show()
     sys.exit(gui.exec_())
