@@ -759,7 +759,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
 
                     if isinstance(run_time, str):
                         self.ui.tab_d_statusrun_pte.appendPlainText('>>> %s' % run_time)
-                        self.ui.tab_d_statusrun_pte.appendPlainText('FINISHED with file %i / %i\n\n' %
+                        self.ui.tab_d_statusrun_pte.appendPlainText('FINISHED with file %i / %i\n' %
                                                                     (run_counter, tot_num))
                         run_counter += 1
                     else:
@@ -770,25 +770,25 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
 
         else:  # single mode
             for _cfg in loaded_cfg_lst:
-                if os.path.isfile(_cfg):
-                    self.ui.tab_d_statusrun_pte.insertPlainText('Start processing...\n%s\n' % _cfg)
-                    hunter_param_dct = self.d_read_batch_cfg(_cfg)
-                    if 'hunter_start_time' in hunter_param_dct.keys():
-                        tot_run_time = huntlipids(hunter_param_dct)
 
-                        if isinstance(tot_run_time, str):
-                            self.ui.tab_d_statusrun_pte.appendPlainText(tot_run_time)
-                            self.ui.tab_d_statusrun_pte.appendPlainText('FINISHED with file %i / %i\n\n' %
-                                                                        (run_counter, tot_num))
-                            run_counter += 1
-                        else:
-                            self.ui.tab_d_statusrun_pte.insertPlainText(
-                                '!! Failed read batch mode configure files:\n %s \n Please check settings!!' % _cfg)
+                self.ui.tab_d_statusrun_pte.insertPlainText('Start processing...\n%s\n' % _cfg)
+                hunter_param_dct = self.d_read_batch_cfg(_cfg)
+                if 'vendor' in hunter_param_dct.keys():
+                    start_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+                    hunter_param_dct['hunter_start_time'] = start_time_str
+                    tot_run_time = huntlipids(hunter_param_dct)
+
+                    if isinstance(tot_run_time, str):
+                        self.ui.tab_d_statusrun_pte.appendPlainText(tot_run_time)
+                        self.ui.tab_d_statusrun_pte.appendPlainText('FINISHED with file %i / %i\n' %
+                                                                    (run_counter, tot_num))
+                        run_counter += 1
                     else:
                         self.ui.tab_d_statusrun_pte.insertPlainText(
                             '!! Failed read batch mode configure files:\n %s \n Please check settings!!' % _cfg)
                 else:
-                    self.ui.tab_d_statusrun_pte.appendPlainText('Can not find file')
+                    self.ui.tab_d_statusrun_pte.insertPlainText(
+                        '!! Failed read batch mode configure files:\n %s \n Please check settings!!' % _cfg)
 
 
 if __name__ == '__main__':

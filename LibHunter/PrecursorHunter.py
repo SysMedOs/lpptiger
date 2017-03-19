@@ -148,6 +148,9 @@ class PrecursorHunter(object):
         else:
             sub_pl_group_lst = [spectra_pl_idx_lst]
 
+        print('sub_pl_group_lst')
+        print(sub_pl_group_lst)
+
         part_tot = len(sub_pl_group_lst)
         part_counter = 1
         opt_sub_pl_group_lst = []
@@ -155,6 +158,7 @@ class PrecursorHunter(object):
             sub_idx_lst = filter(lambda x: x is not None, sub_idx_lst)
             opt_sub_pl_group_lst.append(sub_idx_lst)
             sub_pl = spectra_pl.loc[sub_idx_lst, :, :]
+            print(sub_pl.items)
 
             # Start multiprocessing
             if part_tot == 1:

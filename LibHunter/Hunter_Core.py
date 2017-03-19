@@ -151,10 +151,13 @@ def huntlipids(param_dct):
 
     ms1_xic_mz_lst = ms1_obs_pr_df['MS1_XIC_mz'].tolist()
     ms1_xic_mz_lst = sorted(set(ms1_xic_mz_lst))
+    print('ms1_xic_mz_lst', len(ms1_xic_mz_lst))
+    print(ms1_xic_mz_lst)
 
     print('=== ==> --> Start to extract XIC')
     sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
     core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
+    print(core_key_list)
     # Start multiprocessing
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
     xic_dct = {}
@@ -181,10 +184,10 @@ def huntlipids(param_dct):
     for xic_result in xic_results_lst:
         sub_xic_dct = xic_result.get()
         if len(sub_xic_dct.keys()) > 0:
-            if len(xic_dct.keys()) > 0:
-                xic_dct = dict(xic_dct, **sub_xic_dct)
-            else:
-                xic_dct = sub_xic_dct.copy()
+            xic_dct = dict(xic_dct, **sub_xic_dct)
+
+    print('xic_dct', len(xic_dct.keys()))
+    print(xic_dct.keys())
 
     print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
 
@@ -194,60 +197,90 @@ def huntlipids(param_dct):
                                 ascending=[True, True, True], inplace=True)
 
     print('=== ==> --> Start to Hunt for LPPs !!')
-    checked_info_groups = checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time'])
+    checked_info_groups = checked_info_df.groupby(['Lib_mz', 'MS2_PR_mz', 'Formula', 'scan_time'])
     lpp_all_group_key_lst = checked_info_groups.groups.keys()
-    lpp_sub_len = int(math.ceil(len(lpp_all_group_key_lst) / usr_core_num))
-    lpp_sub_key_lst = map(None, *(iter(lpp_all_group_key_lst),) * lpp_sub_len)
+    lpp_all_group_key_lst = sorted(lpp_all_group_key_lst, key=lambda x: x[0])
 
-    part_tot = len(sub_pl_group_lst)
-    part_counter = 1
+    lpp_spec_dct = {}
+    for group_key in lpp_all_group_key_lst:
+        _subgroup_df = checked_info_groups.get_group(group_key)
+        _samemz_se = _subgroup_df.iloc[0, :].squeeze()
+        _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
 
-    print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
-    for sub_idx_lst in sub_pl_group_lst:
-        sub_pl = usr_spectra_pl.loc[sub_idx_lst, :, :]
-        if part_tot == 1:
-            print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
+        _usr_ms2_dda_rank = _samemz_se['DDA_rank']
+        _usr_ms2_scan_id = _samemz_se['scan_number']
+        _usr_mz_lib = _samemz_se['Lib_mz']
+        _tmp_chk_df = usr_scan_info_df.query('MS2_PR_mz == %.6f and DDA_rank == %i and scan_number == %i'
+                                             % (_usr_ms2_pr_mz, _usr_ms2_dda_rank, _usr_ms2_scan_id))
+        if _tmp_chk_df.shape[0] == 1:
+            print('>>> >>> >>> Processing MS2/MS scan of:')
+            print(_tmp_chk_df.head())
+            usr_spec_info_dct = get_spectra(_usr_ms2_pr_mz, _usr_mz_lib, _usr_ms2_dda_rank, _usr_ms2_scan_id,
+                                            ms1_xic_mz_lst, usr_scan_info_df, usr_spectra_pl,
+                                            dda_top=usr_dda_top, ms1_precision=usr_ms1_precision, vendor=usr_vendor
+                                            )
+            lpp_spec_dct[group_key] = usr_spec_info_dct
         else:
-            print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
-                  (part_counter, part_tot, usr_core_num))
-        part_counter += 1
-        # Start multiprocessing
-        parallel_pool = Pool(usr_core_num)
-        lpp_info_results_lst = []
-        core_worker_count = 1
-        for lpp_sub_list in lpp_sub_key_lst:
-            lpp_sub_list = filter(lambda x: x is not None, lpp_sub_list)
-            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-            lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
-                                                                            checked_info_groups, lpp_sub_list,
-                                                                            usr_fa_def_df, usr_weight_df,
-                                                                            usr_key_frag_df,
-                                                                            usr_scan_info_df, ms1_xic_mz_lst,
-                                                                            sub_pl, xic_dct, target_ident_lst))
-            core_worker_count += 1
-            lpp_info_results_lst.append(lpp_info_result)
+            pass
+    found_spec_key_lst = lpp_spec_dct.keys()
+    lpp_sub_len = int(math.ceil(len(found_spec_key_lst) / usr_core_num))
+    lpp_sub_key_lst = map(None, *(iter(found_spec_key_lst), ) * lpp_sub_len)
 
-        parallel_pool.close()
-        parallel_pool.join()
+    # part_tot = len(sub_pl_group_lst)
+    # part_counter = 1
 
-        for lpp_info_result in lpp_info_results_lst:
-            try:
-                tmp_lpp_info_df = lpp_info_result.get()
-            except KeyError:
-                tmp_lpp_info_df = 'error'
-                print('!!error!!')
-            if isinstance(tmp_lpp_info_df, str):
-                pass
-            else:
-                if tmp_lpp_info_df.shape[0] > 0:
-                    output_df = output_df.append(tmp_lpp_info_df)
+    # for sub_idx_lst in sub_pl_group_lst:
+    #     sub_pl = usr_spectra_pl.loc[sub_idx_lst, :, :]
+    #     if part_tot == 1:
+    #         print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
+    #     else:
+    #         print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
+    #               (part_counter, part_tot, usr_core_num))
+    #     part_counter += 1
+    # Start multiprocessing
 
-            ident_page_idx += 1
+    parallel_pool = Pool(usr_core_num)
+    lpp_info_results_lst = []
+    core_worker_count = 1
+    for lpp_sub_lst in lpp_sub_key_lst:
+        lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
+        lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+        print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+        lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
+                                                                        checked_info_groups, lpp_sub_lst,
+                                                                        usr_fa_def_df, usr_weight_df,
+                                                                        usr_key_frag_df,
+                                                                        usr_scan_info_df, ms1_xic_mz_lst,
+                                                                        lpp_sub_dct, xic_dct, target_ident_lst))
+        core_worker_count += 1
+        lpp_info_results_lst.append(lpp_info_result)
 
-    log_pager.add_all_info(output_df)
+    parallel_pool.close()
+    parallel_pool.join()
+
+    for lpp_info_result in lpp_info_results_lst:
+        try:
+            tmp_lpp_info_df = lpp_info_result.get()
+        except KeyError:
+            tmp_lpp_info_df = 'error'
+            print('!!error!!')
+        if isinstance(tmp_lpp_info_df, str):
+            pass
+        else:
+            if tmp_lpp_info_df.shape[0] > 0:
+                output_df = output_df.append(tmp_lpp_info_df)
+
+        ident_page_idx += 1
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:
+        try:
+            output_df = output_df.sort_values(by=['Lib_mz', 'Proposed_structures', 'MS2_scan_time', 'Overall_score'])
+        except KeyError:
+            pass
+        output_df.reset_index(drop=True, inplace=True)
+        output_df.index += 1
+        log_pager.add_all_info(output_df)
         output_header_lst = output_df.columns.tolist()
         for _i_check in ['i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2', 'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O']:
             if _i_check not in output_header_lst:
@@ -265,7 +298,7 @@ def huntlipids(param_dct):
 
         output_df.rename(columns={'#Contaminated_peaks': '#Unspecific_peaks'}, inplace=True)
 
-        output_header_lst = ['Bulk_identification', 'Proposed_structures', 'Formula_neutral', 'Formula_ion',
+        output_header_lst = ['Proposed_structures', 'Formula_neutral', 'Formula_ion',
                              'Charge', 'Lib_mz', 'ppm', 'SN_ratio', 'Overall_score',
                              'Rank_score', 'Cosine_score', 'Fingerprint', 'SNR_score', 'Isotope_score',
                              'MS1_obs_mz', 'MS1_obs_i', r'MS2_PR_mz', 'MS2_scan_time',
@@ -283,7 +316,7 @@ def huntlipids(param_dct):
         print(output_sum_xlsx)
         print('=== ==> --> saved >>> >>> >>>')
 
-    # log_pager.close_page()
+    log_pager.close_page()
 
     tot_run_time = time.clock() - start_time
 

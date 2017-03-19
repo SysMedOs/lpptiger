@@ -179,7 +179,7 @@ class LogPageCreator(object):
                     score = _row_se['Overall_score']
                     formula_ion = _row_se['Formula_ion']
                     charge = _row_se['Charge']
-                    ident_idx = str(_row_se['img_idx'])
+                    ident_idx = str(_idx)
 
                     ident_info_df = pd.DataFrame()
                     ident_info_df = ident_info_df.append(_row_se, ignore_index=True)
