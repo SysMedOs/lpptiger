@@ -460,6 +460,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         mz_end = self.ui.tab_b_mzend_dspb.value()
         dda_top = self.ui.tab_b_dda_spb.value()
         ms_th = self.ui.tab_b_msthreshold_spb.value()
+        ms_max = 5000
         ms2_th = self.ui.tab_b_ms2threshold_spb.value()
         ms_ppm = self.ui.tab_b_msppm_spb.value()
         ms2_ppm = self.ui.tab_b_ms2ppm_spb.value()
@@ -534,6 +535,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
                             'snr_score_filter': snr_score_filter,
                             'parallization_mode': parallelization_mode, 'core_number': core_num, 'max_ram': max_ram,
                             'img_type': img_typ, 'img_dpi': img_dpi, 'fast_isotope': fast_isotope,
+                            'ms_max': ms_max
                             }
 
         param_log_output_path_str = (str(self.ui.tab_b_saveimgfolder_le.text()) +
@@ -673,7 +675,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
                 batch_cfg_dct[param] = config.get(user_cfg, param)
         batch_cfg_key_lst = batch_cfg_dct.keys()
         i_type_key_lst = ['ms_th', 'ms2_th', 'hg_th', 'ms_ppm', 'ms2_ppm', 'hg_ppm', 'dda_top', 'sn_ratio',
-                          'core_number', 'max_ram', 'img_dpi']
+                          'core_number', 'max_ram', 'img_dpi', 'ms_max']
         f_type_key_lst = ['rt_start', 'rt_end', 'mz_start', 'mz_end', 'pr_window',
                           'ms2_infopeak_threshold', 'ms2_hginfopeak_threshold',
                           'score_filter', 'isotope_score_filter', 'rank_score_filter',

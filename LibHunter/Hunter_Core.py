@@ -21,7 +21,7 @@ import pandas as pd
 
 from LibHunter.SpectraExtractor import extract_mzml
 from LibHunter.SpectraExtractor import get_spectra
-from LibHunter.SpectraExtractor import get_xic_all
+from LibHunter.SpectraExtractor import get_xic_from_pl
 from LibHunter.ScoreGenerator import ScoreGenerator
 from LibHunter.PanelPlotter import plot_spectra
 from LibHunter.IsotopeHunter import IsotopeHunter
@@ -72,6 +72,7 @@ def huntlipids(param_dct):
     mz_end = param_dct['mz_end']
     usr_dda_top = param_dct['dda_top']
     usr_ms1_threshold = param_dct['ms_th']
+    usr_ms1_max = param_dct['ms_max']
     usr_ms2_threshold = param_dct['ms2_th']
     usr_ms1_precision = param_dct['ms_ppm'] * 1e-6
     usr_ms2_precision = param_dct['ms2_ppm'] * 1e-6
@@ -125,13 +126,17 @@ def huntlipids(param_dct):
 
     print('=== ==> --> Start to parse mzML')
     # extract all spectra from mzML to pandas DataFrame
-    usr_scan_info_df, usr_spectra_pl = extract_mzml(usr_mzml, usr_rt_range, dda_top=usr_dda_top,
-                                                    ms1_threshold=usr_ms1_threshold, ms2_threshold=usr_ms2_threshold,
-                                                    ms1_precision=usr_ms1_precision, ms2_precision=usr_ms2_precision,
-                                                    vendor=usr_vendor
-                                                    )
+    usr_scan_info_df, usr_spectra_pl, ms1_xic_df = extract_mzml(usr_mzml, usr_rt_range, dda_top=usr_dda_top,
+                                                                ms1_threshold=usr_ms1_threshold,
+                                                                ms2_threshold=usr_ms2_threshold,
+                                                                ms1_precision=usr_ms1_precision,
+                                                                ms2_precision=usr_ms2_precision,
+                                                                vendor=usr_vendor, ms1_max=usr_ms1_max
+                                                                )
 
-    ms1_obs_pr_df, sub_pl_group_lst = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl,
+    print('MS1_XIC_df.shape', ms1_xic_df.shape)
+
+    ms1_obs_pr_df, sub_pl_group_lst = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl, ms1_max=usr_ms1_max,
                                                                core_num=usr_core_num, max_ram=usr_max_ram)
 
     if isinstance(ms1_obs_pr_df, str):
@@ -157,24 +162,28 @@ def huntlipids(param_dct):
     print('=== ==> --> Start to extract XIC')
     sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
     core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
-    print(core_key_list)
+    # print(core_key_list)
     # Start multiprocessing
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
     xic_dct = {}
 
-    if usr_core_num >= 4:
-        xic_core_num = 4
-    else:
-        xic_core_num = usr_core_num
-    parallel_pool = Pool(xic_core_num)
+    # if usr_core_num >= 8:
+    #     xic_core_num = 8
+    # else:
+    #     xic_core_num = usr_core_num
+    # parallel_pool = Pool(xic_core_num)
+
+    parallel_pool = Pool(usr_core_num)
     xic_results_lst = []
     core_worker_count = 1
     for core_list in core_key_list:
         core_list = filter(lambda x: x is not None, core_list)
         print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-        xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
-                                                                  usr_ms1_precision, usr_ms2_precision,
-                                                                  usr_vendor,))
+        print(core_list)
+        # xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
+        #                                                           usr_ms1_precision, usr_ms2_precision,
+        #                                                           usr_vendor,))
+        xic_result = parallel_pool.apply_async(get_xic_from_pl, args=(core_list, ms1_xic_df, 500))
         core_worker_count += 1
         xic_results_lst.append(xic_result)
 
@@ -199,7 +208,7 @@ def huntlipids(param_dct):
     print('=== ==> --> Start to Hunt for LPPs !!')
     checked_info_groups = checked_info_df.groupby(['Lib_mz', 'MS2_PR_mz', 'Formula', 'scan_time'])
     lpp_all_group_key_lst = checked_info_groups.groups.keys()
-    lpp_all_group_key_lst = sorted(lpp_all_group_key_lst, key=lambda x: x[0])
+    # lpp_all_group_key_lst = sorted(lpp_all_group_key_lst, key=lambda x: x[0])
 
     lpp_spec_dct = {}
     for group_key in lpp_all_group_key_lst:
@@ -223,8 +232,9 @@ def huntlipids(param_dct):
         else:
             pass
     found_spec_key_lst = lpp_spec_dct.keys()
+    found_spec_key_lst = sorted(found_spec_key_lst, key=lambda x: x[0])
     lpp_sub_len = int(math.ceil(len(found_spec_key_lst) / usr_core_num))
-    lpp_sub_key_lst = map(None, *(iter(found_spec_key_lst), ) * lpp_sub_len)
+    lpp_sub_key_lst = map(None, *(iter(found_spec_key_lst),) * lpp_sub_len)
 
     # part_tot = len(sub_pl_group_lst)
     # part_counter = 1

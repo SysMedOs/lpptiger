@@ -549,8 +549,6 @@ class ScoreGenerator:
 
             tmp_df = ms2_df.query('%f <= mz <= %f' % (mz_l, mz_h))
 
-            # print(tmp_df)
-
             if tmp_df.shape[0] == 1:
                 obs_score_df = obs_score_df.append(tmp_df)
             elif tmp_df.shape[0] > 1:

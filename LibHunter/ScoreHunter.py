@@ -153,6 +153,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                             print('Rank_score: %.f --> passed' % rank_score)
 
                             _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
+                            print('msp_df', _msp_df)
                             _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df,
                                                                                               _score_ms2_df,
                                                                                               ms2_precision=

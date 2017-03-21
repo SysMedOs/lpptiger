@@ -17,7 +17,7 @@ from multiprocessing import Pool
 from ParallelFunc import ppm_calc_para, ppm_window_para, pr_window_calc_para
 
 
-def find_pr_info(scan_info_df, spectra_pl, lpp_info_groups, sub_group_list, ms1_th, ms1_ppm):
+def find_pr_info(scan_info_df, spectra_pl, lpp_info_groups, sub_group_list, ms1_th, ms1_ppm, ms1_max):
     core_results_df = pd.DataFrame()
     for group_key in sub_group_list:
         subgroup_df = lpp_info_groups.get_group(group_key)
@@ -46,9 +46,14 @@ def find_pr_info(scan_info_df, spectra_pl, lpp_info_groups, sub_group_list, ms1_
 
                     if ms1_spec_idx in spectra_pl.items:
                         ms1_df = spectra_pl[ms1_spec_idx]
-                        pr_ms1_df = ms1_df.query('i > %f and %f <= mz <= %f' % (ms1_th,
-                                                                                same_mz_se['MS1_MZ_LOW'],
-                                                                                same_mz_se['MS1_MZ_HIGH']))
+                        if ms1_max > ms1_th:
+                            pr_ms1_df = ms1_df.query('%f <= i <= %f and %f <= mz <= %f' % (ms1_th, ms1_max,
+                                                                                           same_mz_se['MS1_MZ_LOW'],
+                                                                                           same_mz_se['MS1_MZ_HIGH']))
+                        else:
+                            pr_ms1_df = ms1_df.query('%f <= i and %f <= mz <= %f' % (ms1_th,
+                                                                                     same_mz_se['MS1_MZ_LOW'],
+                                                                                     same_mz_se['MS1_MZ_HIGH']))
                         if pr_ms1_df.shape[0] > 0:
 
                             pr_ms1_df.loc[:, 'ppm'] = ppm_calc_para(pr_ms1_df['mz'].values, same_mz_se['Lib_mz'])
@@ -81,7 +86,7 @@ class PrecursorHunter(object):
         self.lpp_info_df = lpp_info_df
         self.param_dct = param_dct
 
-    def get_matched_pr(self, scan_info_df, spectra_pl, core_num=4, max_ram=8):
+    def get_matched_pr(self, scan_info_df, spectra_pl, ms1_max=0, core_num=4, max_ram=8):
 
         print('Start match!!!!')
 
@@ -139,7 +144,7 @@ class PrecursorHunter(object):
         lpp_info_groups = self.lpp_info_df.groupby(['Lib_mz', 'Formula'])
         all_group_key_lst = lpp_info_groups.groups.keys()
         sub_len = int(math.ceil(len(all_group_key_lst) / core_num))
-        core_key_list = map(None,  * (iter(all_group_key_lst),) * sub_len)
+        core_key_list = map(None, *(iter(all_group_key_lst),) * sub_len)
 
         spectra_pl_idx_lst = sorted(spectra_pl.items.tolist())
 
@@ -176,7 +181,7 @@ class PrecursorHunter(object):
                 print('>>> >>> ...... Core #%i ==> processing ......' % core_worker_count)
                 pr_info_result = parallel_pool.apply_async(find_pr_info, args=(scan_info_df, sub_pl,
                                                                                lpp_info_groups,
-                                                                               core_list, ms1_th, ms1_ppm))
+                                                                               core_list, ms1_th, ms1_ppm, ms1_max))
                 core_worker_count += 1
                 pr_info_results_lst.append(pr_info_result)
 
