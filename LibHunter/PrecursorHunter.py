@@ -177,7 +177,10 @@ class PrecursorHunter(object):
             pr_info_results_lst = []
             core_worker_count = 1
             for core_list in core_key_list:
-                core_list = filter(lambda x: x is not None, core_list)
+                if None in core_list:
+                    core_list = filter(lambda x: x is not None, core_list)
+                else:
+                    pass
                 print('>>> >>> ...... Core #%i ==> processing ......' % core_worker_count)
                 pr_info_result = parallel_pool.apply_async(find_pr_info, args=(scan_info_df, sub_pl,
                                                                                lpp_info_groups,
@@ -189,9 +192,12 @@ class PrecursorHunter(object):
             parallel_pool.join()
 
             for pr_info_result in pr_info_results_lst:
-                sub_df = pr_info_result.get()
-                if sub_df.shape[0] > 0:
-                    ms1_obs_pr_df = ms1_obs_pr_df.append(sub_df)
+                try:
+                    sub_df = pr_info_result.get()
+                    if sub_df.shape[0] > 0:
+                        ms1_obs_pr_df = ms1_obs_pr_df.append(sub_df)
+                except:
+                    pass
 
         # End multiprocessing
 

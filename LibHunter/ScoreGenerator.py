@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 from scipy import spatial
 
-from ParallelFunc import ppm_window_para
+from ParallelFunc import ppm_window_para, wfactor_calc_para
 
 
 class ScoreGenerator:
@@ -562,14 +562,21 @@ class ScoreGenerator:
         # calc minus i for plot
         msp_df.loc[:, 'rev_abs_i'] = msp_df['i'] * -0.001 * obs_i_max
 
-        obs_ar = obs_score_df.as_matrix()
-        lib_ar = np.column_stack((lib_mz_lst, msp_df['i'].tolist()))
+        # # old Algorithm
+        # obs_ar = obs_score_df.as_matrix()
+        # lib_ar = np.column_stack((lib_mz_lst, msp_df['i'].tolist()))
+        #
+        # # reduce matrix to 1D array
+        # obs_flat = np.hstack(obs_ar.T)
+        # lib_flat = np.hstack(lib_ar.T)
+        #
+        # cosine_score = 100 * (1 - spatial.distance.cosine(obs_flat, lib_flat))
 
         # reduce matrix to 1D array
-        obs_flat = np.hstack(obs_ar.T)
-        lib_flat = np.hstack(lib_ar.T)
+        obs_flat = wfactor_calc_para(obs_score_df['mz'].values, obs_score_df['i'].values)
+        lib_flat = wfactor_calc_para(msp_df['mz'].values, msp_df['i'].values)
 
-        cosine_score = 100 * (1 - spatial.distance.cosine(obs_flat, lib_flat))
+        cosine_score = 100 * ((1 - spatial.distance.cosine(obs_flat, lib_flat))**2)
         cosine_score = round(cosine_score, 1)
         if cosine_score > 0:
             pass
@@ -622,9 +629,9 @@ class ScoreGenerator:
         # fingerprint_score = 100 * (1 - spatial.distance.cosine(np.array(obs_lst), np.array(fingerprint_lst)))
         print(fp_lib_lst)
         print(fp_obs_lst)
-        fp_sim_score = 100 * (1 - spatial.distance.cosine(np.array(obs_lst), np.array(fingerprint_lst)))
-        fp_sim_score = round(fp_sim_score, 1)
-        print('fp_sim_score', fp_sim_score)
+        # fp_sim_score = 100 * (1 - spatial.distance.cosine(np.array(obs_lst), np.array(fingerprint_lst)))
+        # fp_sim_score = round(fp_sim_score, 1)
+        # print('fp_sim_score', fp_sim_score)
         fingerprint_score = 100 * (1 - spatial.distance.cosine(np.array(fp_obs_lst), np.array(fp_lib_lst)))
         fingerprint_score = round(fingerprint_score, 1)
         print('fingerprint_score', fingerprint_score)

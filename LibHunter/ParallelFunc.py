@@ -25,3 +25,8 @@ def ppm_window_para(mz, ppm):
 @vectorize(([float64(float64, float64)]), target='parallel')
 def ppm_calc_para(mz_obs, mz_lib):
     return 1e6 * (mz_obs - mz_lib) / mz_lib
+
+
+@vectorize(([float64(float64, float64)]), target='parallel')
+def wfactor_calc_para(mz, i):
+    return (mz**3)*(i**0.6)

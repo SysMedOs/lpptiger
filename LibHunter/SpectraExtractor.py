@@ -22,6 +22,7 @@ def extract_mzml(mzml, rt_range, dda_top=6, ms1_threshold=1000, ms2_threshold=10
     """
     Extract mzML to a scan info DataFrame and a pandas panel for spectra DataFrame of mz and i
 
+    :param ms1_max: Max of MS1 intensity, required for better identification for low intensity signals
     :param vendor: 'waters' or 'thermo'
     :param ms2_threshold:
     :param ms1_threshold:
@@ -97,8 +98,9 @@ def extract_mzml(mzml, rt_range, dda_top=6, ms1_threshold=1000, ms2_threshold=10
                     _function = int(scan_info_checker.groups()[2])
                     _scan_id = int(scan_info_checker.groups()[5])
                     if _function in function_range_lst:
-                        _tmp_spec_df = pd.DataFrame(data=_spectrum.peaks, columns=['mz', 'i'])
+
                         if _function == 1:
+                            _tmp_spec_df = pd.DataFrame(data=_spectrum.peaks, columns=['mz', 'i'])
                             dda_event_idx += 1
 
                             # _tmp_spec_df = _tmp_spec_df.sort_values(by='i', ascending=False).head(1000)
@@ -112,10 +114,13 @@ def extract_mzml(mzml, rt_range, dda_top=6, ms1_threshold=1000, ms2_threshold=10
                             spec_dct[spec_idx] = _tmp_spec_df
                             _tmp_spec_df.loc[:, 'rt'] = _scan_rt
                             ms1_xic_df = ms1_xic_df.append(_tmp_spec_df)
+                            del _tmp_spec_df
 
                         if _function in ms2_function_range_lst:
+                            _tmp_spec_df = pd.DataFrame(data=_spectrum.peaks, columns=['mz', 'i'])
                             pr_mz = _spectrum[scan_pr_mz_obo]
                             spec_dct[spec_idx] = _tmp_spec_df.query('i >= %f' % ms2_threshold)
+                            del _tmp_spec_df
 
                         spec_idx_lst.append(spec_idx)
                         dda_event_lst.append(dda_event_idx)
@@ -180,7 +185,7 @@ def extract_mzml(mzml, rt_range, dda_top=6, ms1_threshold=1000, ms2_threshold=10
     spec_pl = pd.Panel(data=spec_dct)
     print('=== ==> --> mzML extracted')
 
-    ms1_xic_df = ms1_xic_df.query('%f <= rt <= %f' % (rt_start, rt_end))
+    # ms1_xic_df = ms1_xic_df.query('%f <= rt <= %f' % (rt_start, rt_end))
 
     return scan_info_df, spec_pl, ms1_xic_df
 
@@ -385,10 +390,10 @@ def get_xic(ms1_mz, mzml, rt_range, ppm=500, ms1_precision=50e-6, msn_precision=
 
 def get_xic_all(core_list, mzml, rt_range, ms1_precision=50e-6, msn_precision=500e-6, vendor='waters'):
 
-    waters_obo_lst = (('MS:1000016', ['value']), ('MS:1000744', ['value']), ('MS:1000042', ['value']),
+    waters_obo_lst = [('MS:1000016', ['value']), ('MS:1000744', ['value']), ('MS:1000042', ['value']),
                       ('MS:1000796', ['value']), ('MS:1000514', ['name']), ('MS:1000515', ['name']),
-                      ('MS:1000769', ['name']), ('MS:1000526', ['name']))
-    thermo_obo_lst = (('MS:1000511', ['value']), ('MS:1000768', ['name']), ('MS:1000563', ['name']))
+                      ('MS:1000769', ['name']), ('MS:1000526', ['name'])]
+    thermo_obo_lst = [('MS:1000511', ['value']), ('MS:1000768', ['name']), ('MS:1000563', ['name'])]
     vendor_obo_lst = thermo_obo_lst + waters_obo_lst
     for _obo in vendor_obo_lst:
         if _obo not in pymzml.minimum.MIN_REQ:
@@ -491,6 +496,25 @@ def get_xic_all(core_list, mzml, rt_range, ms1_precision=50e-6, msn_precision=50
 
     return ms1_xic_dct
 
+
+def get_spec_info(lpp_all_group_key_lst, checked_info_groups, usr_scan_info_df):
+    lpp_spec_info_dct = {}
+    for group_key in lpp_all_group_key_lst:
+        _subgroup_df = checked_info_groups.get_group(group_key)
+        _samemz_se = _subgroup_df.iloc[0, :].squeeze()
+        _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
+
+        _usr_ms2_dda_rank = _samemz_se['DDA_rank']
+        _usr_ms2_scan_id = _samemz_se['scan_number']
+        _usr_mz_lib = _samemz_se['Lib_mz']
+        _tmp_chk_df = usr_scan_info_df.query('MS2_PR_mz == %.6f and DDA_rank == %i and scan_number == %i'
+                                             % (_usr_ms2_pr_mz, _usr_ms2_dda_rank, _usr_ms2_scan_id))
+        if _tmp_chk_df.shape[0] == 1:
+            _tmp_info_dct = {'MS2_PR_mz': _usr_ms2_pr_mz, 'DDA_rank': _usr_ms2_dda_rank,
+                             'scan_number': _usr_ms2_scan_id, 'Lib_mz': _usr_mz_lib}
+            lpp_spec_info_dct[group_key] = _tmp_info_dct
+
+    return lpp_spec_info_dct
 
 # if __name__ == '__main__':
 #

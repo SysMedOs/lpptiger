@@ -22,6 +22,7 @@ import pandas as pd
 from LibHunter.SpectraExtractor import extract_mzml
 from LibHunter.SpectraExtractor import get_spectra
 from LibHunter.SpectraExtractor import get_xic_from_pl
+from LibHunter.SpectraExtractor import get_spec_info
 from LibHunter.ScoreGenerator import ScoreGenerator
 from LibHunter.PanelPlotter import plot_spectra
 from LibHunter.IsotopeHunter import IsotopeHunter
@@ -177,7 +178,10 @@ def huntlipids(param_dct):
     xic_results_lst = []
     core_worker_count = 1
     for core_list in core_key_list:
-        core_list = filter(lambda x: x is not None, core_list)
+        if None in core_list:
+            core_list = filter(lambda x: x is not None, core_list)
+        else:
+            pass
         print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
         print(core_list)
         # xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
@@ -201,7 +205,7 @@ def huntlipids(param_dct):
     print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
 
     target_ident_lst = []
-    ident_page_idx = 1
+    # ident_page_idx = 1
     checked_info_df.sort_values(by=['Lib_mz', 'scan_time', 'MS2_PR_mz'],
                                 ascending=[True, True, True], inplace=True)
 
@@ -210,77 +214,115 @@ def huntlipids(param_dct):
     lpp_all_group_key_lst = checked_info_groups.groups.keys()
     # lpp_all_group_key_lst = sorted(lpp_all_group_key_lst, key=lambda x: x[0])
 
-    lpp_spec_dct = {}
-    for group_key in lpp_all_group_key_lst:
-        _subgroup_df = checked_info_groups.get_group(group_key)
-        _samemz_se = _subgroup_df.iloc[0, :].squeeze()
-        _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
+    spec_sub_len = int(math.ceil(len(lpp_all_group_key_lst) / usr_core_num))
+    spec_sub_key_lst = map(None, *(iter(lpp_all_group_key_lst),) * spec_sub_len)
 
-        _usr_ms2_dda_rank = _samemz_se['DDA_rank']
-        _usr_ms2_scan_id = _samemz_se['scan_number']
-        _usr_mz_lib = _samemz_se['Lib_mz']
-        _tmp_chk_df = usr_scan_info_df.query('MS2_PR_mz == %.6f and DDA_rank == %i and scan_number == %i'
-                                             % (_usr_ms2_pr_mz, _usr_ms2_dda_rank, _usr_ms2_scan_id))
-        if _tmp_chk_df.shape[0] == 1:
-            print('>>> >>> >>> Processing MS2/MS scan of:')
-            print(_tmp_chk_df.head())
-            usr_spec_info_dct = get_spectra(_usr_ms2_pr_mz, _usr_mz_lib, _usr_ms2_dda_rank, _usr_ms2_scan_id,
-                                            ms1_xic_mz_lst, usr_scan_info_df, usr_spectra_pl,
-                                            dda_top=usr_dda_top, ms1_precision=usr_ms1_precision, vendor=usr_vendor
-                                            )
-            lpp_spec_dct[group_key] = usr_spec_info_dct
-        else:
-            pass
-    found_spec_key_lst = lpp_spec_dct.keys()
-    found_spec_key_lst = sorted(found_spec_key_lst, key=lambda x: x[0])
-    lpp_sub_len = int(math.ceil(len(found_spec_key_lst) / usr_core_num))
-    lpp_sub_key_lst = map(None, *(iter(found_spec_key_lst),) * lpp_sub_len)
-
-    # part_tot = len(sub_pl_group_lst)
-    # part_counter = 1
-
-    # for sub_idx_lst in sub_pl_group_lst:
-    #     sub_pl = usr_spectra_pl.loc[sub_idx_lst, :, :]
-    #     if part_tot == 1:
-    #         print('>>> Start multiprocessing ==> Number of Cores: %i' % usr_core_num)
-    #     else:
-    #         print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
-    #               (part_counter, part_tot, usr_core_num))
-    #     part_counter += 1
-    # Start multiprocessing
+    lpp_spec_info_dct = {}
 
     parallel_pool = Pool(usr_core_num)
-    lpp_info_results_lst = []
+    spec_results_lst = []
     core_worker_count = 1
-    for lpp_sub_lst in lpp_sub_key_lst:
-        lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
-        lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+    for _sub_lst in spec_sub_key_lst:
+        if None in _sub_lst:
+            _sub_lst = filter(lambda x: x is not None, _sub_lst)
+        else:
+            pass
         print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-        lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
-                                                                        checked_info_groups, lpp_sub_lst,
-                                                                        usr_fa_def_df, usr_weight_df,
-                                                                        usr_key_frag_df,
-                                                                        usr_scan_info_df, ms1_xic_mz_lst,
-                                                                        lpp_sub_dct, xic_dct, target_ident_lst))
+        spec_result = parallel_pool.apply_async(get_spec_info, args=(_sub_lst, checked_info_groups, usr_scan_info_df))
         core_worker_count += 1
-        lpp_info_results_lst.append(lpp_info_result)
+        spec_results_lst.append(spec_result)
 
     parallel_pool.close()
     parallel_pool.join()
 
-    for lpp_info_result in lpp_info_results_lst:
-        try:
-            tmp_lpp_info_df = lpp_info_result.get()
-        except KeyError:
-            tmp_lpp_info_df = 'error'
-            print('!!error!!')
-        if isinstance(tmp_lpp_info_df, str):
-            pass
-        else:
-            if tmp_lpp_info_df.shape[0] > 0:
-                output_df = output_df.append(tmp_lpp_info_df)
+    for spec_result in spec_results_lst:
+        sub_spec_dct = spec_result.get()
+        if len(sub_spec_dct.keys()) > 0:
+            lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
 
-        ident_page_idx += 1
+    print('lpp_spec_info_dct', len(lpp_spec_info_dct.keys()))
+
+    # Single process ONLY. usr_spectra_pl is too big in RAM --> RAM leaking during copy
+    lpp_spec_dct = {}
+    spec_info_key_lst = lpp_spec_info_dct.keys()
+    for _spec_group_key in spec_info_key_lst:
+        _spec_info_dct = lpp_spec_info_dct[_spec_group_key]
+        _usr_ms2_pr_mz = _spec_info_dct['MS2_PR_mz']
+        _usr_ms2_dda_rank = _spec_info_dct['DDA_rank']
+        _usr_ms2_scan_id = _spec_info_dct['scan_number']
+        _usr_mz_lib = _spec_info_dct['Lib_mz']
+        usr_spec_info_dct = get_spectra(_usr_ms2_pr_mz, _usr_mz_lib, _usr_ms2_dda_rank, _usr_ms2_scan_id,
+                                        ms1_xic_mz_lst, usr_scan_info_df, usr_spectra_pl,
+                                        dda_top=usr_dda_top, ms1_precision=usr_ms1_precision, vendor=usr_vendor
+                                        )
+        lpp_spec_dct[_spec_group_key] = usr_spec_info_dct
+
+    found_spec_key_lst = lpp_spec_dct.keys()
+    found_spec_key_lst = sorted(found_spec_key_lst, key=lambda x: x[0])
+    spec_key_num = len(found_spec_key_lst)
+    lpp_part_key_lst = []
+    if spec_key_num > (usr_core_num * 80):
+        lpp_part_len = int(math.ceil(spec_key_num / 4))
+        lpp_part_lst = map(None, *(iter(found_spec_key_lst),) * lpp_part_len)
+        for part_lst in lpp_part_lst:
+            if None in part_lst:
+                part_lst = filter(lambda x: x is not None, part_lst)
+            lpp_sub_len = int(math.ceil(len(part_lst) / usr_core_num))
+            lpp_sub_key_lst = map(None, *(iter(part_lst),) * lpp_sub_len)
+            lpp_part_key_lst.append(lpp_sub_key_lst)
+
+    else:
+        lpp_sub_len = int(math.ceil(spec_key_num / usr_core_num))
+        lpp_sub_key_lst = map(None, *(iter(found_spec_key_lst),) * lpp_sub_len)
+        lpp_part_key_lst.append(lpp_sub_key_lst)
+
+    part_tot = len(lpp_part_key_lst)
+    part_counter = 1
+
+    for lpp_sub_key_lst in lpp_part_key_lst:
+
+        if part_tot == 1:
+            print('>>> Start multiprocessing ==> Max Number of Cores: %i' % usr_core_num)
+        else:
+            print('>>> Start multiprocessing ==> Part %i / %i --> Max Number of Cores: %i' %
+                  (part_counter, part_tot, usr_core_num))
+        part_counter += 1
+        # Start multiprocessing
+
+        parallel_pool = Pool(usr_core_num)
+        lpp_info_results_lst = []
+        core_worker_count = 1
+        for lpp_sub_lst in lpp_sub_key_lst:
+            if None in lpp_sub_lst:
+                lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
+            else:
+                pass
+            lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+            lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
+                                                                            checked_info_groups, lpp_sub_lst,
+                                                                            usr_fa_def_df, usr_weight_df,
+                                                                            usr_key_frag_df,
+                                                                            usr_scan_info_df, ms1_xic_mz_lst,
+                                                                            lpp_sub_dct, xic_dct, target_ident_lst))
+            core_worker_count += 1
+            lpp_info_results_lst.append(lpp_info_result)
+
+        parallel_pool.close()
+        parallel_pool.join()
+
+        for lpp_info_result in lpp_info_results_lst:
+            try:
+                tmp_lpp_info_df = lpp_info_result.get()
+            except (KeyError, SystemError):
+                tmp_lpp_info_df = 'error'
+                print('!!error!!')
+            if isinstance(tmp_lpp_info_df, str):
+                pass
+            else:
+                if tmp_lpp_info_df.shape[0] > 0:
+                    output_df = output_df.append(tmp_lpp_info_df)
+            # ident_page_idx += 1
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:

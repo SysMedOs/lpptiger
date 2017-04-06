@@ -300,10 +300,10 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
             prostane_mode = 0
 
         ox_prostane_mode = 0
-        if self.ui.prostane_ox_yes_rb.isChecked():
-            ox_prostane_mode = 1
-        elif self.ui.prostane_ox_no_rb.isChecked():
-            ox_prostane_mode = 0
+        # if self.ui.prostane_ox_yes_rb.isChecked():
+        #     ox_prostane_mode = 1
+        # elif self.ui.prostane_ox_no_rb.isChecked():
+        #     ox_prostane_mode = 0
 
         msp_mode = 1  # by default save msp is checked
         if self.ui.spectra_yes_rb.isChecked():
@@ -399,25 +399,25 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         #                               'LPPtiger need time to run, it might take up to few hours.\n'
         #                               'The Please click "OK" to start the analysis.')
 
-        self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane.xlsx')
-        self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane_FA_SUM.xlsx')
-        self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
-        self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
-        self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_Lv12.xlsx')
-        self.ui.tab_b_rtstart_dspb.setValue(24.0)
-        self.ui.tab_b_rtend_dspb.setValue(25.0)
-        self.ui.tab_b_msppm_spb.setValue(20)
-        self.ui.tab_b_ms2ppm_spb.setValue(50)
-        self.ui.tab_b_hgppm_spb.setValue(50)
-        self.ui.tab_b_dda_spb.setValue(12)
-        self.ui.tab_b_msthreshold_spb.setValue(2000)
-        self.ui.tab_b_ms2threshold_spb.setValue(1)
-        self.ui.tab_b_mzstart_dspb.setValue(850.0)
-        self.ui.tab_b_mzend_dspb.setValue(880.0)
-        self.ui.tab_b_ms2infoth_dspb.setValue(0)
-        self.ui.tab_b_ms2hginfoth_dspb.setValue(0)
-        self.ui.tab_c_snratio_spb.setValue(5)
-        self.ui.tab_c_ram_spb.setValue(16)
+        # self.ui.tab_b_loadlpppath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane.xlsx')
+        # self.ui.tab_b_loadfapath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_lipids\Lv1_max3O_max1Keto_prostane\PC_Lv1_max3O_max1Keto_prostane_FA_SUM.xlsx')
+        # self.ui.tab_b_ms2mzml_le.setText(r'D:\project_mzML\CM_DDA_neg_mzML\070120_CM_neg_70min_SIN_I.mzML')
+        # self.ui.tab_b_saveimgfolder_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC')
+        # self.ui.tab_b_sumxlsxpath_le.setText(r'D:\Project_lpptiger\output_sdf\CM_LPPs\PC\CM_PC_Lv12.xlsx')
+        # self.ui.tab_b_rtstart_dspb.setValue(24.0)
+        # self.ui.tab_b_rtend_dspb.setValue(25.0)
+        # self.ui.tab_b_msppm_spb.setValue(20)
+        # self.ui.tab_b_ms2ppm_spb.setValue(50)
+        # self.ui.tab_b_hgppm_spb.setValue(50)
+        # self.ui.tab_b_dda_spb.setValue(12)
+        # self.ui.tab_b_msthreshold_spb.setValue(2000)
+        # self.ui.tab_b_ms2threshold_spb.setValue(1)
+        # self.ui.tab_b_mzstart_dspb.setValue(850.0)
+        # self.ui.tab_b_mzend_dspb.setValue(880.0)
+        # self.ui.tab_b_ms2infoth_dspb.setValue(0)
+        # self.ui.tab_b_ms2hginfoth_dspb.setValue(0)
+        # self.ui.tab_c_snratio_spb.setValue(5)
+        # self.ui.tab_c_ram_spb.setValue(16)
 
         if self.ui.tab_b_vendor_cmb.currentText() == 'Waters':
             usr_vendor = 'waters'
