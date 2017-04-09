@@ -261,8 +261,8 @@ def huntlipids(param_dct):
     found_spec_key_lst = sorted(found_spec_key_lst, key=lambda x: x[0])
     spec_key_num = len(found_spec_key_lst)
     lpp_part_key_lst = []
-    if spec_key_num > (usr_core_num * 80):
-        lpp_part_len = int(math.ceil(spec_key_num / 4))
+    if spec_key_num > (usr_core_num * 40):
+        lpp_part_len = int(math.ceil(spec_key_num / 8))
         lpp_part_lst = map(None, *(iter(found_spec_key_lst),) * lpp_part_len)
         for part_lst in lpp_part_lst:
             if None in part_lst:
@@ -305,8 +305,9 @@ def huntlipids(param_dct):
                                                                             usr_key_frag_df,
                                                                             usr_scan_info_df, ms1_xic_mz_lst,
                                                                             lpp_sub_dct, xic_dct, target_ident_lst))
-            core_worker_count += 1
+            # ('>>> >>> Get lpp_info_result of this worker-->', <class 'multiprocessing.pool.ApplyResult'>)
             lpp_info_results_lst.append(lpp_info_result)
+            core_worker_count += 1
 
         parallel_pool.close()
         parallel_pool.join()
@@ -316,13 +317,13 @@ def huntlipids(param_dct):
                 tmp_lpp_info_df = lpp_info_result.get()
             except (KeyError, SystemError):
                 tmp_lpp_info_df = 'error'
-                print('!!error!!')
+                print('!!error!!--> This segment receive no LPP identified.')
             if isinstance(tmp_lpp_info_df, str):
                 pass
             else:
-                if tmp_lpp_info_df.shape[0] > 0:
-                    output_df = output_df.append(tmp_lpp_info_df)
-            # ident_page_idx += 1
+                if isinstance(tmp_lpp_info_df, pd.DataFrame):
+                    if tmp_lpp_info_df.shape[0] > 0:
+                        output_df = output_df.append(tmp_lpp_info_df)
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:

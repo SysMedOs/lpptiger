@@ -624,7 +624,7 @@ class ScoreGenerator:
                 missed_fp_lst.append(mz)
                 fp_obs_lst.append(0)
 
-        obs_lst = obs_score_df['mz'].tolist()
+        # obs_lst = obs_score_df['mz'].tolist()
 
         # fingerprint_score = 100 * (1 - spatial.distance.cosine(np.array(obs_lst), np.array(fingerprint_lst)))
         print(fp_lib_lst)
@@ -694,13 +694,13 @@ class ScoreGenerator:
             if vendor == 'thermo':
                 if _frag_mz < 450.0:
                     seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600.0:
+                elif 450.0 <= mz_lib < 600:
                     seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750.0:
+                elif 600.0 <= mz_lib < 750:
                     seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900.0:
+                elif 750.0 <= mz_lib < 900:
                     seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200.0:
+                elif 900.0 <= mz_lib < 1200:
                     seg_shift = 0.4
                 elif 1200.0 <= mz_lib:
                     seg_shift = 0.5
@@ -734,13 +734,13 @@ class ScoreGenerator:
             if vendor == 'thermo':
                 if mz_lib < 450.0:
                     seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600.0:
+                elif 450.0 <= mz_lib < 600:
                     seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750.0:
+                elif 600.0 <= mz_lib < 750:
                     seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900.0:
+                elif 750.0 <= mz_lib < 900:
                     seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200.0:
+                elif 900.0 <= mz_lib < 1200:
                     seg_shift = 0.4
                 elif 1200.0 <= mz_lib:
                     seg_shift = 0.5
@@ -775,13 +775,13 @@ class ScoreGenerator:
             if vendor == 'thermo':
                 if mz_lib < 450.0:
                     seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600.0:
+                elif 450.0 <= mz_lib < 600:
                     seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750.0:
+                elif 600.0 <= mz_lib < 750:
                     seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900.0:
+                elif 750.0 <= mz_lib < 900:
                     seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200.0:
+                elif 900.0 <= mz_lib < 1200:
                     seg_shift = 0.4
                 elif 1200.0 <= mz_lib:
                     seg_shift = 0.5
@@ -820,7 +820,7 @@ class ScoreGenerator:
         return specific_ion_dct
 
     @staticmethod
-    def get_snr_score(ident_info_dct, specific_ion_dct, msp_obs_df, fp_obs_df, amplify_factor=3.5767):
+    def get_snr_score(ident_info_dct, specific_ion_dct, msp_obs_df, fp_obs_df, amplify_factor=3.5767, use_fp=0):
 
         signal_df = pd.DataFrame()
         tmp_s_df = ident_info_dct['MATCHED_FA_INFO']
@@ -845,16 +845,18 @@ class ScoreGenerator:
         except KeyError:
             pass
         try:
-            tmp_s_df = pd.DataFrame(msp_obs_df, columns=['mz', 'i'])
-            signal_df = signal_df.append(tmp_s_df)
+            if msp_obs_df.shape[0] > 0:
+                tmp_s_df = pd.DataFrame(msp_obs_df, columns=['mz', 'i'])
+                signal_df = signal_df.append(tmp_s_df)
         except KeyError:
             pass
-        # remove fingerprint for signal consideration
-        # try:
-        #     tmp_s_df = pd.DataFrame(fp_obs_df, columns=['mz', 'i'])
-        #     signal_df = signal_df.append(tmp_s_df)
-        # except KeyError:
-        #     pass
+
+        if use_fp == 1:
+            try:
+                tmp_s_df = pd.DataFrame(fp_obs_df, columns=['mz', 'i'])
+                signal_df = signal_df.append(tmp_s_df)
+            except KeyError:
+                pass
 
         noise_df = pd.DataFrame()
         try:

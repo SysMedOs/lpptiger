@@ -37,9 +37,11 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
     usr_ms2_threshold = param_dct['ms2_th']
     usr_ms1_precision = param_dct['ms_ppm'] * 1e-6
     usr_ms2_precision = param_dct['ms2_ppm'] * 1e-6
+    usr_hg_precision = param_dct['hg_ppm'] * 1e-6
 
     usr_overallscore_filter = param_dct['score_filter']
     usr_ms2_info_th = param_dct['ms2_infopeak_threshold']
+    usr_hg_info_th = param_dct['ms2_hginfopeak_threshold']
 
     usr_fast_isotope = param_dct['fast_isotope']
 
@@ -151,16 +153,28 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
 
                         if matched_checker > 0 and rank_score > usr_rank_score_filter:
                             print('Rank_score: %.f --> passed' % rank_score)
+                            print('MSP_JSON', _r_abbr['MSP_JSON'], type(_r_abbr['MSP_JSON']))
+                            if isinstance(_r_abbr['MSP_JSON'], str) and len(_r_abbr['MSP_JSON']) > 0:
+                                _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
+                                print('msp_df', _msp_df)
+                                _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df,
+                                                                                                  _score_ms2_df,
+                                                                                                  ms2_precision=
+                                                                                                  usr_ms2_precision)
+                                consider_msp = 1
+                            else:
+                                _cosine_score = 0
+                                _msp_df = pd.DataFrame()
+                                _obs_msp_df = pd.DataFrame()
+                                consider_msp = 0
 
-                            _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
-                            print('msp_df', _msp_df)
-                            _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df,
-                                                                                              _score_ms2_df,
-                                                                                              ms2_precision=
-                                                                                              usr_ms2_precision)
+                            print('consider_msp', consider_msp)
 
-                            if _cosine_score > usr_msp_score_filter:
-                                print('==> --> Cosine similarity score: %f' % _cosine_score)
+                            if _cosine_score > usr_msp_score_filter or consider_msp == 0:
+                                if consider_msp > 0:
+                                    print('==> --> Spectra similarity score: %f' % _cosine_score)
+                                else:
+                                    print('==> --> No spectra similarity score -->')
 
                                 fingerprint_lst = json.loads(_r_abbr['FINGERPRINT'])
                                 if 'MIN_INFO_i' in match_info_dct.keys():
@@ -169,32 +183,40 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                     min_info_i = 0
                                 fp_info_dct = score_calc.get_fingerprint_score(fingerprint_lst, _score_ms2_df,
                                                                                min_info_i, _ms2_max_i,
-                                                                               ms2_precision=usr_ms2_precision)
+                                                                               ms2_precision=usr_hg_precision,
+                                                                               ms2_fp_th=usr_hg_info_th)
                                 _fp_score = fp_info_dct['fingerprint_score']
                                 _obs_fp_df = fp_info_dct['obs_score_df']
                                 obs_fp_lst = fp_info_dct['obs_mz']
                                 missed_fp_lst = fp_info_dct['missed_mz']
 
                                 if _fp_score > usr_fp_score_filter:
-
                                     specific_check_dct = score_calc.get_specific_peaks(_usr_mz_lib, _score_ms2_df,
                                                                                        _ms2_max_i,
-                                                                                       ms2_precision=
-                                                                                       usr_ms2_precision,
+                                                                                       ms2_precision=usr_hg_precision,
                                                                                        vendor=usr_vendor)
+                                    if consider_msp == 1:
+                                        use_fp = 0
+                                    elif consider_msp == 0:
+                                        use_fp = 1
+                                    else:
+                                        use_fp = 0
 
                                     snr_score, usr_sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(match_info_dct,
                                                                                                          specific_check_dct,
                                                                                                          _obs_msp_df,
                                                                                                          _obs_fp_df,
                                                                                                          amplify_factor=
-                                                                                                         usr_amp_factor)
+                                                                                                         usr_amp_factor,
+                                                                                                             use_fp=
+                                                                                                             use_fp)
 
                                     if usr_sn_ratio >= 0.3 and snr_score >= usr_snr_score_filter:
 
                                         overall_score = sum([rank_score, _cosine_score, _fp_score,
                                                              snr_score, isotope_score]) / 5
                                         overall_score = round(overall_score, 1)
+                                        print('overall_score', overall_score)
 
                                         if overall_score >= usr_overallscore_filter:
                                             match_info_dct['Cosine_score'] = _cosine_score
@@ -314,6 +336,8 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                 tmp_df = tmp_df.append(_tmp_output_df)
                                                 tmp_idx += 1
     if tmp_df.shape[0] > 0:
+        print('Size of the identified LPP_df %i, %i' % (tmp_df.shape[0], tmp_df.shape[1]))
         return tmp_df
     else:
+        print('!! Size of the identified LPP_df == 0')
         return 'empty_df'

@@ -131,6 +131,7 @@ def fa_abbr_encode(fa_dct, mod_info_t_df, fa_ox_df, mode=0):
 
     return fa_ox_df
 
+
 class AbbrGenerator(object):
 
     def __init__(self):

@@ -298,6 +298,10 @@ def theolpp(usr_params):
 
             _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
             _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
+            _lpp_dct['EXACT_MASS'] = _lpp_exactmass
+            fp_mz_lst = fingerprint_gen.get_fingerprint(_lpp_dct)
+            _lpp_dct['FINGERPRINT'] = fp_mz_lst
+            _lpp_mol.SetProp('FINGERPRINT', json.dumps(fp_mz_lst))
 
             for _k in _lpp_dct.keys():
                 _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
@@ -309,8 +313,8 @@ def theolpp(usr_params):
         msp_obj.close()
 
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
-    if save_spectra == 1:
-        SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
+    # if save_spectra == 1:
+    SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
 
     t_spent = time.clock() - t_start
     info_updater_1 = '=>%i of LPP generated ==> ' % len(sdf_dct.keys())

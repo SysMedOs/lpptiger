@@ -31,7 +31,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
+        self.ui.tabWidget.setCurrentIndex(0)
         # current folder:
         if cwd is not None:
             print('User LPPtiger folder', cwd)
@@ -61,6 +61,8 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         # hide the msp part
         self.ui.label_14.hide()
         self.ui.exceltab_cb.hide()
+        self.ui.tab_b_ms1max_lb.hide()
+        self.ui.tab_b_ms1max_spb.hide()
         # self.ui.label_12.hide()
         # self.ui.prostane_ox_yes_rb.hide()
         # self.ui.prostane_ox_no_rb.hide()
@@ -79,10 +81,13 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         QtCore.QObject.connect(self.ui.tab_b_loadfapath_pb, QtCore.SIGNAL("clicked()"), self.b_load_sum_fa)
         # QtCore.QObject.connect(self.ui.tab_b_loadsdfpath_pb, QtCore.SIGNAL("clicked()"), self.b_load_sdf)
         # QtCore.QObject.connect(self.ui.tab_b_loadmsppath_pb, QtCore.SIGNAL("clicked()"), self.b_load_msp)
+        QtCore.QObject.connect(self.ui.tab_b_ms1max_chb, QtCore.SIGNAL("clicked()"), self.set_ms1_max)
         QtCore.QObject.connect(self.ui.tab_b_ms2mzml_pb, QtCore.SIGNAL("clicked()"), self.b_load_mzml)
         QtCore.QObject.connect(self.ui.tab_b_saveimgfolder_pb, QtCore.SIGNAL("clicked()"), self.b_save_img2folder)
         QtCore.QObject.connect(self.ui.tab_b_sumxlsxpath_pb, QtCore.SIGNAL("clicked()"), self.b_save_output)
+        QtCore.QObject.connect(self.ui.tab_b_cfgpath_pb, QtCore.SIGNAL("clicked()"), self.b_save_cfg)
         QtCore.QObject.connect(self.ui.tab_b_runhunter_pb, QtCore.SIGNAL("clicked()"), self.b_run_hunter)
+        QtCore.QObject.connect(self.ui.tab_b_runcfg_pb, QtCore.SIGNAL("clicked()"), self.b_create_cfg)
 
         # slots for tab c
         QtCore.QObject.connect(self.ui.tab_c_mod_lst_pb, QtCore.SIGNAL("clicked()"), self.set_general_mod)
@@ -394,7 +399,21 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         e_save_output_str = os.path.abspath(e_save_output_path[0])
         self.ui.tab_b_sumxlsxpath_le.setText(e_save_output_str)
 
-    def b_run_hunter(self):
+    def b_save_cfg(self):
+        b_save_cfg_path = QtGui.QFileDialog.getSaveFileName(caption='Save file', filter='.txt')
+        self.ui.tab_b_cfgpath_le.clear()
+        b_save_cfg_str = os.path.abspath(b_save_cfg_path[0])
+        self.ui.tab_b_cfgpath_le.setText(b_save_cfg_str)
+
+    def set_ms1_max(self):
+        if self.ui.tab_b_ms1max_chb.isChecked():
+            self.ui.tab_b_ms1max_lb.show()
+            self.ui.tab_b_ms1max_spb.show()
+        else:
+            self.ui.tab_b_ms1max_lb.hide()
+            self.ui.tab_b_ms1max_spb.hide()
+
+    def b_get_params(self):
         # QtGui.QMessageBox.information(self, 'Information',
         #                               'LPPtiger need time to run, it might take up to few hours.\n'
         #                               'The Please click "OK" to start the analysis.')
@@ -460,7 +479,12 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         mz_end = self.ui.tab_b_mzend_dspb.value()
         dda_top = self.ui.tab_b_dda_spb.value()
         ms_th = self.ui.tab_b_msthreshold_spb.value()
-        ms_max = 5000
+        if self.ui.tab_b_ms1max_chb.isChecked():
+            ms_max = self.ui.tab_b_ms1max_spb.value()
+            print('Set ms1_max', ms_max)
+        else:
+            ms_max = 0
+            print('No ms1_max', ms_max)
         ms2_th = self.ui.tab_b_ms2threshold_spb.value()
         ms_ppm = self.ui.tab_b_msppm_spb.value()
         ms2_ppm = self.ui.tab_b_ms2ppm_spb.value()
@@ -534,22 +558,29 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
                             'msp_score_filter': msp_score_filter, 'fp_score_filter': fp_score_filter,
                             'snr_score_filter': snr_score_filter,
                             'parallization_mode': parallelization_mode, 'core_number': core_num, 'max_ram': max_ram,
-                            'img_type': img_typ, 'img_dpi': img_dpi, 'fast_isotope': fast_isotope,
-                            'ms_max': ms_max
+                            'img_type': img_typ, 'img_dpi': img_dpi, 'fast_isotope': fast_isotope, 'ms_max': ms_max
                             }
 
+        return hunter_param_dct
+
+    def b_run_hunter(self):
+
+        hunter_param_dct = self.b_get_params()
+
+        print(hunter_param_dct)
+
+        start_time = hunter_param_dct['hunter_start_time']
+
         param_log_output_path_str = (str(self.ui.tab_b_saveimgfolder_le.text()) +
-                                     '/LPPtiger_Params-Log_%s.txt' % start_time_str
+                                     r'/LPPtiger_Params-Log_%s.txt' % start_time
                                      )
-        if usr_vendor != '':
+        if hunter_param_dct['vendor'] != '':
             config = configparser.ConfigParser()
             with open(param_log_output_path_str, 'w') as usr_param_cfg:
                 config.add_section('parameters')
                 for param in hunter_param_dct.keys():
                     config.set('parameters', param, str(hunter_param_dct[param]))
                 config.write(usr_param_cfg)
-
-            print(hunter_param_dct)
 
             tot_run_time = huntlipids(hunter_param_dct)
 
@@ -563,6 +594,24 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
 
         else:
             self.ui.tab_b_statusrun_pte.insertPlainText('Please check your vendor settings!')
+
+    def b_create_cfg(self):
+
+        hunter_param_dct = self.b_get_params()
+
+        print(hunter_param_dct)
+
+        param_log_output_path_str = str(self.ui.tab_b_cfgpath_le.text())
+        if hunter_param_dct['vendor'] != '':
+            config = configparser.ConfigParser()
+            with open(param_log_output_path_str, 'w') as usr_param_cfg:
+                config.add_section('parameters')
+                for param in hunter_param_dct.keys():
+                    config.set('parameters', param, str(hunter_param_dct[param]))
+                config.write(usr_param_cfg)
+                self.ui.tab_b_statuscfg_pte.insertPlainText('>>> >>> >>> SAVED <<< <<< <<<')
+        else:
+            self.ui.tab_b_statuscfg_pte.insertPlainText('Please check your vendor settings!')
 
     def c_calc_snr_amp(self):
         import math
