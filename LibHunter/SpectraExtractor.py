@@ -156,7 +156,10 @@ def extract_mzml(mzml, rt_range, dda_top=6, ms1_threshold=1000, ms2_threshold=10
                             _tmp_spec_df = _tmp_spec_df.sort_values(by='i', ascending=False)
                             _tmp_spec_df = _tmp_spec_df.reset_index(drop=True)
                             spec_dct[spec_idx] = _tmp_spec_df
-                            _tmp_spec_df.loc[:, 'rt'] = _scan_rt
+                            # _tmp_spec_df.loc[:, 'rt'] = _scan_rt
+                            print('Reading MS1_survey_scan @:', _scan_rt)
+                            for _idx, _r in _tmp_spec_df.iterrows():
+                                _tmp_spec_df.set_value(_idx, 'rt', _scan_rt)
                             ms1_xic_df = ms1_xic_df.append(_tmp_spec_df)
 
                         if ms_level == 2:
@@ -217,7 +220,7 @@ def get_spectra(mz, mz_lib, func_id, ms2_scan_id, ms1_obs_mz_lst,
             ms2_scan_id = _tmp_mz_scan_info_df.get_value(_tmp_mz_scan_info_df.index[0], 'scan_number')
             ms2_rt = _tmp_mz_scan_info_df.get_value(_tmp_mz_scan_info_df.index[0], 'scan_time')
 
-            print('%.6f @ DDA#: %.0f | Total scan id: %.0f | func_id: %.0f | Scan ID: %.0f | RT: %.4f'
+            print('%.6f @ DDA#: %.0f | Total scan id: %.0f | DDA_Rank: %.0f | Scan ID: %.0f | RT: %.4f'
                   % (mz, ms2_dda_idx, ms2_spec_idx, ms2_function, ms2_scan_id, ms2_rt)
                   )
 

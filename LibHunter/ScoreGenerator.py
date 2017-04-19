@@ -21,9 +21,10 @@ from ParallelFunc import ppm_window_para, wfactor_calc_para
 
 
 class ScoreGenerator:
-    def __init__(self, fa_def_df, weight_df, key_frag_df, lipid_type, checked_info_df,
+    def __init__(self, param_dct, fa_def_df, weight_df, key_frag_df, lipid_type, checked_info_df,
                  ion_charge='[M-H]-', ms2_ppm=200):
         gc.disable()
+        self.param_dct = param_dct
         self.fa_def_df = fa_def_df
         self.weight_dct = weight_df.to_dict()
         self.weight_type_lst = self.weight_dct.keys()
@@ -653,7 +654,7 @@ class ScoreGenerator:
             _frag_mz = _frag_se['EXACTMASS']
             _frag_class = _frag_se['CLASS']
             _frag_label = _frag_se['LABEL']
-            if vendor == 'thermo':
+            if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
                 if mz_lib < 450.0:
                     seg_shift = 0.0
                 elif 450.0 <= mz_lib < 600.0:
@@ -691,7 +692,7 @@ class ScoreGenerator:
             _frag_class = _frag_se['CLASS']
             _frag_label = _frag_se['LABEL']
 
-            if vendor == 'thermo':
+            if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
                 if _frag_mz < 450.0:
                     seg_shift = 0.0
                 elif 450.0 <= mz_lib < 600:
@@ -731,7 +732,7 @@ class ScoreGenerator:
             _nl_class = _nl_se['CLASS']
             _nl_label = _nl_se['LABEL']
 
-            if vendor == 'thermo':
+            if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
                 if mz_lib < 450.0:
                     seg_shift = 0.0
                 elif 450.0 <= mz_lib < 600:
@@ -772,7 +773,7 @@ class ScoreGenerator:
             _nl_class = _nl_se['CLASS']
             _nl_label = _nl_se['LABEL']
 
-            if vendor == 'thermo':
+            if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
                 if mz_lib < 450.0:
                     seg_shift = 0.0
                 elif 450.0 <= mz_lib < 600:

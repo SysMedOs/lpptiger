@@ -18,6 +18,7 @@ from PySide import QtGui
 from LibLPPtiger.LPPtiger_Main import LPPtigerMain
 
 if __name__ == '__main__':
+    sys.setrecursionlimit(10000)
     multiprocessing.freeze_support()
     usr_cwd = os.getcwd()
     gui = QtGui.QApplication(sys.argv)

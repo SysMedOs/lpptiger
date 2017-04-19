@@ -73,7 +73,8 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
     hunter_start_time_str = param_dct['hunter_start_time']
     isotope_hunter = IsotopeHunter()
 
-    score_calc = ScoreGenerator(usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type, checked_info_df,
+    score_calc = ScoreGenerator(param_dct, usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type,
+                                checked_info_df,
                                 ion_charge=charge_mode, ms2_ppm=param_dct['ms2_ppm'])
 
     # for group_key in core_list:
@@ -115,10 +116,12 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
         _ms2_df = usr_spec_info_dct['ms2_df']
 
         # use the max threshold from abs & relative intensity settings
-        _ms2_max_i = _ms2_df['i'].max()
-        ms2_threshold = max(usr_ms2_threshold, _ms2_max_i * usr_ms2_info_th)
-        _score_ms2_df = _ms2_df.query('i > %f' % ms2_threshold)
-
+        if 'i' in _ms2_df.columns.tolist():
+            _ms2_max_i = _ms2_df['i'].max()
+            ms2_threshold = max(usr_ms2_threshold, _ms2_max_i * usr_ms2_info_th)
+            _score_ms2_df = _ms2_df.query('i > %f' % ms2_threshold)
+        else:
+            _ms2_df = pd.DataFrame()
         if _ms1_pr_mz > 0.0 and _ms1_df.shape[0] > 0 and _ms2_df.shape[0] > 0 and _ms1_pr_i > 0.0:
 
             print('>>> >>> >>> >>> Best PR on MS1: %f' % _ms1_pr_mz)
@@ -154,7 +157,16 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                         if matched_checker > 0 and rank_score > usr_rank_score_filter:
                             print('Rank_score: %.f --> passed' % rank_score)
                             print('MSP_JSON', _r_abbr['MSP_JSON'], type(_r_abbr['MSP_JSON']))
+                            consider_msp = 1
                             if isinstance(_r_abbr['MSP_JSON'], str) and len(_r_abbr['MSP_JSON']) > 0:
+                                _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
+                                print('msp_df', _msp_df)
+                                _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df,
+                                                                                                  _score_ms2_df,
+                                                                                                  ms2_precision=
+                                                                                                  usr_ms2_precision)
+                                consider_msp = 1
+                            elif isinstance(_r_abbr['MSP_JSON'], unicode) and len(str(_r_abbr['MSP_JSON'])) > 0:
                                 _msp_df = pd.read_json(_r_abbr['MSP_JSON'], orient='index')
                                 print('msp_df', _msp_df)
                                 _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df,
@@ -202,14 +214,15 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                     else:
                                         use_fp = 0
 
-                                    snr_score, usr_sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(match_info_dct,
-                                                                                                         specific_check_dct,
-                                                                                                         _obs_msp_df,
-                                                                                                         _obs_fp_df,
-                                                                                                         amplify_factor=
-                                                                                                         usr_amp_factor,
-                                                                                                             use_fp=
-                                                                                                             use_fp)
+                                    snr_score, usr_sn_ratio, noise_df, snr_i_info = score_calc.get_snr_score(
+                                        match_info_dct,
+                                        specific_check_dct,
+                                        _obs_msp_df,
+                                        _obs_fp_df,
+                                        amplify_factor=
+                                        usr_amp_factor,
+                                        use_fp=
+                                        use_fp)
 
                                     if usr_sn_ratio >= 0.3 and snr_score >= usr_snr_score_filter:
 
@@ -244,24 +257,25 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                         r'\LPPtiger_Results_Figures_%s'
                                                         % hunter_start_time_str + img_name_core)
 
-                                            isotope_checker, isotope_score = plot_spectra(_usr_abbr_bulk,
-                                                                                          _samemz_se, xic_dct,
-                                                                                          match_info_dct,
-                                                                                          usr_spec_info_dct,
-                                                                                          specific_check_dct,
-                                                                                          isotope_score_info_dct,
-                                                                                          _usr_formula_charged,
-                                                                                          _usr_charge,
-                                                                                          save_img_as=img_name,
-                                                                                          img_type=img_typ,
-                                                                                          dpi=img_dpi,
-                                                                                          ms1_precision=
-                                                                                          usr_ms1_precision,
-                                                                                          msp_info=_msp_df,
-                                                                                          obs_fp=obs_fp_lst,
-                                                                                          missed_fp=missed_fp_lst,
-                                                                                          snr_i_info=snr_i_info
-                                                                                          )
+                                            isotope_checker, isotope_score, img_n = plot_spectra(_usr_abbr_bulk,
+                                                                                                 _samemz_se,
+                                                                                                 xic_dct,
+                                                                                                 match_info_dct,
+                                                                                                 usr_spec_info_dct,
+                                                                                                 specific_check_dct,
+                                                                                                 isotope_score_info_dct,
+                                                                                                 _usr_formula_charged,
+                                                                                                 _usr_charge,
+                                                                                                 save_img_as=img_name,
+                                                                                                 img_type=img_typ,
+                                                                                                 dpi=img_dpi,
+                                                                                                 ms1_precision=
+                                                                                                 usr_ms1_precision,
+                                                                                                 msp_info=_msp_df,
+                                                                                                 obs_fp=obs_fp_lst,
+                                                                                                 missed_fp=missed_fp_lst,
+                                                                                                 snr_i_info=snr_i_info
+                                                                                                 )
 
                                             print('==> check for output -->')
 
@@ -323,7 +337,13 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                                                                          other_nl_count)
                                                 match_info_dct['ppm'] = _exact_ppm
                                                 match_info_dct['SN_ratio'] = '%.1f' % usr_sn_ratio
-                                                match_info_dct['img_name'] = img_name_core[1:]
+
+                                                # if any IO error while writing img output
+                                                if img_n == '-2':
+                                                    match_info_dct['img_name'] = '%s-2.%s' % (img_name_core[1:-4],
+                                                                                              img_typ)
+                                                else:
+                                                    match_info_dct['img_name'] = img_name_core[1:]
 
                                                 try:
                                                     del match_info_dct['MATCH_INFO']

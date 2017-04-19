@@ -10,6 +10,7 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+import sys
 
 import pandas as pd
 from multiprocessing import Pool
@@ -18,6 +19,7 @@ from ParallelFunc import ppm_calc_para, ppm_window_para, pr_window_calc_para
 
 
 def find_pr_info(scan_info_df, spectra_pl, lpp_info_groups, sub_group_list, ms1_th, ms1_ppm, ms1_max):
+    sys.setrecursionlimit(10000)
     core_results_df = pd.DataFrame()
     for group_key in sub_group_list:
         subgroup_df = lpp_info_groups.get_group(group_key)
@@ -54,6 +56,7 @@ def find_pr_info(scan_info_df, spectra_pl, lpp_info_groups, sub_group_list, ms1_
                             pr_ms1_df = ms1_df.query('%f <= i and %f <= mz <= %f' % (ms1_th,
                                                                                      same_mz_se['MS1_MZ_LOW'],
                                                                                      same_mz_se['MS1_MZ_HIGH']))
+
                         if pr_ms1_df.shape[0] > 0:
 
                             pr_ms1_df.loc[:, 'ppm'] = ppm_calc_para(pr_ms1_df['mz'].values, same_mz_se['Lib_mz'])
@@ -87,6 +90,7 @@ class PrecursorHunter(object):
         self.param_dct = param_dct
 
     def get_matched_pr(self, scan_info_df, spectra_pl, ms1_max=0, core_num=4, max_ram=8):
+        sys.setrecursionlimit(10000)
 
         print('Start match!!!!')
 
@@ -171,33 +175,48 @@ class PrecursorHunter(object):
             else:
                 print('>>> Start multiprocessing ==> Part %i / %i --> Number of Cores: %i' %
                       (part_counter, part_tot, core_num))
-            part_counter += 1
 
-            parallel_pool = Pool(core_num)
-            pr_info_results_lst = []
-            core_worker_count = 1
-            for core_list in core_key_list:
-                if None in core_list:
-                    core_list = filter(lambda x: x is not None, core_list)
-                else:
-                    pass
-                print('>>> >>> ...... Core #%i ==> processing ......' % core_worker_count)
-                pr_info_result = parallel_pool.apply_async(find_pr_info, args=(scan_info_df, sub_pl,
-                                                                               lpp_info_groups,
-                                                                               core_list, ms1_th, ms1_ppm, ms1_max))
-                core_worker_count += 1
-                pr_info_results_lst.append(pr_info_result)
+            if self.param_dct['vendor'] == 'waters':
+                part_counter += 1
+                parallel_pool = Pool(core_num)
+                pr_info_results_lst = []
+                core_worker_count = 1
+                for core_list in core_key_list:
+                    if None in core_list:
+                        core_list = filter(lambda x: x is not None, core_list)
+                    else:
+                        pass
+                    print('>>> >>> ...... Core #%i ==> processing ......' % core_worker_count)
+                    pr_info_result = parallel_pool.apply_async(find_pr_info, args=(scan_info_df, sub_pl,
+                                                                                   lpp_info_groups,
+                                                                                   core_list, ms1_th, ms1_ppm, ms1_max))
+                    core_worker_count += 1
+                    pr_info_results_lst.append(pr_info_result)
 
-            parallel_pool.close()
-            parallel_pool.join()
+                parallel_pool.close()
+                parallel_pool.join()
 
-            for pr_info_result in pr_info_results_lst:
-                try:
-                    sub_df = pr_info_result.get()
+                for pr_info_result in pr_info_results_lst:
+                    try:
+                        sub_df = pr_info_result.get()
+                        if sub_df.shape[0] > 0:
+                            ms1_obs_pr_df = ms1_obs_pr_df.append(sub_df)
+                    except:
+                        pass
+            else:
+                print('Using single core for Thermo files...')
+                core_worker_count = 1
+                for core_list in core_key_list:
+                    if None in core_list:
+                        core_list = filter(lambda x: x is not None, core_list)
+                    else:
+                        pass
+                    print('>>> >>> processing ......Part: %i subset: %i ' % (part_counter, core_worker_count))
+                    sub_df = find_pr_info(scan_info_df, sub_pl, lpp_info_groups, core_list, ms1_th, ms1_ppm, ms1_max)
+                    core_worker_count += 1
                     if sub_df.shape[0] > 0:
                         ms1_obs_pr_df = ms1_obs_pr_df.append(sub_df)
-                except:
-                    pass
+                part_counter += 1
 
         # End multiprocessing
 

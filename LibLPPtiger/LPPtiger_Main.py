@@ -32,6 +32,8 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.tabWidget.setCurrentIndex(0)
+        # self.ui.tabWidget.setTabEnabled(4, False)
+        self.ui.tabWidget.removeTab(4)
         # current folder:
         if cwd is not None:
             print('User LPPtiger folder', cwd)
@@ -447,7 +449,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         if self.ui.mode_lcms_rb.isChecked():
             usr_exp_mode = 'LC-MS'
         elif self.ui.mode_static_rb.isChecked():
-            usr_exp_mode = 'Static-MS'
+            usr_exp_mode = 'Shotgun'
         else:
             usr_exp_mode = 'LC-MS'
         print('Vendor mode = %s, Experiment mode = %s' % (usr_vendor, usr_exp_mode))
@@ -543,7 +545,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         start_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
         hunter_param_dct = {'hunter_folder': self.theolpp_cwd, 'hunter_start_time': start_time_str,
-                            'vendor': usr_vendor, 'Experiment_mode': usr_exp_mode,
+                            'vendor': usr_vendor, 'experiment_mode': usr_exp_mode,
                             'lipid_type': _pl_class, 'charge_mode': _pl_charge,
                             'lpp_sum_info_path_str': lpp_sum_info_path_str, 'fa_sum_path_str': fa_sum_path_str,
                             'mzml_path_str': mzml_path_str, 'img_output_folder_str': img_output_folder_str,

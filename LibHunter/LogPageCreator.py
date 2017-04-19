@@ -179,7 +179,7 @@ class LogPageCreator(object):
                     score = _row_se['Overall_score']
                     formula_ion = _row_se['Formula_ion']
                     charge = _row_se['Charge']
-                    ident_idx = str(_idx)
+                    # ident_idx = str(_idx)
 
                     ident_info_df = pd.DataFrame()
                     ident_info_df = ident_info_df.append(_row_se, ignore_index=True)
@@ -198,18 +198,21 @@ class LogPageCreator(object):
                                         'i_[M-H]-sn2',
                                         'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', 'SN_ratio']
 
+                    ident_info_df = pd.DataFrame(ident_info_df, columns=plot_df_cols)
                     ident_col = ident_info_df.columns.tolist()
 
                     for _col in plot_df_cols:
                         if _col not in ident_col:
-                            ident_info_df.loc[:, _col] = ''
-                    table_buf_code = ident_info_df.to_html(columns=plot_df_cols, float_format='%.1f', border=0,
-                                                           index=False)
+                            ident_info_df.loc[:, _col] = 0
+                    try:
+                        table_buf_code = ident_info_df.to_html(float_format='%.1f', border=0, index=False)
+                    except TypeError:
+                        table_buf_code = ident_info_df.to_html(index=False)
                     table_buf_code = table_buf_code.replace('NaN', '')
                     img_title_str = ('{mz}_RT{rt:.3}_DDArank{dda}_Scan{scan}_{ident}_{f}_{chg}_score{score}'
                                      .format(mz='%.4f' % ms1_pr_mz, rt=ms2_rt, dda=dda, scan=ms2_scan_id,
                                              ident=ident_abbr, score=score, f=formula_ion, chg=charge))
-                    img_info_lst = ['<a name="', ident_idx, '"><h3>', '<a href="', img_path, '" target="blank">',
+                    img_info_lst = ['<a name="', '%i' % _idx, '"><h3>', '<a href="', img_path, '" target="blank">',
                                     img_title_str,
                                     '</a></h3></a>', '<a href="', img_path, '" target="blank">',
                                     '<img src="', img_path, '" height="800" /></a>', table_buf_code, '\n<hr>\n']
@@ -228,7 +231,7 @@ class LogPageCreator(object):
                             </td>\n<td>
                             <a href ="LPPtiger_Results_Figures_list.html#{id}" target ="results_frame">{score}
                             </td>\n</tr>\n
-                            '''.format(id=ident_idx, mz='%.4f' % ms1_pr_mz, rt='%.1f' % ms2_rt,
+                            '''.format(id='%i' % _idx, mz='%.4f' % ms1_pr_mz, rt='%.1f' % ms2_rt,
                                        ident=ident_abbr, score=score))
                     idx_page.write(idx_str)
 
