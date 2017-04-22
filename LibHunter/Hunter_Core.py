@@ -226,7 +226,7 @@ def huntlipids(param_dct):
                                 ascending=[True, True, True], inplace=True)
 
     print('=== ==> --> Start to Hunt for LPPs !!')
-    checked_info_groups = checked_info_df.groupby(['Lib_mz', 'MS2_PR_mz', 'Formula', 'scan_time'])
+    checked_info_groups = checked_info_df.groupby(['Lib_mz', 'MS2_PR_mz', 'Formula', 'scan_time', 'Ion'])
     lpp_all_group_key_lst = checked_info_groups.groups.keys()
     # lpp_all_group_key_lst = sorted(lpp_all_group_key_lst, key=lambda x: x[0])
 

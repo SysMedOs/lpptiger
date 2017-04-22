@@ -375,11 +375,6 @@ class IsotopeHunter(object):
                     else:
                         pass
 
-                else:
-                    isotope_score = 0
-                    isotope_checker_dct = {}
-                    m2_checker_dct = {}
-                    m2_score = 0
             else:
                 isotope_score = 0
                 isotope_checker_dct = {}

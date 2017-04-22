@@ -74,7 +74,12 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
     except ValueError:
         ms_zoom_bp_i = 0
 
-    if ms_zoom_bp_i > 0:
+    xic_df = xic_dct[ms1_xic_mz]
+
+    xic_rt_lst = xic_df['rt'].tolist()
+    xic_i_lst = xic_df['i'].tolist()
+
+    if ms_zoom_bp_i > 0 and len(xic_rt_lst) > 0 and len(xic_i_lst) > 0:
         # cut lower peaks to accelerate plotting time
         m1_dct = isotope_checker_dct[1]
         m1_theo_mz = m1_dct['theo_mz']
@@ -120,8 +125,6 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
 
         print ('Start looking for MS2 PR m/z %f @ MS1 best PR m/z %f with lib m/z %f'
                % (ms2_pr_mz, ms1_obs, lib_mz))
-
-        xic_df = xic_dct[ms1_xic_mz]
 
         # Generate A4 image in landscape
         fig, pic_array = plt.subplots(nrows=3, ncols=2, figsize=(11.692, 8.267), sharex=False,
@@ -299,8 +302,6 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
                          color='magenta', fontsize=10)
 
         # XIC spectrum start
-        xic_rt_lst = xic_df['rt'].tolist()
-        xic_i_lst = xic_df['i'].tolist()
         xic_rt_min = min(xic_rt_lst)
         xic_rt_max = max(xic_rt_lst)
         xic_rt_label_shift = (xic_rt_max - xic_rt_min) * 0.04

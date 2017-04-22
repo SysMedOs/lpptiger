@@ -104,7 +104,6 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
         _samemz_se = _subgroup_df.iloc[0, :].squeeze()
         _usr_ms2_pr_mz = _samemz_se['MS2_PR_mz']
         _usr_ms2_rt = _samemz_se['scan_time']
-        _usr_charge = _samemz_se['Ion']
         _usr_ms2_dda_rank = _samemz_se['DDA_rank']
         _usr_ms2_scan_id = _samemz_se['scan_number']
         _usr_mz_lib = _samemz_se['Lib_mz']
@@ -114,6 +113,8 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
         _ms1_pr_mz = usr_spec_info_dct['ms1_mz']
         _ms1_df = usr_spec_info_dct['ms1_df']
         _ms2_df = usr_spec_info_dct['ms2_df']
+
+        _usr_charge = _samemz_se['Ion']
 
         # use the max threshold from abs & relative intensity settings
         if 'i' in _ms2_df.columns.tolist():
