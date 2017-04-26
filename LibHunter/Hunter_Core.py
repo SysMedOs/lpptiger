@@ -55,7 +55,6 @@ def huntlipids(param_dct):
     :param param_dct:
     :return:
     """
-    sys.setrecursionlimit(10000)
 
     start_time = time.clock()
 
@@ -175,50 +174,59 @@ def huntlipids(param_dct):
     # else:
     #     xic_core_num = usr_core_num
     # parallel_pool = Pool(xic_core_num)
-    if usr_vendor == 'waters':
+    if usr_core_num > 1:
         parallel_pool = Pool(usr_core_num)
         xic_results_lst = []
         core_worker_count = 1
         for core_list in core_key_list:
-            if None in core_list:
-                core_list = filter(lambda x: x is not None, core_list)
-            else:
-                pass
-            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-            print(core_list)
-            # xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
-            #                                                           usr_ms1_precision, usr_ms2_precision,
-            #                                                           usr_vendor,))
-            xic_result = parallel_pool.apply_async(get_xic_from_pl, args=(core_list, ms1_xic_df, 500))
-            core_worker_count += 1
-            xic_results_lst.append(xic_result)
+            if isinstance(core_list, tuple) or isinstance(core_list, list):
+                if None in core_list:
+                    core_list = filter(lambda x: x is not None, core_list)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                print(core_list)
+                # xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
+                #                                                           usr_ms1_precision, usr_ms2_precision,
+                #                                                           usr_vendor,))
+                xic_result = parallel_pool.apply_async(get_xic_from_pl, args=(core_list, ms1_xic_df, 500))
+                core_worker_count += 1
+                xic_results_lst.append(xic_result)
 
         parallel_pool.close()
         parallel_pool.join()
 
         for xic_result in xic_results_lst:
-            sub_xic_dct = xic_result.get()
-            if len(sub_xic_dct.keys()) > 0:
-                xic_dct = dict(xic_dct, **sub_xic_dct)
+            try:
+                sub_xic_dct = xic_result.get()
+                if len(sub_xic_dct.keys()) > 0:
+                    xic_dct = dict(xic_dct, **sub_xic_dct)
+            except (KeyError, SystemError, ValueError):
+                pass
     else:
-        print('Using single core for Thermo files...')
+        print('Using single core mode...')
         core_worker_count = 1
         for core_list in core_key_list:
-            if None in core_list:
-                core_list = filter(lambda x: x is not None, core_list)
-            else:
-                pass
-            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-            print(core_list)
-            sub_xic_dct = get_xic_from_pl(core_list, ms1_xic_df, 500)
-            core_worker_count += 1
-            if len(sub_xic_dct.keys()) > 0:
-                xic_dct = dict(xic_dct, **sub_xic_dct)
+            if isinstance(core_list, tuple) or isinstance(core_list, list):
+                if None in core_list:
+                    core_list = filter(lambda x: x is not None, core_list)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                print(core_list)
+                sub_xic_dct = get_xic_from_pl(core_list, ms1_xic_df, 500)
+                core_worker_count += 1
+                if len(sub_xic_dct.keys()) > 0:
+                    xic_dct = dict(xic_dct, **sub_xic_dct)
 
     print('xic_dct', len(xic_dct.keys()))
     print(xic_dct.keys())
 
-    print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
+    if len(xic_dct.keys()) == 0:
+        print('No precursor for XIC found')
+        return '!! NO suitable precursor --> Check settings!!\n'
+    else:
+        print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
 
     target_ident_lst = []
     # ident_page_idx = 1
@@ -235,41 +243,46 @@ def huntlipids(param_dct):
 
     lpp_spec_info_dct = {}
 
-    if usr_vendor == 'waters':
+    if usr_core_num > 1:
         parallel_pool = Pool(usr_core_num)
         spec_results_lst = []
         core_worker_count = 1
         for _sub_lst in spec_sub_key_lst:
-            if None in _sub_lst:
-                _sub_lst = filter(lambda x: x is not None, _sub_lst)
-            else:
-                pass
-            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-            spec_result = parallel_pool.apply_async(get_spec_info, args=(_sub_lst, checked_info_groups,
-                                                                         usr_scan_info_df))
-            core_worker_count += 1
-            spec_results_lst.append(spec_result)
+            if isinstance(_sub_lst, tuple) or isinstance(_sub_lst, list):
+                if None in _sub_lst:
+                    _sub_lst = filter(lambda x: x is not None, _sub_lst)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                spec_result = parallel_pool.apply_async(get_spec_info, args=(_sub_lst, checked_info_groups,
+                                                                             usr_scan_info_df))
+                core_worker_count += 1
+                spec_results_lst.append(spec_result)
 
         parallel_pool.close()
         parallel_pool.join()
 
         for spec_result in spec_results_lst:
-            sub_spec_dct = spec_result.get()
-            if len(sub_spec_dct.keys()) > 0:
-                lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
+            try:
+                sub_spec_dct = spec_result.get()
+                if len(sub_spec_dct.keys()) > 0:
+                    lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
+            except (KeyError, SystemError, ValueError):
+                print('ValueError: must supply a tuple to get_group with multiple grouping keys')
     else:
-        print('Using single core for Thermo files...')
+        print('Using single core mode...')
         core_worker_count = 1
         for _sub_lst in spec_sub_key_lst:
-            if None in _sub_lst:
-                _sub_lst = filter(lambda x: x is not None, _sub_lst)
-            else:
-                pass
-            print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-            sub_spec_dct = get_spec_info(_sub_lst, checked_info_groups, usr_scan_info_df)
-            core_worker_count += 1
-            if len(sub_spec_dct.keys()) > 0:
-                lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
+            if isinstance(_sub_lst, tuple) or isinstance(_sub_lst, list):
+                if None in _sub_lst:
+                    _sub_lst = filter(lambda x: x is not None, _sub_lst)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                sub_spec_dct = get_spec_info(_sub_lst, checked_info_groups, usr_scan_info_df)
+                core_worker_count += 1
+                if len(sub_spec_dct.keys()) > 0:
+                    lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
 
     print('lpp_spec_info_dct', len(lpp_spec_info_dct.keys()))
 
@@ -319,26 +332,27 @@ def huntlipids(param_dct):
                   (part_counter, part_tot, usr_core_num))
         part_counter += 1
         # Start multiprocessing
-        if usr_vendor == 'waters':
+        if usr_core_num > 1:
             parallel_pool = Pool(usr_core_num)
             lpp_info_results_lst = []
             core_worker_count = 1
             for lpp_sub_lst in lpp_sub_key_lst:
-                if None in lpp_sub_lst:
-                    lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
-                else:
-                    pass
-                lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
-                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
-                lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
-                                                                                checked_info_groups, lpp_sub_lst,
-                                                                                usr_fa_def_df, usr_weight_df,
-                                                                                usr_key_frag_df,
-                                                                                usr_scan_info_df, ms1_xic_mz_lst,
-                                                                                lpp_sub_dct, xic_dct, target_ident_lst))
-                # ('>>> >>> Get lpp_info_result of this worker-->', <class 'multiprocessing.pool.ApplyResult'>)
-                lpp_info_results_lst.append(lpp_info_result)
-                core_worker_count += 1
+                if isinstance(lpp_sub_lst, tuple) or isinstance(lpp_sub_lst, list):
+                    if None in lpp_sub_lst:
+                        lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
+                    else:
+                        pass
+                    lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+                    print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                    lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
+                                                                                    checked_info_groups, lpp_sub_lst,
+                                                                                    usr_fa_def_df, usr_weight_df,
+                                                                                    usr_key_frag_df,
+                                                                                    usr_scan_info_df, ms1_xic_mz_lst,
+                                                                                    lpp_sub_dct, xic_dct, target_ident_lst))
+                    # ('>>> >>> Get lpp_info_result of this worker-->', <class 'multiprocessing.pool.ApplyResult'>)
+                    lpp_info_results_lst.append(lpp_info_result)
+                    core_worker_count += 1
 
             parallel_pool.close()
             parallel_pool.join()
@@ -346,7 +360,7 @@ def huntlipids(param_dct):
             for lpp_info_result in lpp_info_results_lst:
                 try:
                     tmp_lpp_info_df = lpp_info_result.get()
-                except (KeyError, SystemError):
+                except (KeyError, SystemError, ValueError):
                     tmp_lpp_info_df = 'error'
                     print('!!error!!--> This segment receive no LPP identified.')
                 if isinstance(tmp_lpp_info_df, str):
@@ -356,24 +370,26 @@ def huntlipids(param_dct):
                         if tmp_lpp_info_df.shape[0] > 0:
                             output_df = output_df.append(tmp_lpp_info_df)
         else:
-            print('Using single core for Thermo files...')
+            print('Using single core mode...')
             core_worker_count = 1
             for lpp_sub_lst in lpp_sub_key_lst:
-                if None in lpp_sub_lst:
-                    lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
-                else:
-                    pass
-                lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
-                print('>>> >>> Part %i Subset #%i ==> ...... processing ......' % (part_counter, core_worker_count))
-                tmp_lpp_info_df = get_lpp_info(param_dct, checked_info_df, checked_info_groups, lpp_sub_lst,
-                                               usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_scan_info_df,
-                                               ms1_xic_mz_lst, lpp_sub_dct, xic_dct, target_ident_lst)
-                core_worker_count += 1
-                if isinstance(tmp_lpp_info_df, str):
-                    pass
-                else:
-                    if tmp_lpp_info_df.shape[0] > 0:
-                        output_df = output_df.append(tmp_lpp_info_df)
+
+                if isinstance(lpp_sub_lst, tuple) or isinstance(lpp_sub_lst, list):
+                    if None in lpp_sub_lst:
+                        lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
+                    else:
+                        pass
+                    lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+                    print('>>> >>> Part %i Subset #%i ==> ...... processing ......' % (part_counter, core_worker_count))
+                    tmp_lpp_info_df = get_lpp_info(param_dct, checked_info_df, checked_info_groups, lpp_sub_lst,
+                                                   usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_scan_info_df,
+                                                   ms1_xic_mz_lst, lpp_sub_dct, xic_dct, target_ident_lst)
+                    core_worker_count += 1
+                    if isinstance(tmp_lpp_info_df, str):
+                        pass
+                    else:
+                        if tmp_lpp_info_df.shape[0] > 0:
+                            output_df = output_df.append(tmp_lpp_info_df)
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:
