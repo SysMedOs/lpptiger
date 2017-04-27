@@ -162,8 +162,11 @@ def huntlipids(param_dct):
     print(ms1_xic_mz_lst)
 
     print('=== ==> --> Start to extract XIC')
-    sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
-    core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
+    if len(ms1_xic_mz_lst) >= 20 * usr_core_num:
+        sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
+        core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
+    else:
+        core_key_list = [ms1_xic_mz_lst]
     # print(core_key_list)
     # Start multiprocessing
     print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
@@ -174,7 +177,7 @@ def huntlipids(param_dct):
     # else:
     #     xic_core_num = usr_core_num
     # parallel_pool = Pool(xic_core_num)
-    if usr_core_num > 1:
+    if 1 < usr_core_num < len(core_key_list):
         parallel_pool = Pool(usr_core_num)
         xic_results_lst = []
         core_worker_count = 1
@@ -435,8 +438,12 @@ def huntlipids(param_dct):
                                           ascending=[True, True, False])
         output_df = output_df.reset_index(drop=True)
         output_df.index += 1
-        output_df.to_excel(output_sum_xlsx, index=False)
-        print(output_sum_xlsx)
+        try:
+            output_df.to_excel(output_sum_xlsx, index=False)
+            print(output_sum_xlsx)
+        except IOError:
+            output_df.to_excel('%s-%i%s' % (output_sum_xlsx[:-5], int(time.time()), '.xlsx'), index=False)
+            print(output_sum_xlsx)
         print('=== ==> --> saved >>> >>> >>>')
 
     log_pager.close_page()

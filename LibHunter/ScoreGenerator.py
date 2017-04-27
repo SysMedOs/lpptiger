@@ -104,7 +104,7 @@ class ScoreGenerator:
                                                         (pr_mz - _u_mz_r['NL-H2O_b'], pr_mz - _u_mz_r['NL-H2O_s']))
                     _tmp_fa_mz_dct['[M-H]-sn-H2O_query'] = ('%f <= mz <= %f' %
                                                             (pr_mz - _u_mz_r['NL_b'], pr_mz - _u_mz_r['NL_s']))
-                pr_mz_dct[_tmp_fa_mz] = _tmp_fa_mz_dct
+                pr_mz_dct[round(_tmp_fa_mz, 6)] = _tmp_fa_mz_dct
             self.pr_query_dct[pr_mz] = pr_mz_dct
 
     @staticmethod
@@ -246,12 +246,34 @@ class ScoreGenerator:
 
         sn2_mz = self.fa_def_df.loc[self.fa_def_df['FA'] == sn2_fa, '[M-H]-'].values[0]
 
+        print('sn1_mz', sn1_mz)
+        print('sn2_mz', sn2_mz)
+
         if (mz_lib, charge_type) in self.pr_info_lst:
             pr_query_dct = self.pr_query_dct[mz_lib]
 
             if sn1_mz in pr_query_dct.keys():
-                _fa_dct = pr_query_dct[sn1_mz]
+                pass
+            else:
+                print('sn1_mz not in dict, try to reduce decimals -->', sn1_mz, round(sn1_mz, 6))
+                if round(sn1_mz, 6) in pr_query_dct.keys():
+                    sn1_mz = round(sn1_mz, 6)
+                    print('found with new sn1_mz')
+                else:
+                    print('Not found with new sn1_mz')
+            if sn2_mz in pr_query_dct.keys():
+                pass
+            else:
+                print('sn2_mz not in dict, try to reduce decimals -->', sn2_mz, round(sn2_mz, 6))
+                if round(sn2_mz, 6) in pr_query_dct.keys():
+                    sn2_mz = round(sn2_mz, 6)
+                    print('found with new sn2_mz')
+                else:
+                    print('Not found with new sn2_mz')
 
+            if sn1_mz in pr_query_dct.keys():
+                _fa_dct = pr_query_dct[sn1_mz]
+                print(_fa_dct)
                 for _frag_type in ['sn1', '[M-H]-sn1', '[M-H]-sn1-H2O']:
 
                     if _frag_type == 'sn1':
@@ -284,10 +306,19 @@ class ScoreGenerator:
                                 ident_checker += 1
                             else:
                                 ident_df_dct[_frag_type]['Proposed_structures'] = _frag_type
+                        elif _frag_df.shape[0] == 1:
+                            # convert df to dict
+                            ident_df_dct[_frag_type] = _frag_df.iloc[0, :].to_dict()
+
+                            if _frag_type == 'sn1':
+                                ident_df_dct[_frag_type]['Proposed_structures'] = sn1_fa
+                                ident_checker += 1
+                            else:
+                                ident_df_dct[_frag_type]['Proposed_structures'] = _frag_type
 
             if sn2_mz in pr_query_dct.keys():
                 _fa_dct = pr_query_dct[sn2_mz]
-
+                print(_fa_dct)
                 for _frag_type in ['sn2', '[M-H]-sn2', '[M-H]-sn2-H2O']:
 
                     if _frag_type == 'sn2':
@@ -315,6 +346,15 @@ class ScoreGenerator:
                             # convert df to dict
                             ident_df_dct[_frag_type] = _frag_df.iloc[0, :].to_dict()
 
+                            if _frag_type == 'sn2':
+                                ident_df_dct[_frag_type]['Proposed_structures'] = sn2_fa
+                                ident_checker += 1
+                            else:
+                                ident_df_dct[_frag_type]['Proposed_structures'] = _frag_type
+
+                        elif _frag_df.shape[0] == 1:
+                            # convert df to dict
+                            ident_df_dct[_frag_type] = _frag_df.iloc[0, :].to_dict()
                             if _frag_type == 'sn2':
                                 ident_df_dct[_frag_type]['Proposed_structures'] = sn2_fa
                                 ident_checker += 1
@@ -402,8 +442,11 @@ class ScoreGenerator:
     def get_rankscore(self, abbr, charge_type, ms1_lib_mz, ms2_df, other_signals_dct, ms2_max_i):
 
         lipid_info_dct = self.get_structure(abbr)
+        print(lipid_info_dct)
 
         ident_signals_dct, ident_checker = self.get_fa_signals(lipid_info_dct, charge_type, ms1_lib_mz, ms2_df)
+        print(ident_checker)
+        print(ident_signals_dct)
         empty_df = pd.DataFrame()
         matched_checker = 0
 
@@ -655,21 +698,7 @@ class ScoreGenerator:
             _frag_class = _frag_se['CLASS']
             _frag_label = _frag_se['LABEL']
             if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
-                if mz_lib < 450.0:
-                    seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600.0:
-                    seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750.0:
-                    seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900.0:
-                    seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200.0:
-                    seg_shift = 0.4
-                elif 1200.0 <= mz_lib:
-                    seg_shift = 0.5
-                else:
-                    seg_shift = 0.0
-                _delta = _frag_mz * ms2_precision + seg_shift
+                _delta = _frag_mz * ms2_precision
                 _frag_mz_low = _frag_mz - _delta
                 _frag_mz_high = _frag_mz + _delta
             else:
@@ -693,22 +722,8 @@ class ScoreGenerator:
             _frag_label = _frag_se['LABEL']
 
             if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
-                if _frag_mz < 450.0:
-                    seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600:
-                    seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750:
-                    seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900:
-                    seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200:
-                    seg_shift = 0.4
-                elif 1200.0 <= mz_lib:
-                    seg_shift = 0.5
-                else:
-                    seg_shift = 0.0
 
-                _delta = _frag_mz * ms2_precision + seg_shift
+                _delta = _frag_mz * ms2_precision
                 _frag_mz_low = _frag_mz - _delta
                 _frag_mz_high = _frag_mz + _delta
 
@@ -733,22 +748,8 @@ class ScoreGenerator:
             _nl_label = _nl_se['LABEL']
 
             if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
-                if mz_lib < 450.0:
-                    seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600:
-                    seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750:
-                    seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900:
-                    seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200:
-                    seg_shift = 0.4
-                elif 1200.0 <= mz_lib:
-                    seg_shift = 0.5
-                else:
-                    seg_shift = 0.0
 
-                _delta = (mz_lib - _nl_mz) * ms2_precision * ms2_precision + seg_shift
+                _delta = (mz_lib - _nl_mz) * ms2_precision * ms2_precision
                 _nl_mz_low = mz_lib - _nl_mz - _delta
                 _nl_mz_high = mz_lib - _nl_mz + _delta
 
@@ -774,22 +775,8 @@ class ScoreGenerator:
             _nl_label = _nl_se['LABEL']
 
             if vendor == 'thermo' and self.param_dct['experiment_mode'] == 'Shotgun':
-                if mz_lib < 450.0:
-                    seg_shift = 0.0
-                elif 450.0 <= mz_lib < 600:
-                    seg_shift = 0.1
-                elif 600.0 <= mz_lib < 750:
-                    seg_shift = 0.2
-                elif 750.0 <= mz_lib < 900:
-                    seg_shift = 0.3
-                elif 900.0 <= mz_lib < 1200:
-                    seg_shift = 0.4
-                elif 1200.0 <= mz_lib:
-                    seg_shift = 0.5
-                else:
-                    seg_shift = 0.0
 
-                _delta = (mz_lib - _nl_mz) * ms2_precision + seg_shift
+                _delta = (mz_lib - _nl_mz) * ms2_precision
                 _nl_mz_low = mz_lib - _nl_mz - _delta
                 _nl_mz_high = mz_lib - _nl_mz + _delta
 

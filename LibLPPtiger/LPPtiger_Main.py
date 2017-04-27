@@ -798,6 +798,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
 
                     start_time_str = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
                     _cfg_dct['hunter_start_time'] = start_time_str
+                    os.chdir(_cfg_dct['hunter_folder'])
                     tot_run_time = parallel_pool.apply_async(huntlipids, args=(_cfg_dct,))
 
                     core_worker_count += 1

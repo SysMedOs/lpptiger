@@ -115,6 +115,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
         _ms2_df = usr_spec_info_dct['ms2_df']
 
         _usr_charge = _samemz_se['Ion']
+        print(_usr_ms2_rt, _ms1_pr_mz, _usr_formula_charged)
 
         # use the max threshold from abs & relative intensity settings
         if 'i' in _ms2_df.columns.tolist():
@@ -225,7 +226,7 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                         use_fp=
                                         use_fp)
 
-                                    if usr_sn_ratio >= 0.3 and snr_score >= usr_snr_score_filter:
+                                    if usr_sn_ratio >= 0 and snr_score >= usr_snr_score_filter:
 
                                         overall_score = sum([rank_score, _cosine_score, _fp_score,
                                                              snr_score, isotope_score]) / 5
