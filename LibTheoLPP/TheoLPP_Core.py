@@ -114,7 +114,7 @@ def theolpp(usr_params):
 
         _pl_abbr = str(_row['phospholipids'])
 
-        _pl_elem_lst = parser.get_composition(_pl_abbr)
+        _pl_elem_lst, pl_info_dct = parser.get_composition(_pl_abbr)
         print ('PL composition ==>', _pl_elem_lst)
         _pl_hg_abbr = _pl_elem_lst[0]
 
@@ -129,9 +129,40 @@ def theolpp(usr_params):
             print('Start oxidation of ==>', _pl_abbr)
             _pl_sn1_abbr = _pl_elem_lst[1]
             _pl_sn2_abbr = _pl_elem_lst[2]
-            _pl_sn1_smiles = fa_df.loc[_pl_sn1_abbr, 'SMILES']
-            _pl_sn2_smiles = fa_df.loc[_pl_sn2_abbr, 'SMILES']
-            print('sn1 =>', _pl_sn1_smiles, '|| sn2 =>', _pl_sn2_smiles)
+            if len(pl_info_dct.keys()) > 0:
+                sn1_link = pl_info_dct['sn1_link']
+                sn1_c_num = int(pl_info_dct['sn1_c_num'])
+                sn1_db_num = int(pl_info_dct['sn1_db_num'])
+                sn1_omega_type = int(pl_info_dct['sn1_omega_type'])
+                if sn1_omega_type == 0:
+                    sn1_query_code = 'C == % i and DB == %i' % (sn1_c_num, sn1_db_num)
+                    sn1_fa_df = fa_df.query(sn1_query_code)
+                    sn1_fa_df = sn1_fa_df.query(sn1_query_code).head(1)
+                else:
+                    sn1_query_code = 'C == % i and DB == %i' % (sn1_c_num, sn1_db_num)
+                    sn1_fa_df = fa_df.query(sn1_query_code)
+                    sn1_fa_df = sn1_fa_df.query('Link == "%s" and omega == %i' % (sn1_link, sn1_omega_type)).head(1)
+
+                sn2_link = pl_info_dct['sn2_link']
+                sn2_c_num = int(pl_info_dct['sn2_c_num'])
+                sn2_db_num = int(pl_info_dct['sn2_db_num'])
+                sn2_omega_type = int(pl_info_dct['sn2_omega_type'])
+                if sn2_omega_type == 0:
+                    sn2_query_code = 'C == % i and DB == %i' % (sn2_c_num, sn2_db_num)
+                    sn2_fa_df = fa_df.query(sn2_query_code)
+                    sn2_fa_df = sn2_fa_df.query(sn2_query_code).head(1)
+                else:
+                    sn2_query_code = 'C == % i and DB == %i' % (sn2_c_num, sn2_db_num)
+                    sn2_fa_df = fa_df.query(sn2_query_code)
+                    sn2_fa_df = sn2_fa_df.query('Link == "%s" and omega == %i' % (sn2_link, sn2_omega_type)).head(1)
+
+                _pl_sn1_smiles = sn1_fa_df.loc[_pl_sn1_abbr, 'SMILES']
+                _pl_sn2_smiles = sn2_fa_df.loc[_pl_sn2_abbr, 'SMILES']
+                print('sn1 =>', _pl_sn1_smiles, '|| sn2 =>', _pl_sn2_smiles)
+
+            else:
+                _pl_sn1_smiles = ''
+                _pl_sn2_smiles = ''
 
             # check if FA already oxidized to speed up
             if _pl_sn1_abbr in fa_lpp_df_dct.keys():

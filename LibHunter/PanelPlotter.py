@@ -169,16 +169,16 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
             ms_pic.text(_ms_pkl_top_peak[0], _ms_pkl_top_peak_y, _ms_pkl_top_peak_str, fontsize=6)
 
         m0_theo_base_box = patches.Rectangle((lib_mz - ms1_delta, 0), 2 * ms1_delta, deconv_lst[0],
-                                             facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor="none", zorder=1)
+                                             facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor='none', zorder=1)
         ms_zoom_pic.add_patch(m0_theo_base_box)
         m0_theo_box = patches.Rectangle((lib_mz - ms1_delta, deconv_lst[0]), 2 * ms1_delta, ms1_pr_i - deconv_lst[0],
-                                        facecolor=(0, 0.8, 1.0, 0.6), edgecolor="none", zorder=1)
+                                        facecolor=(0, 0.8, 1.0, 0.6), edgecolor='none', zorder=1)
         ms_zoom_pic.add_patch(m0_theo_box)
 
         # isotope region | if any peak in M-1.0034
 
         m_pre_theo_box = patches.Rectangle((lib_mz - 1.0034 - ms1_delta, 0), 2 * ms1_delta, ms1_pr_i,
-                                           facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor="none")
+                                           facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor='none')
         ms_zoom_pic.add_patch(m_pre_theo_box)
 
         ms_zoom_offset_i = ms_zoom_bp_i * 0.1
@@ -211,12 +211,12 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
         # theo range box
         m1_theo_base_box = patches.Rectangle((m1_theo_mz - ms1_delta, 0),
                                              2 * ms1_delta, deconv_lst[1],
-                                             facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor="none", zorder=1)
+                                             facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor='none', zorder=1)
         ms_zoom_pic.add_patch(m1_theo_base_box)
         # m1_theo_box = patches.Rectangle((m1_theo_mz - ms1_delta, deconv_lst[1]), 2 * ms1_delta, m1_theo_i - deconv_lst[1],
-        #                                 facecolor=(0.1, 1.0, 1.0, 0.3), edgecolor="none", zorder=7)
+        #                                 facecolor=(0.1, 1.0, 1.0, 0.3), edgecolor='none', zorder=7)
         m1_theo_box = patches.Rectangle((m1_theo_mz - ms1_delta, deconv_lst[1]), 2 * ms1_delta, m1_theo_i - deconv_lst[1],
-                                        facecolor=(0, 0.8, 1.0, 0.6), edgecolor="none", zorder=1)
+                                        facecolor=(0, 0.8, 1.0, 0.6), edgecolor='none', zorder=1)
         ms_zoom_pic.add_patch(m1_theo_box)
 
         markerline, stemlines, baseline = ms_zoom_pic.stem([m1_theo_mz], [m1_theo_i], '--', markerfmt='o', zorder=22)
@@ -239,9 +239,9 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
             # m2_theo_r = m2_dct['theo_ratio']
             # # m2_obs_r = m2_dct['obs_ratio']
             # m2_theo_box = patches.Rectangle((m2_theo_mz - ms1_delta, 0), 2 * ms1_delta, m2_theo_i,
-            #                                 facecolor=(0.2, 1.0, 1.0, 0.3), edgecolor="none", zorder=9)
+            #                                 facecolor=(0.2, 1.0, 1.0, 0.3), edgecolor='none', zorder=9)
             m2_theo_box = patches.Rectangle((m2_theo_mz - ms1_delta, 0), 2 * ms1_delta, m2_theo_i,
-                                            facecolor=(0, 0.8, 1.0, 0.6), edgecolor="none", zorder=1)
+                                            facecolor=(0, 0.8, 1.0, 0.6), edgecolor='none', zorder=1)
             ms_zoom_pic.add_patch(m2_theo_box)
             opt_box_lst.append(ms_zoom_pic)
             markerline, stemlines, baseline = ms_zoom_pic.stem([m2_theo_mz], [m2_theo_i], '--', markerfmt='o', zorder=23)
@@ -264,15 +264,15 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
                 # mh2_theo_r = mh2_dct['theo_ratio']
                 # mh2_obs_r = mh2_dct['obs_ratio']
                 mh2_theo_base_box = patches.Rectangle((mh2_theo_mz - ms1_delta, 0), 2 * ms1_delta, deconv_lst[decon_idx],
-                                                      facecolor=(0, 0.8, 1.0, 0.6), edgecolor="none", zorder=1)
+                                                      facecolor=(0, 0.8, 1.0, 0.6), edgecolor='none', zorder=1)
                 ms_zoom_pic.add_patch(mh2_theo_base_box)
                 # opt_box_lst.append(mh2_theo_base_box)
                 # mh2_theo_box = patches.Rectangle((mh2_theo_mz - ms1_delta, deconv_lst[decon_idx]),
                 #                                  2 * ms1_delta, mh2_theo_i - deconv_lst[decon_idx],
-                #                                  facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor="none", zorder=12)
+                #                                  facecolor=(1.0, 0.0, 0.0, 0.4), edgecolor='none', zorder=12)
                 mh2_theo_box = patches.Rectangle((mh2_theo_mz - ms1_delta, deconv_lst[decon_idx]),
                                                  2 * ms1_delta, mh2_theo_i - deconv_lst[decon_idx],
-                                                 facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor="none", zorder=1)
+                                                 facecolor=(1.0, 0.0, 0.0, 0.6), edgecolor='none', zorder=1)
                 ms_zoom_pic.add_patch(mh2_theo_box)
                 markerline, stemlines, baseline = ms_zoom_pic.stem([mh2_theo_mz], [mh2_theo_i], '--',
                                                                    markerfmt='o', zorder=24)
@@ -516,11 +516,11 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
         min_msp_i_fp_h = abs(min_msp_i * 0.5)
         for obs_fp_mz in obs_fp:
             obs_fp_box = patches.Rectangle((obs_fp_mz - 1.75, min_msp_i_fp), 3.5, min_msp_i_fp_h,
-                                           facecolor='#88ff88', edgecolor="none")
+                                           facecolor='#88ff88', edgecolor='none')
             msms_pic.add_patch(obs_fp_box)
         for missed_fp_mz in missed_fp:
             missed_fp_box = patches.Rectangle((missed_fp_mz - 1.75, min_msp_i_fp), 3.5, min_msp_i_fp_h,
-                                              facecolor='#999999', edgecolor="none")
+                                              facecolor='#999999', edgecolor='none')
             msms_pic.add_patch(missed_fp_box)
 
         if plot_msp == 1:
