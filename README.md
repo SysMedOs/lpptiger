@@ -1,6 +1,6 @@
 # LPPtiger instructions (source code version) #
 
-
+![banner.png](https://bitbucket.org/repo/b8ygkn/images/2344627376-banner.png)
 
 This repository contains the source code of LPPtiger.
 
@@ -13,8 +13,9 @@ https://bitbucket.org/SysMedOs/LPPtiger_exe
 
 ### Instructions ###
 
+
+* [How to install LPPtiger from source code](#markdown-header-how-to-install-lpptiger-from-source-code)
 * [License](#markdown-header-license)
-* [A step by step tutorial](https://bitbucket.org/SysMedOs/LPPtiger/wiki/Home)
 * [Q&A](#markdown-header-further-questions)
 * [Fundings](#markdown-header-fundings)
 
@@ -26,19 +27,19 @@ https://bitbucket.org/SysMedOs/LPPtiger_exe
     + [Download LPPtiger source Code](https://bitbucket.org/SysMedOs/lpptiger/downloads/?tab=tags) Please notice the date and version of LPPtiger source code.
     + Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch.
 
-
-
 * Rename the downloaded file to `LPPtiger.zip`
 * Unzip `LPPtiger.zip` file to any folder.
-* Downloaded LPPtiger test spectra files: [LPPtiger_Test_mzML_File](https://bitbucket.org/SysMedOs/LPPtiger_exe/downloads/LPPtiger_TestFile.zip)
 
 * LPPtiger user guide: [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/LPPtiger_exe/downloads/LPPtiger_User_Guide.pdf)
+* LPPtiger test file package: [Download test file package as .zip](https://bitbucket.org/SysMedOs/LPPtiger_exe/downloads/LPPtiger_Test_Files.pdf)
+
+* Install required python packages. See detailed instructions here: link
 
 
 
-* Errors/bugs
+### Errors/bugs ###
     
-    In case you experienced any problems with running LPPtiger, please report an issue in the [issue tracker](https://bitbucket.org/SysMedOs/lpptiger/issues) or contact us.
++ In case you experienced any problems with running LPPtiger, please report an issue in the [issue tracker](https://bitbucket.org/SysMedOs/lpptiger/issues) or contact us.
 
 ### License ###
 
