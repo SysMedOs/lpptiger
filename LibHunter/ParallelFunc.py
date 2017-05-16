@@ -9,6 +9,7 @@
 #
 from __future__ import division
 import platform
+import ConfigParser as configparser
 from numba import int32, float32, float64, vectorize
 
 
@@ -23,6 +24,32 @@ else:
     print('Parallel processing mode: other systems')
     para_target = 'cpu'
 
+# setup weight factor
+# load configurations
+config = configparser.ConfigParser()
+config.read('configure.ini')
+if config.has_section('settings'):
+    user_cfg = 'settings'
+else:
+    if config.has_section('default'):
+        user_cfg = 'default'
+    else:
+        user_cfg = ''
+if len(user_cfg) > 2:
+    options = config.options(user_cfg)
+    if 'general_mod_lst' in options:
+        intensity_factor = float(config.get(user_cfg, 'specsim_m'))
+    else:
+        intensity_factor = 0.6
+    if 'general_mod_lst' in options:
+        mz_factor = float(config.get(user_cfg, 'specsim_n'))
+    else:
+        mz_factor = 0.6
+else:
+    intensity_factor = 3
+    mz_factor = 0.6
+
+print('intensity_factor', intensity_factor, type(intensity_factor), 'mz_factor', mz_factor, type(mz_factor))
 
 @vectorize(([float64(float64, float32)]), target=para_target)
 def pr_window_calc_para(mz, delta):
@@ -41,4 +68,4 @@ def ppm_calc_para(mz_obs, mz_lib):
 
 @vectorize(([float64(float64, float64)]), target=para_target)
 def wfactor_calc_para(mz, i):
-    return (mz**3)*(i**0.6)
+    return (mz ** mz_factor) * (i ** intensity_factor)

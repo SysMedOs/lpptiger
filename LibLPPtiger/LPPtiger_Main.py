@@ -34,7 +34,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget.removeTab(4)
 
-        self.ui.version_lb.setText('LPPtiger Beta Version: 16, May, 2017')
+        self.ui.version_lb.setText('LPPtiger Beta Version: 17, May, 2017')
 
         # current folder:
         if cwd is not None:
@@ -149,8 +149,48 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
                 self.ui.tab_c_hgcfg_le.setText(config.get(user_cfg, 'hg_specifc_lst'))
             if 'wfrag_lst' in options:
                 self.ui.tab_c_scorecfg_le.setText(config.get(user_cfg, 'wfrag_lst'))
-            if 'wfrag_lst' in options:
-                self.ui.tab_c_snratio_spb.setValue(int(config.get(user_cfg, 'sn_ratio')))
+
+            if 'sn_ratio' in options:
+                self.ui.tab_c_snratio_spb.setValue(float(config.get(user_cfg, 'sn_ratio')))
+            if 'isotope_score_filter' in options:
+                self.ui.tab_c_iso_score_spb.setValue(float(config.get(user_cfg, 'isotope_score_filter')))
+            if 'rank_score_filter' in options:
+                self.ui.tab_c_rank_score_spb.setValue(float(config.get(user_cfg, 'rank_score_filter')))
+            if 'specsim_score_filter' in options:
+                self.ui.tab_c_msp_score_spb.setValue(float(config.get(user_cfg, 'specsim_score_filter')))
+            if 'fingerprint_score_filter' in options:
+                self.ui.tab_c_fp_score_spb.setValue(float(config.get(user_cfg, 'fingerprint_score_filter')))
+            if 'specificity_score_filter' in options:
+                self.ui.tab_c_snr_score_spb.setValue(float(config.get(user_cfg, 'specificity_score_filter')))
+            if 'specsim_m' in options:
+                self.ui.tab_c_msp_m_spb.setValue(float(config.get(user_cfg, 'specsim_m')))
+            if 'specsim_n' in options:
+                self.ui.tab_c_msp_n_spb.setValue(float(config.get(user_cfg, 'specsim_n')))
+
+            if 'max_cpu_core' in options:
+                self.ui.tab_c_cores_spb.setValue(int(config.get(user_cfg, 'max_cpu_core')))
+            if 'max_ram' in options:
+                self.ui.tab_c_ram_spb.setValue(int(config.get(user_cfg, 'max_ram')))
+
+            if 'img_type' in options:
+                if config.get(user_cfg, 'img_type') == 'png':
+                    self.ui.tab_c_imagetype_cmb.setCurrentIndex(0)
+                elif config.get(user_cfg, 'img_type') == 'svg':
+                    self.ui.tab_c_imagetype_cmb.setCurrentIndex(1)
+                else:
+                    self.ui.tab_c_imagetype_cmb.setCurrentIndex(0)
+            if 'img_dpi' in options:
+                self.ui.tab_c_dpi_spb.setValue(int(config.get(user_cfg, 'img_dpi')))
+            if 'isotope_13c_mode' in options:
+                self.ui.tab_c_isotopescoremode_cmb.setCurrentIndex(int(config.get(user_cfg, 'isotope_13c_mode')))
+
+        # links
+        self.ui.logo_lb.setOpenExternalLinks(True)
+        self.ui.label_67.setOpenExternalLinks(True)
+        self.ui.label_68.setOpenExternalLinks(True)
+        self.ui.label_73.setOpenExternalLinks(True)
+        self.ui.label_74.setOpenExternalLinks(True)
+        self.ui.label_75.setOpenExternalLinks(True)
 
     def set_spec_t(self):
         self.ui.save_msp_le.show()
@@ -250,6 +290,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         config = configparser.ConfigParser()
         with open('configure.ini', 'w') as default_cfg:
             config.add_section('settings')
+            # configuration files
             config.set('settings', 'general_mod_lst', self.ui.tab_c_mod_lst_le.text())
             config.set('settings', 'fa_white_list', self.ui.tab_c_fa_lst_le.text())
             config.set('settings', 'prostane_mod_lst', self.ui.tab_c_prostane_mod_lst_le.text())
@@ -257,7 +298,26 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
             config.set('settings', 'frag_patterns', self.ui.tab_c_frag_pattern_le.text())
             config.set('settings', 'hg_specifc_lst', self.ui.tab_c_hgcfg_le.text())
             config.set('settings', 'wfrag_lst', self.ui.tab_c_scorecfg_le.text())
+
+            # score settings
             config.set('settings', 'sn_ratio', str(self.ui.tab_c_snratio_spb.value()))
+            config.set('settings', 'isotope_score_filter', str(self.ui.tab_c_iso_score_spb.value()))
+            config.set('settings', 'rank_score_filter', str(self.ui.tab_c_rank_score_spb.value()))
+            config.set('settings', 'specsim_score_filter', str(self.ui.tab_c_msp_score_spb.value()))
+            config.set('settings', 'fingerprint_score_filter', str(self.ui.tab_c_fp_score_spb.value()))
+            config.set('settings', 'specificity_score_filter', str(self.ui.tab_c_snr_score_spb.value()))
+            config.set('settings', 'specsim_m', str(self.ui.tab_c_msp_m_spb.value()))
+            config.set('settings', 'specsim_n', str(self.ui.tab_c_msp_n_spb.value()))
+
+            # parallel processing settings
+            config.set('settings', 'max_cpu_core', str(self.ui.tab_c_cores_spb.value()))
+            config.set('settings', 'max_ram', str(self.ui.tab_c_ram_spb.value()))
+
+            # other settings
+            config.set('settings', 'img_type', str(self.ui.tab_c_imagetype_cmb.currentText())[1:])
+            config.set('settings', 'img_dpi', str(self.ui.tab_c_dpi_spb.value()))
+            config.set('settings', 'isotope_13c_mode', str(self.ui.tab_c_isotopescoremode_cmb.currentIndex()))
+
             config.write(default_cfg)
 
     def load_lipid_list(self):
