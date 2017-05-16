@@ -32,8 +32,10 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.tabWidget.setCurrentIndex(0)
-        # self.ui.tabWidget.setTabEnabled(4, False)
         self.ui.tabWidget.removeTab(4)
+
+        self.ui.version_lb.setText('LPPtiger Beta Version: 16, May, 2017')
+
         # current folder:
         if cwd is not None:
             print('User LPPtiger folder', cwd)
@@ -58,6 +60,18 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         msp_group = QtGui.QButtonGroup(self.ui.tabWidget)
         msp_group.addButton(self.ui.spectra_yes_rb)
         msp_group.addButton(self.ui.spectra_no_rb)
+
+        self.ui.pl_class_cb.removeItem(8)
+        self.ui.pl_class_cb.removeItem(7)
+        self.ui.pl_class_cb.removeItem(6)
+        self.ui.pl_class_cb.removeItem(4)
+
+        self.ui.tab_b_lipidclass_cmb.removeItem(8)
+        self.ui.tab_b_lipidclass_cmb.removeItem(7)
+        self.ui.tab_b_lipidclass_cmb.removeItem(6)
+        self.ui.tab_b_lipidclass_cmb.removeItem(4)
+
+        self.d_set_multi_mode()
 
         # slots for tab a
         # hide the msp part
@@ -635,7 +649,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
 
         multi_mode_idx = self.ui.tab_d_mutlimode_cmb.currentIndex()
 
-        if multi_mode_idx == 0:
+        if multi_mode_idx == 1:
             print('Multi processing mode')
             self.ui.tab_d_maxbatch_lb.show()
             self.ui.tab_d_maxbatch_spb.show()
@@ -643,7 +657,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
             self.ui.tab_d_maxsubcore_spb.show()
             self.ui.tab_d_maxsubram_lb.show()
             self.ui.tab_d_maxsubram_spb.show()
-        elif multi_mode_idx == 1:
+        elif multi_mode_idx == 0:
             print('Single processing mode')
             self.ui.tab_d_maxbatch_lb.hide()
             self.ui.tab_d_maxbatch_spb.hide()
@@ -761,7 +775,9 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
 
         multi_mode_idx = self.ui.tab_d_mutlimode_cmb.currentIndex()
 
-        if multi_mode_idx == 0:  # multi mode
+        os.chdir(self.theolpp_cwd)
+
+        if multi_mode_idx == 1:  # multi mode
 
             max_process = self.ui.tab_d_maxbatch_spb.value()
             sub_max_core = self.ui.tab_d_maxsubcore_spb.value()

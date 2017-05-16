@@ -251,12 +251,12 @@ def get_lpp_info(param_dct, checked_info_df, checked_info_groups, core_list, usr
                                             _save_abbr_bulk = _save_abbr_bulk.replace('\\', r'_')
                                             _save_abbr_bulk = _save_abbr_bulk.replace(r'/', r'_')
 
-                                            img_name_core = ('\%.4f_rt%.3f_DDAtop%.0f_scan%.0f_%s.%s'
+                                            img_name_core = ('/%.4f_rt%.3f_DDAtop%.0f_scan%.0f_%s.%s'
                                                              % (_usr_ms2_pr_mz, _usr_ms2_rt, _usr_ms2_dda_rank,
                                                                 _usr_ms2_scan_id, _save_abbr_bulk, img_typ)
                                                              )
                                             img_name = (output_folder +
-                                                        r'\LPPtiger_Results_Figures_%s'
+                                                        r'/LPPtiger_Results_Figures_%s'
                                                         % hunter_start_time_str + img_name_core)
 
                                             isotope_checker, isotope_score, img_n = plot_spectra(_usr_abbr_bulk,

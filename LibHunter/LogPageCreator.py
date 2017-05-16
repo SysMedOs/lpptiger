@@ -15,15 +15,15 @@ class LogPageCreator(object):
     def __init__(self, output_folder, start_time, params):
         print(os.getcwd())
         self.output_folder = output_folder
-        self.output_img_folder = output_folder + r'\LPPtiger_Results_Figures_%s' % start_time
-        self.main_page = output_folder + r'\LPPtiger_Results_%s.html' % start_time
-        self.logo = r'LPPtiger_Results_Figures_%s\LPPtiger.ico' % start_time
-        _image_lst_page = r'LPPtiger_Results_Figures_%s\LPPtiger_Results_Figures_list.html' % start_time
-        _params_lst_page = r'LPPtiger_Results_Figures_%s\LPPtiger_Params_list.html' % start_time
-        _idx_lst_page = r'LPPtiger_Results_Figures_%s\LPPtiger_Identification_list.html' % start_time
-        self.image_lst_page = self.output_img_folder + r'\LPPtiger_Results_Figures_list.html'
-        self.params_lst_page = self.output_img_folder + r'\LPPtiger_Params_list.html'
-        self.idx_lst_page = self.output_img_folder + r'\LPPtiger_Identification_list.html'
+        self.output_img_folder = output_folder + r'/LPPtiger_Results_Figures_%s' % start_time
+        self.main_page = output_folder + r'/LPPtiger_Results_%s.html' % start_time
+        self.logo = r'LPPtiger_Results_Figures_%s/LPPtiger.ico' % start_time
+        _image_lst_page = r'LPPtiger_Results_Figures_%s/LPPtiger_Results_Figures_list.html' % start_time
+        _params_lst_page = r'LPPtiger_Results_Figures_%s/LPPtiger_Params_list.html' % start_time
+        _idx_lst_page = r'LPPtiger_Results_Figures_%s/LPPtiger_Identification_list.html' % start_time
+        self.image_lst_page = self.output_img_folder + r'/LPPtiger_Results_Figures_list.html'
+        self.params_lst_page = self.output_img_folder + r'/LPPtiger_Params_list.html'
+        self.idx_lst_page = self.output_img_folder + r'/LPPtiger_Identification_list.html'
 
         self.lipid_type = params['lipid_type']
         hunter_folder = params['hunter_folder']
