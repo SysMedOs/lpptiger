@@ -92,23 +92,13 @@ pyvenv.cfg
 
 # user list
 *.sdf
-*.csv
-SDFs
-/Theo_spec.msp
-/Theo_Spec.msp
 temp
 *.msp
-*.xlsx
 *.mgf
-TheoFragPatterns_csv/
-json.txt
-LibTheoLPP/images/
+
 /Makefile
 /make.bat
-/SDFs/TheoALL/sdf_sn2_extractor.py
 /temp/
-/ConfigurationFiles/
 /temp/UI/
 /temp/accerlerator/numba_pandas2.py
 /temp/accerlerator/numba_pandas_test.py
-/LibBatchHunter/

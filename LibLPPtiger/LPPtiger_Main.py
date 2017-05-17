@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPtiger.
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
 # For more info please contact:
-#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 #
+
 from __future__ import division
 
 import ConfigParser as configparser
@@ -167,6 +175,13 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
             if 'specsim_n' in options:
                 self.ui.tab_c_msp_n_spb.setValue(float(config.get(user_cfg, 'specsim_n')))
 
+            if 'parallel_target' in options:
+                if config.get(user_cfg, 'parallel_target') == 'CPU':
+                    self.ui.tab_c_parallization_cmb.setCurrentIndex(0)
+                elif config.get(user_cfg, 'parallel_target') in ['CPU_and_GPU', 'GPU', 'CPUandGPU', 'CPUGPU', 'parallel']:
+                    self.ui.tab_c_parallization_cmb.setCurrentIndex(1)
+                else:
+                    self.ui.tab_c_parallization_cmb.setCurrentIndex(0)
             if 'max_cpu_core' in options:
                 self.ui.tab_c_cores_spb.setValue(int(config.get(user_cfg, 'max_cpu_core')))
             if 'max_ram' in options:
@@ -310,6 +325,12 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
             config.set('settings', 'specsim_n', str(self.ui.tab_c_msp_n_spb.value()))
 
             # parallel processing settings
+            if self.ui.tab_c_parallization_cmb.currentIndex() == 0:
+                config.set('settings', 'parallel_target', 'CPU')
+            elif self.ui.tab_c_parallization_cmb.currentIndex() == 1:
+                config.set('settings', 'parallel_target', 'CPU_and_GPU')
+            else:
+                config.set('settings', 'parallel_target', 'CPU')
             config.set('settings', 'max_cpu_core', str(self.ui.tab_c_cores_spb.value()))
             config.set('settings', 'max_ram', str(self.ui.tab_c_ram_spb.value()))
 
@@ -710,7 +731,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         multi_mode_idx = self.ui.tab_d_mutlimode_cmb.currentIndex()
 
         if multi_mode_idx == 1:
-            print('Multi processing mode')
+            print('Set Batch mode to: Multi processing mode')
             self.ui.tab_d_maxbatch_lb.show()
             self.ui.tab_d_maxbatch_spb.show()
             self.ui.tab_d_maxsubcore_lb.show()
@@ -718,7 +739,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
             self.ui.tab_d_maxsubram_lb.show()
             self.ui.tab_d_maxsubram_spb.show()
         elif multi_mode_idx == 0:
-            print('Single processing mode')
+            print('Set Batch mode to: Single processing mode')
             self.ui.tab_d_maxbatch_lb.hide()
             self.ui.tab_d_maxbatch_spb.hide()
             self.ui.tab_d_maxsubcore_lb.hide()

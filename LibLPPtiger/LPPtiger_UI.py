@@ -1,5 +1,19 @@
 # -*- coding: utf-8 -*-
-
+#
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
+# For more info please contact:
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
+#     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 # Form implementation generated from reading ui file '.\LPPtiger_UI.ui'
 #
 # Created: Tue May 16 17:20:14 2017
@@ -1548,7 +1562,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.hunter_tab), QtGui.QApplication.translate("MainWindow", "LPP identification", None, QtGui.QApplication.UnicodeUTF8))
         self.tab_c_mod_lst_pb.setText(QtGui.QApplication.translate("MainWindow", "Open", None, QtGui.QApplication.UnicodeUTF8))
         self.tab_c_parallization_cmb.setItemText(0, QtGui.QApplication.translate("MainWindow", "CPU prarallization mode", None, QtGui.QApplication.UnicodeUTF8))
-        self.tab_c_parallization_cmb.setItemText(1, QtGui.QApplication.translate("MainWindow", "CPU +GPU mode (experimental)", None, QtGui.QApplication.UnicodeUTF8))
+        self.tab_c_parallization_cmb.setItemText(1, QtGui.QApplication.translate("MainWindow", "CPU + GPU mode (experimental)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_63.setText(QtGui.QApplication.translate("MainWindow", "Max CPU cores to use:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_64.setText(QtGui.QApplication.translate("MainWindow", "Max RAM to use:", None, QtGui.QApplication.UnicodeUTF8))
         self.tab_c_ram_spb.setSuffix(QtGui.QApplication.translate("MainWindow", " GB", None, QtGui.QApplication.UnicodeUTF8))

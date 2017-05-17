@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPsmi.
+#
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
 # For more info please contact:
-#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 from __future__ import division
 from __future__ import print_function
@@ -305,7 +314,7 @@ def get_xic_from_pl(xic_ms1_lst, ms1_xic_df, xic_ppm):
         ms1_high = _xic_mz_info[2]
         if _xic_mz > 0:
             ms1_query = '%f <= mz <= %f' % (ms1_low, ms1_high)
-            print(ms1_query)
+            # print(ms1_query)
             _found_ms1_df = ms1_xic_df.query(ms1_query)
             _found_ms1_df.loc[:, 'ppm'] = 1e6 * (_found_ms1_df['mz'] - _xic_mz) / _xic_mz
             _found_ms1_df.loc[:, 'ppm'] = _found_ms1_df['ppm'].abs()
@@ -313,7 +322,7 @@ def get_xic_from_pl(xic_ms1_lst, ms1_xic_df, xic_ppm):
             _found_ms1_df.sort_values(by=['rt', 'i', 'ppm'],
                                       ascending=[True, False, True], inplace=True)
             _found_ms1_df.drop_duplicates(subset=['rt'], keep='first', inplace=True)
-            print('_found_ms1_df.shape', _found_ms1_df.shape)
+            # print('_found_ms1_df.shape', _found_ms1_df.shape)
             ms1_xic_dct[_xic_mz] = _found_ms1_df
     return ms1_xic_dct
 
