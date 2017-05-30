@@ -441,19 +441,20 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
                      'pl_hg_path': hgcfg_path}
 
         print(param_dct)
-        info_1, info_2 = theolpp(param_dct)
-        self.ui.run_status_te.append(info_1)
-        self.ui.run_status_te.append(info_2)
-        self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+        # # Debug part
+        # info_1, info_2 = theolpp(param_dct)
+        # self.ui.run_status_te.append(info_1)
+        # self.ui.run_status_te.append(info_2)
+        # self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
 
-        # try:
-        #     info_1, info_2 = theolpp(param_dct)
-        #     self.ui.run_status_te.append(info_1)
-        #     self.ui.run_status_te.append(info_2)
-        #     self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
-        #
-        # except:
-        #     self.ui.run_status_te.append('!! An error has occurred, please check your settings !!')
+        try:
+            info_1, info_2 = theolpp(param_dct)
+            self.ui.run_status_te.append(info_1)
+            self.ui.run_status_te.append(info_2)
+            self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+
+        except:
+            self.ui.run_status_te.append('!! An error has occurred, please check your settings !!')
 
     def b_load_sum_sdf(self):
         b_load_lipidstable_dialog = QtGui.QFileDialog(self)

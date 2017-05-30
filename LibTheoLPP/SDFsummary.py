@@ -130,7 +130,7 @@ def sdf2sum_fa(usr_sdf, save_path):
         mol_info_df = mol_info_df.set_value(i, 'NL-H2O', exact_mz - 18.010565)
     mol_info_df = mol_info_df.sort_values(by='mass')
     mol_info_df = mol_info_df[['FA', 'Link', 'C', 'DB', 'elem', 'mass', '[M-H]-', '[M-H2O-H]-', 'NL-H2O']]
-    mol_info_df.to_excel(save_path)
+    mol_info_df.to_excel(save_path, index=False)
 
     print('saved!')
 
