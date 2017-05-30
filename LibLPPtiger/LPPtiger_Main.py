@@ -42,7 +42,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget.removeTab(4)
 
-        self.ui.version_lb.setText('LPPtiger Beta Version: 17, May, 2017')
+        self.ui.version_lb.setText('LPPtiger Beta Version: 30, May, 2017')
 
         # current folder:
         if cwd is not None:
