@@ -2,11 +2,13 @@
 
 ![banner.png](https://bitbucket.org/repo/b8ygkn/images/2344627376-banner.png)
 
-This repository contains the source code of LPPtiger.
+** This repository contains the source code of LPPtiger. **
 
-LPPtiger Windows .exe executable version can be found here
+** LPPtiger Windows .exe executable version can be found here: **
 
-https://bitbucket.org/SysMedOs/LPPtiger_exe
+https://bitbucket.org/SysMedOs/lpptiger_exe
+
+
 
 
 ** Please read the following instructions before you start to run LPPtiger. **
@@ -24,14 +26,14 @@ https://bitbucket.org/SysMedOs/LPPtiger_exe
 ### How to install LPPtiger from source code ###
 * Download the LPPtiger as zip file for your system
 
-    + [Download LPPtiger source Code](https://bitbucket.org/SysMedOs/lpptiger/downloads/?tab=tags) Please notice the date and version of LPPtiger source code.
+    + [Download LPPtiger source Code](https://bitbucket.org/SysMedOs/lpptiger/downloads) Please notice the date and version of LPPtiger source code.
     + Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch.
 
 * Rename the downloaded file to `LPPtiger.zip`
 * Unzip `LPPtiger.zip` file to any folder.
 
-* LPPtiger user guide: [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/LPPtiger_exe/downloads/LPPtiger_User_Guide.pdf)
-* LPPtiger test file package: [Download test file package as .zip](https://bitbucket.org/SysMedOs/LPPtiger_exe/downloads/LPPtiger_Test_Files.pdf)
+* LPPtiger user guide: [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
+* LPPtiger test file package: [Download test file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
 
 * Install required python packages. See detailed instructions here: link
 
