@@ -1,6 +1,6 @@
 # LPPtiger instructions (source code version) #
 
-![banner.png](https://bitbucket.org/repo/b8ygkn/images/2344627376-banner.png)
+![LPPtiger_CrossPlatform_Banner.png](https://bitbucket.org/repo/b8ygkn/images/462710922-LPPtiger_CrossPlatform_Banner.png)
 
 ** This repository contains the source code of LPPtiger. **
 
@@ -24,18 +24,24 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 
 ### How to install LPPtiger from source code ###
-* Download the LPPtiger as zip file for your system
+** Preparation **
 
-    + [Download LPPtiger source Code](https://bitbucket.org/SysMedOs/lpptiger/downloads) Please notice the date and version of LPPtiger source code.
-    + Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch.
++ Download the LPPtiger as zip file for your system
 
-* Rename the downloaded file to `LPPtiger.zip`
-* Unzip `LPPtiger.zip` file to any folder.
+    - [Download LPPtiger source Code](https://bitbucket.org/SysMedOs/lpptiger/downloads) Please notice the date and version of LPPtiger source code.
+    - Rename the downloaded file to `LPPtiger.zip`
+    - Unzip `LPPtiger.zip` file to any folder.
 
-* LPPtiger user guide: [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
-* LPPtiger test file package: [Download test file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
++ Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch.
 
-* Install required python packages. See detailed instructions here: link
+** Related files **
+
++ LPPtiger user guide: [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
++ LPPtiger tutorial file package: [Download test file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
+
+** Step  by step guide to run LPPtiger from source code **
+
++ Install required python packages. See detailed instructions here: [Install LPPtiger from source code](https://bitbucket.org/SysMedOs/lpptiger/wiki/Install%20LPPtiger%20from%20source%20code)
 
 
 
