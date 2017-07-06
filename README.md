@@ -37,7 +37,11 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 + Download the LPPtiger as zip file for your system
 
-    - [Download LPPtiger source Code](https://bitbucket.org/SysMedOs/lpptiger/downloads) Please notice the date and version of LPPtiger source code.
+    - [Download LPPtiger source Code]
+
+        + Visit https://bitbucket.org/SysMedOs/lpptiger/downloads and click on `Download repository` to download LPPtiger source code as a zip package.
+        + Please notice the date and version of LPPtiger source code.
+
     - Rename the downloaded file to `LPPtiger.zip`
     - Unzip `LPPtiger.zip` file to any folder.
 
