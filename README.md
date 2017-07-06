@@ -10,12 +10,17 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 
 
-**Please download and read LPPtiger user guide:** 
+**Please download and read LPPtiger user guide before you start to run LPPtiger. **
 
 + [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
 + [https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
 
-** Please also read the following instructions before you start to run LPPtiger. **
+**We also provide a set of sample spectra and output files as a tutorial packages for you to get start with LPPtiger. **
+
++ [Download LPPtiger tutorial file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
++ [https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
+
+
 
 ### Instructions ###
 
