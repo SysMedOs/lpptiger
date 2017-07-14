@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPsmi.
+#
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
 # For more info please contact:
-#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
-
+#
 
 from __future__ import print_function
 import re
@@ -130,6 +138,7 @@ def fa_abbr_encode(fa_dct, mod_info_t_df, fa_ox_df, mode=0):
             fa_ox_df.set_value(_idx, 'ABBR', _fa_abbr_str)
 
     return fa_ox_df
+
 
 class AbbrGenerator(object):
 

@@ -1,8 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2016 Zhixu Ni, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of oxLPPdb.
-# For more info please contact: zhixu.ni@uni-leipzig.de
+#
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
+# For more info please contact:
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
+#     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 import json
 import re
@@ -104,10 +115,16 @@ class FingerprintGen(object):
         pl_class = lpp_info_dct['LPP_CLASS']
 
         if pl_class == 'PC':
-            fp_mz_lst = [lpp_info_dct['EXACT_MASS'] - 1.0078250321]
-            pr_mz = lpp_info_dct['EXACT_MASS'] - 3 * 1.0078250321 - 12.0
+            pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
+            pr_s_mz = lpp_info_dct['EXACT_MASS'] - 3 * 1.0078250321 - 12.0
+            fp_mz_lst = [pr_mz, pr_s_mz]
+        elif pl_class == 'PS':
+            pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
+            pr_s_mz = lpp_info_dct['EXACT_MASS'] - 87.032029
+            fp_mz_lst = [pr_mz, pr_s_mz]
         else:
             pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
+            pr_s_mz = pr_mz
             fp_mz_lst = [pr_mz]
 
         try:
@@ -117,6 +134,14 @@ class FingerprintGen(object):
             pl_frag_mz_lst = pl_frag_df['EXACTMASS'].tolist()
             pl_nl_df = pl_hg_df[pl_hg_df['TYPE'] == 'NL']
             pl_nl_mz_lst = pl_nl_df['EXACTMASS'].tolist()
+
+            if pl_class == 'PC':
+                for _nl in pl_nl_mz_lst:
+                    if 60 < _nl < 61:
+                        pl_nl_mz_lst.remove(_nl)
+                    if 74 < _nl < 75:
+                        pl_nl_mz_lst.remove(_nl)
+
         except KeyError:
             pl_frag_mz_lst = []
             pl_nl_mz_lst = []
@@ -133,11 +158,11 @@ class FingerprintGen(object):
         sn1_c_mz = self.formula_to_mz(sn1_formula_dct, charge='[M-H]-')
         sn2_c_mz = self.formula_to_mz(sn2_formula_dct, charge='[M-H]-')
 
-        fa_frag_mz_lst = [sn1_c_mz, sn2_c_mz]
-        fa_nl_mz_lst = [sn1_n_mz, sn2_n_mz]
-
         nl_water_mz = 2 * 1.0078250321 + 15.9949146221
         nl_co2_mz = 12.0 + 2 * 15.9949146221
+
+        fa_frag_mz_lst = [sn1_c_mz, sn2_c_mz]
+        fa_nl_mz_lst = [sn1_n_mz, sn2_n_mz, sn1_n_mz - nl_water_mz, sn2_n_mz - nl_water_mz]
 
         if 'OH' in sn1_dct.keys():
             if sn1_dct['OH'] > 1:
@@ -149,6 +174,7 @@ class FingerprintGen(object):
             for mod_c in mod_count_lst:
                 fa_frag_mz_lst.append(sn1_c_mz - mod_c * nl_water_mz)
                 fa_nl_mz_lst.append(sn1_n_mz - mod_c * nl_water_mz)
+                fa_nl_mz_lst.append(sn1_n_mz - (mod_c + 1) * nl_water_mz)
 
         if 'OH' in sn2_dct.keys():
             if sn2_dct['OH'] > 1:
@@ -160,25 +186,36 @@ class FingerprintGen(object):
             for mod_c in mod_count_lst:
                 fa_frag_mz_lst.append(sn2_c_mz - mod_c * nl_water_mz)
                 fa_nl_mz_lst.append(sn2_n_mz - mod_c * nl_water_mz)
+                fa_nl_mz_lst.append(sn2_n_mz - (mod_c + 1) * nl_water_mz)
 
         if 'COOH' in sn1_dct.keys():
             if sn1_dct['COOH'] == 1:
                 fa_frag_mz_lst.append(sn1_c_mz - nl_co2_mz)
                 fa_nl_mz_lst.append(sn1_n_mz - nl_co2_mz)
+                fa_nl_mz_lst.append(sn1_n_mz - nl_co2_mz - nl_water_mz)
         if 'COOH' in sn2_dct.keys():
             if sn2_dct['COOH'] == 1:
                 fa_frag_mz_lst.append(sn2_c_mz - nl_co2_mz)
                 fa_nl_mz_lst.append(sn2_n_mz - nl_co2_mz)
+                fa_nl_mz_lst.append(sn2_n_mz - nl_co2_mz - nl_water_mz)
 
         fp_mz_lst.extend(pl_frag_mz_lst)
         fp_mz_lst.extend(fa_frag_mz_lst)
 
-        nl_comb_lst = []
-        for _hg_nl in pl_nl_mz_lst:
-            for _fa_nl in fa_nl_mz_lst:
-                nl_comb_lst.append((_hg_nl, _fa_nl))
+        fa_nl_mz_lst = list(set(fa_nl_mz_lst))
+        if pl_class == 'PC':
+            fp_mz_lst.extend([pr_s_mz - x for x in fa_nl_mz_lst])
+        elif pl_class == 'PS':
+            fp_mz_lst.extend([pr_s_mz - x for x in fa_nl_mz_lst])
+        fa_nl_mz_lst.extend(pl_nl_mz_lst)
+        fp_mz_lst.extend([pr_mz - x for x in fa_nl_mz_lst])
 
-        fp_mz_lst.extend([pr_mz - sum(x) for x in nl_comb_lst])
+        # nl_comb_lst = []
+        # for _hg_nl in pl_nl_mz_lst:
+        #     for _fa_nl in fa_nl_mz_lst:
+        #         nl_comb_lst.append((_hg_nl, _fa_nl))
+        #
+        # fp_mz_lst.extend([pr_mz - sum(x) for x in nl_comb_lst])
 
         # print(pr_mz)
         # print(pl_nl_mz_lst)

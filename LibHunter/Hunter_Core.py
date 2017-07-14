@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPtiger.
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
 # For more info please contact:
-#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 #
-
 
 from __future__ import division
 
@@ -15,91 +21,73 @@ import json
 import math
 import os
 import time
+import sys
+from multiprocessing import Pool
 
 import pandas as pd
 
 from LibHunter.SpectraExtractor import extract_mzml
 from LibHunter.SpectraExtractor import get_spectra
-from LibHunter.SpectraExtractor import get_xic_all
+from LibHunter.SpectraExtractor import get_xic_from_pl
+from LibHunter.SpectraExtractor import get_spec_info
 from LibHunter.ScoreGenerator import ScoreGenerator
-from LibHunter.PanelPloter import plot_spectra
-from LibHunter.ScoreFilter import check_peaks
+from LibHunter.PanelPlotter import plot_spectra
 from LibHunter.IsotopeHunter import IsotopeHunter
-# from LibHunter.AbbrElemCalc import BulkAbbrFormula
 from LibHunter.LogPageCreator import LogPageCreator
 from LibHunter.PrecursorHunter import PrecursorHunter
+from LibHunter.ScoreHunter import get_lpp_info
 
 
 def huntlipids(param_dct):
     """
-
+    hunter_param_dct = {'hunter_folder': self.theolpp_cwd, 'hunter_start_time': start_time_str,
+                            'vendor': usr_vendor, 'Experiment_mode': usr_exp_mode,
+                            'lipid_type': _pl_class, 'charge_mode': _pl_charge,
+                            'lpp_sum_info_path_str': lpp_sum_info_path_str, 'fa_sum_path_str': fa_sum_path_str,
+                            'mzml_path_str': mzml_path_str, 'img_output_folder_str': img_output_folder_str,
+                            'xlsx_output_path_str': xlsx_output_path_str,
+                            'rt_start': rt_start, 'rt_end': rt_end, 'mz_start': mz_start, 'mz_end': mz_end,
+                            'ms_th': ms_th, 'ms_ppm': ms_ppm, 'pr_window': pr_window, 'dda_top': dda_top,
+                            'ms2_th': ms2_th, 'ms2_ppm': ms2_ppm, 'ms2_infopeak_threshold': ms2_info_threshold,
+                            'hg_th': hg_th, 'hg_ppm': hg_ppm, 'ms2_hginfopeak_threshold': hgms2_info_threshold,
+                            'score_filter': overall_score_filter,
+                            'lipid_specific_cfg': lipid_specific_cfg, 'score_cfg': score_cfg, 'sn_ratio': sn_ratio,
+                            'isotope_score_filter': isotope_score_filter, 'rank_score_filter': rank_score_filter,
+                            'msp_score_filter': msp_score_filter, 'fp_score_filter': fp_score_filter,
+                            'snr_score_filter': snr_score_filter,
+                            'parallization_mode': parallization_mode, 'core_number': core_num, 'max_ram': max_ram,
+                            'img_type': img_typ, 'img_dpi': img_dpi, 'fast_isotope': fast_isotope,
+                            }
     :param param_dct:
     :return:
     """
 
     start_time = time.clock()
 
-    usr_lipid_type = param_dct['lipid_type']
-    charge_mode = param_dct['charge_mode']
+    hunter_start_time_str = param_dct['hunter_start_time']
     usr_vendor = param_dct['vendor']
 
+    usr_lipid_type = param_dct['lipid_type']
     usr_xlsx = param_dct['lpp_sum_info_path_str']
-    # usr_sdf = param_dct['sdf_path_str']
-    # usr_msp = param_dct['msp_path_str']
     usr_mzml = param_dct['mzml_path_str']
     output_folder = param_dct['img_output_folder_str']
     output_sum_xlsx = param_dct['xlsx_output_path_str']
-
     fa_list_cfg = param_dct['fa_sum_path_str']
     key_frag_cfg = param_dct['lipid_specific_cfg']
     score_cfg = param_dct['score_cfg']
-
     usr_rt_range = [param_dct['rt_start'], param_dct['rt_end']]
     mz_start = param_dct['mz_start']
     mz_end = param_dct['mz_end']
-    usr_pr_mz_range = [mz_start, mz_end]
     usr_dda_top = param_dct['dda_top']
     usr_ms1_threshold = param_dct['ms_th']
+    usr_ms1_max = param_dct['ms_max']
     usr_ms2_threshold = param_dct['ms2_th']
-    usr_ms2_hg_threshold = param_dct['hg_th']
     usr_ms1_precision = param_dct['ms_ppm'] * 1e-6
     usr_ms2_precision = param_dct['ms2_ppm'] * 1e-6
-    usr_ms2_hg_precision = param_dct['hg_ppm'] * 1e-6
-    usr_pr_window = param_dct['pr_window']
 
-    usr_score_filter = param_dct['score_filter']
-    usr_isotope_score_filter = param_dct['isotope_score_filter']
-    usr_ms2_info_th = param_dct['ms2_infopeak_threshold']
-    usr_ms2_hginfo_th = param_dct['ms2_hginfopeak_threshold']
-    usr_rank_mode = param_dct['rank_score']
-    usr_fast_isotope = param_dct['fast_isotope']
-
-    # use the SNR equation SNR = 20 * log10(signal/noise)
-    # snr_score = 20 * math.log10((signal_sum_i / noise_sum_i))
-    # set s/n == 20 --> SNR_SCORE = 100
-    # default 6.5051 = 100 / (20 * math.log10(20)) --> 6.5051
-    usr_max_sn_ratio = param_dct['sn_ratio']
-    if usr_max_sn_ratio == 20 or usr_max_sn_ratio == 0:
-        usr_amp_factor = 6.5051
-    else:
-        usr_amp_factor = 100 / (20 * math.log10(usr_max_sn_ratio))
-
-    # hunter_folder = param_dct['hunter_folder']
-
-    if usr_rank_mode is True:
-        score_mode = 'Rank mode'
-    else:
-        score_mode = 'Relative intensity mode'
-
-    if usr_fast_isotope is True:
-        isotope_score_mode = '(Fast mode)'
-    else:
-        isotope_score_mode = ''
-
-    usr_ms1_ppm = int(param_dct['ms_ppm'])
-
-    hunter_start_time_str = param_dct['hunter_start_time']
-    isotope_hunter = IsotopeHunter()
+    # parameters from settings tab
+    usr_core_num = param_dct['core_number']
+    usr_max_ram = param_dct['max_ram']
 
     lpp_info_df = pd.read_excel(usr_xlsx)
 
@@ -112,8 +100,7 @@ def huntlipids(param_dct):
     else:
         lpp_info_df = lpp_info_df[(mz_start <= lpp_info_df['[M-H]-_MZ']) & (lpp_info_df['[M-H]-_MZ'] <= mz_end)]
 
-    pr_hunter = PrecursorHunter(lpp_info_df, usr_mzml, param_dct)
-    # abbr2formula = BulkAbbrFormula()
+    pr_hunter = PrecursorHunter(lpp_info_df, param_dct)
 
     # keep stay in current working directory
     current_path = os.getcwd()
@@ -135,10 +122,9 @@ def huntlipids(param_dct):
     # generate the indicator table
 
     usr_fa_def_df = pd.read_excel(fa_list_cfg)
-    # usr_fa_def_df.loc[:, 'C'] = usr_fa_def_df['C'].astype(int)
-    # usr_fa_def_df.loc[:, 'DB'] = usr_fa_def_df['DB'].astype(int)
 
-    usr_weight_df = pd.read_excel(score_cfg)
+    usr_weight_df = pd.read_excel(score_cfg, index_col='Type')
+    usr_weight_df = usr_weight_df.loc[:, 'Weight']
 
     usr_key_frag_df = pd.read_excel(key_frag_cfg)
     usr_key_frag_df = usr_key_frag_df.query('EXACTMASS > 0')
@@ -146,17 +132,20 @@ def huntlipids(param_dct):
     # get the information from the following columns and leave the rewark back
     usr_key_frag_df = usr_key_frag_df[['CLASS', 'TYPE', 'EXACTMASS', 'PR_CHARGE', 'LABEL', 'CHARGE_MODE']]
 
-    score_calc = ScoreGenerator(usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_lipid_type, ion_charge=charge_mode)
-
     print('=== ==> --> Start to parse mzML')
     # extract all spectra from mzML to pandas DataFrame
-    usr_scan_info_df, usr_spectra_pl = extract_mzml(usr_mzml, usr_rt_range, dda_top=usr_dda_top,
-                                                    ms1_threshold=usr_ms1_threshold, ms2_threshold=usr_ms2_threshold,
-                                                    ms1_precision=usr_ms1_precision, ms2_precision=usr_ms2_precision,
-                                                    vendor=usr_vendor
-                                                    )
+    usr_scan_info_df, usr_spectra_pl, ms1_xic_df = extract_mzml(usr_mzml, usr_rt_range, dda_top=usr_dda_top,
+                                                                ms1_threshold=usr_ms1_threshold,
+                                                                ms2_threshold=usr_ms2_threshold,
+                                                                ms1_precision=usr_ms1_precision,
+                                                                ms2_precision=usr_ms2_precision,
+                                                                vendor=usr_vendor, ms1_max=usr_ms1_max
+                                                                )
 
-    ms1_obs_pr_df = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl)
+    print('MS1_XIC_df.shape', ms1_xic_df.shape)
+
+    ms1_obs_pr_df, sub_pl_group_lst = pr_hunter.get_matched_pr(usr_scan_info_df, usr_spectra_pl, ms1_max=usr_ms1_max,
+                                                               core_num=usr_core_num, max_ram=usr_max_ram)
 
     if isinstance(ms1_obs_pr_df, str):
         return '!! NO suitable precursor --> Check settings!!\n'
@@ -171,256 +160,259 @@ def huntlipids(param_dct):
         _tmp_usr_df = ms1_obs_pr_df.query('DDA_rank == %f and scan_number == %f' % (_dda_rank, _scan_id))
         checked_info_df = checked_info_df.append(_tmp_usr_df)
 
-    ms1_obs_mz_lst = ms1_obs_pr_df['MS1_obs_mz'].tolist()
-    ms1_obs_mz_lst = set(ms1_obs_mz_lst)
+    checked_info_df.sort_values(by='MS2_PR_mz')
 
     ms1_xic_mz_lst = ms1_obs_pr_df['MS1_XIC_mz'].tolist()
-    ms1_xic_mz_lst = set(ms1_xic_mz_lst)
+    ms1_xic_mz_lst = sorted(set(ms1_xic_mz_lst))
+    print('ms1_xic_mz_lst', len(ms1_xic_mz_lst))
+    print(ms1_xic_mz_lst)
 
     print('=== ==> --> Start to extract XIC')
-    try:
-        xic_dct = get_xic_all(ms1_obs_pr_df, usr_mzml, usr_rt_range, ms1_precision=usr_ms1_precision,
-                              msn_precision=usr_ms2_precision, vendor=usr_vendor)
+    if len(ms1_xic_mz_lst) >= 20 * usr_core_num:
+        sub_len = int(math.ceil(len(ms1_xic_mz_lst) / usr_core_num))
+        core_key_list = map(None, *(iter(ms1_xic_mz_lst),) * sub_len)
+    else:
+        core_key_list = [ms1_xic_mz_lst]
+    # print(core_key_list)
+    # Start multiprocessing
+    print('!!!!!! Start multiprocessing ==> ==> ==> Number of Cores: %i' % usr_core_num)
+    xic_dct = {}
 
-    except KeyError:
-        return u'Nothing found! Check mzML vendor settings!'
+    # if usr_core_num >= 8:
+    #     xic_core_num = 8
+    # else:
+    #     xic_core_num = usr_core_num
+    # parallel_pool = Pool(xic_core_num)
+    if 1 < usr_core_num < len(core_key_list):
+        parallel_pool = Pool(usr_core_num)
+        xic_results_lst = []
+        core_worker_count = 1
+        for core_list in core_key_list:
+            if isinstance(core_list, tuple) or isinstance(core_list, list):
+                if None in core_list:
+                    core_list = filter(lambda x: x is not None, core_list)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                print(core_list)
+                # xic_result = parallel_pool.apply_async(get_xic_all, args=(core_list, usr_mzml, usr_rt_range,
+                #                                                           usr_ms1_precision, usr_ms2_precision,
+                #                                                           usr_vendor,))
+                xic_result = parallel_pool.apply_async(get_xic_from_pl, args=(core_list, ms1_xic_df, 500))
+                core_worker_count += 1
+                xic_results_lst.append(xic_result)
 
-    print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
+        parallel_pool.close()
+        parallel_pool.join()
 
-    # plot_info_dct = {}
-    # ms1_pr_mz_lst = []
+        for xic_result in xic_results_lst:
+            try:
+                sub_xic_dct = xic_result.get()
+                if len(sub_xic_dct.keys()) > 0:
+                    xic_dct = dict(xic_dct, **sub_xic_dct)
+            except (KeyError, SystemError, ValueError):
+                pass
+    else:
+        print('Using single core mode...')
+        core_worker_count = 1
+        for core_list in core_key_list:
+            if isinstance(core_list, tuple) or isinstance(core_list, list):
+                if None in core_list:
+                    core_list = filter(lambda x: x is not None, core_list)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                print(core_list)
+                sub_xic_dct = get_xic_from_pl(core_list, ms1_xic_df, 500)
+                core_worker_count += 1
+                if len(sub_xic_dct.keys()) > 0:
+                    xic_dct = dict(xic_dct, **sub_xic_dct)
+
+    print('xic_dct', len(xic_dct.keys()))
+    print(xic_dct.keys())
+
+    if len(xic_dct.keys()) == 0:
+        print('No precursor for XIC found')
+        return '!! NO suitable precursor --> Check settings!!\n'
+    else:
+        print('=== ==> --> Number of XIC extracted: %i' % len(xic_dct.keys()))
+
     target_ident_lst = []
-    ident_page_idx = 1
-    print('checked_info_df')
-    print(checked_info_df.shape)
+    # ident_page_idx = 1
+    checked_info_df.sort_values(by=['Lib_mz', 'scan_time', 'MS2_PR_mz'],
+                                ascending=[True, True, True], inplace=True)
 
-    # get spectra of one ABBR and plot
-    for _n, _subgroup_df in checked_info_df.groupby(['MS2_PR_mz', 'Lib_mz', 'Formula', 'scan_time', 'Abbreviation']):
-        _row_se = _subgroup_df.iloc[0, :].squeeze()
-        _usr_ms2_pr_mz = _row_se['MS2_PR_mz']
-        # _usr_ms1_obs_mz = _row_se['MS1_obs_mz']
-        _usr_ms2_rt = _row_se['scan_time']
-        # _usr_formula_charged = _row_se['Formula']
-        _usr_charge = _row_se['Ion']
-        _usr_ms2_dda_rank = _row_se['DDA_rank']
-        _usr_ms2_scan_id = _row_se['scan_number']
-        _usr_mz_lib = _row_se['Lib_mz']
-        _usr_abbr_bulk = _row_se['Abbreviation']
-        _tmp_chk_df = usr_scan_info_df.query('MS2_PR_mz == %.6f and DDA_rank == %i and scan_number == %i'
-                                             % (_usr_ms2_pr_mz, _usr_ms2_dda_rank, _usr_ms2_scan_id))
+    print('=== ==> --> Start to Hunt for LPPs !!')
+    checked_info_groups = checked_info_df.groupby(['Lib_mz', 'MS2_PR_mz', 'Formula', 'scan_time', 'Ion'])
+    lpp_all_group_key_lst = checked_info_groups.groups.keys()
+    # lpp_all_group_key_lst = sorted(lpp_all_group_key_lst, key=lambda x: x[0])
 
-        _usr_formula = _row_se['FORMULA_NEUTRAL']
-        _usr_formula_charged = _row_se['Formula']
+    spec_sub_len = int(math.ceil(len(lpp_all_group_key_lst) / usr_core_num))
+    spec_sub_key_lst = map(None, *(iter(lpp_all_group_key_lst),) * spec_sub_len)
 
-        if _tmp_chk_df.shape[0] == 1:
-            print('>>> >>> >>> Processing:', _tmp_chk_df.head())
-            print('>>> >>> >>> >>> MS2 PR m/z %f' % _usr_ms2_pr_mz)
-            usr_spec_info_dct = get_spectra(_usr_ms2_pr_mz, _usr_mz_lib, _usr_ms2_dda_rank, _usr_ms2_scan_id,
-                                            ms1_xic_mz_lst, usr_scan_info_df, usr_spectra_pl,
-                                            dda_top=usr_dda_top, ms1_precision=usr_ms1_precision, vendor=usr_vendor
-                                            )
-            _ms1_pr_i = usr_spec_info_dct['ms1_i']
-            _ms1_pr_mz = usr_spec_info_dct['ms1_mz']
-            _ms1_df = usr_spec_info_dct['ms1_df']
-            _ms2_df = usr_spec_info_dct['ms2_df']
+    lpp_spec_info_dct = {}
 
-            if _ms1_pr_mz > 0.0 and _ms1_df.shape[0] > 0 and _ms2_df.shape[0] > 0:
+    if usr_core_num > 1:
+        parallel_pool = Pool(usr_core_num)
+        spec_results_lst = []
+        core_worker_count = 1
+        for _sub_lst in spec_sub_key_lst:
+            if isinstance(_sub_lst, tuple) or isinstance(_sub_lst, list):
+                if None in _sub_lst:
+                    _sub_lst = filter(lambda x: x is not None, _sub_lst)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                spec_result = parallel_pool.apply_async(get_spec_info, args=(_sub_lst, checked_info_groups,
+                                                                             usr_scan_info_df))
+                core_worker_count += 1
+                spec_results_lst.append(spec_result)
 
-                print('>>> >>> >>> >>> Best PR on MS1: %f' % _ms1_pr_mz)
+        parallel_pool.close()
+        parallel_pool.join()
 
-                isotope_score_info_dct = isotope_hunter.get_isotope_score(_ms1_pr_mz, _ms1_pr_i,
-                                                                          _usr_formula_charged, _ms1_df,
-                                                                          isotope_number=2,
-                                                                          only_c=usr_fast_isotope,
-                                                                          score_filter=usr_isotope_score_filter)
+        for spec_result in spec_results_lst:
+            try:
+                sub_spec_dct = spec_result.get()
+                if len(sub_spec_dct.keys()) > 0:
+                    lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
+            except (KeyError, SystemError, ValueError):
+                print('ValueError: must supply a tuple to get_group with multiple grouping keys')
+    else:
+        print('Using single core mode...')
+        core_worker_count = 1
+        for _sub_lst in spec_sub_key_lst:
+            if isinstance(_sub_lst, tuple) or isinstance(_sub_lst, list):
+                if None in _sub_lst:
+                    _sub_lst = filter(lambda x: x is not None, _sub_lst)
+                else:
+                    pass
+                print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                sub_spec_dct = get_spec_info(_sub_lst, checked_info_groups, usr_scan_info_df)
+                core_worker_count += 1
+                if len(sub_spec_dct.keys()) > 0:
+                    lpp_spec_info_dct = dict(lpp_spec_info_dct, **sub_spec_dct)
 
-                isotope_score = isotope_score_info_dct['isotope_score']
+    print('lpp_spec_info_dct', len(lpp_spec_info_dct.keys()))
 
-                print('isotope_score: %f' % isotope_score)
-                if isotope_score >= usr_isotope_score_filter:
-                    print('>>> isotope_check PASSED! >>> >>> >>>')
-                    print('>>> >>> >>> >>> Entry Info >>> >>> >>> >>> ')
-                    _row_se.set_value('MS1_obs_mz', _ms1_pr_mz)
-                    _exact_ppm = 1e6 * (_ms1_pr_mz - _usr_mz_lib) / _usr_mz_lib
-                    _row_se.set_value('ppm', _exact_ppm)
-                    _row_se.set_value('abs_ppm', abs(_exact_ppm))
-                    _msp_df = pd.read_json(_row_se['MSP_JSON'], orient='index')
-                    print(_row_se)
-                    match_info_dct, matched_checker = score_calc.get_match(_usr_abbr_bulk, charge_mode, _ms1_pr_mz,
-                                                                           _ms2_df,
-                                                                           ms2_precision=usr_ms2_precision,
-                                                                           ms2_threshold=usr_ms2_threshold,
-                                                                           ms2_infopeak_threshold=usr_ms2_info_th,
-                                                                           rank_mode=usr_rank_mode
-                                                                           )
+    # Single process ONLY. usr_spectra_pl is too big in RAM --> RAM leaking during copy
+    lpp_spec_dct = {}
+    spec_info_key_lst = lpp_spec_info_dct.keys()
+    for _spec_group_key in spec_info_key_lst:
+        _spec_info_dct = lpp_spec_info_dct[_spec_group_key]
+        _usr_ms2_pr_mz = _spec_info_dct['MS2_PR_mz']
+        _usr_ms2_dda_rank = _spec_info_dct['DDA_rank']
+        _usr_ms2_scan_id = _spec_info_dct['scan_number']
+        _usr_mz_lib = _spec_info_dct['Lib_mz']
+        usr_spec_info_dct = get_spectra(_usr_ms2_pr_mz, _usr_mz_lib, _usr_ms2_dda_rank, _usr_ms2_scan_id,
+                                        ms1_xic_mz_lst, usr_scan_info_df, usr_spectra_pl,
+                                        dda_top=usr_dda_top, ms1_precision=usr_ms1_precision, vendor=usr_vendor
+                                        )
+        lpp_spec_dct[_spec_group_key] = usr_spec_info_dct
 
-                    if matched_checker > 0:
-                        print('matched to FA')
-                        _cosine_score, _msp_df, _obs_msp_df = score_calc.get_cosine_score(_msp_df, _ms2_df,
-                                                                                          ms2_precision=
-                                                                                          usr_ms2_precision,
-                                                                                          ms2_threshold=
-                                                                                          usr_ms2_threshold,
-                                                                                          ms2_infopeak_threshold=
-                                                                                          usr_ms2_info_th
-                                                                                          )
-                        fingerprint_lst = json.loads(_row_se['FINGERPRINT'])
-                        fp_info_dct = score_calc.get_fingerprint_score(fingerprint_lst, _ms2_df,
-                                                                       ms2_precision=usr_ms2_precision,
-                                                                       ms2_threshold=usr_ms2_threshold,
-                                                                       ms2_infopeak_threshold=usr_ms2_info_th)
-                        _fp_score = fp_info_dct['fingerprint_score']
-                        _obs_fp_df = fp_info_dct['obs_score_df']
-                        obs_fp_lst = fp_info_dct['obs_mz']
-                        missed_fp_lst = fp_info_dct['missed_mz']
+    found_spec_key_lst = lpp_spec_dct.keys()
+    found_spec_key_lst = sorted(found_spec_key_lst, key=lambda x: x[0])
+    spec_key_num = len(found_spec_key_lst)
+    lpp_part_key_lst = []
+    if spec_key_num > (usr_core_num * 40):
+        lpp_part_len = int(math.ceil(spec_key_num / 8))
+        lpp_part_lst = map(None, *(iter(found_spec_key_lst),) * lpp_part_len)
+        for part_lst in lpp_part_lst:
+            if None in part_lst:
+                part_lst = filter(lambda x: x is not None, part_lst)
+            lpp_sub_len = int(math.ceil(len(part_lst) / usr_core_num))
+            lpp_sub_key_lst = map(None, *(iter(part_lst),) * lpp_sub_len)
+            lpp_part_key_lst.append(lpp_sub_key_lst)
 
-                        match_factor = match_info_dct['MATCH_INFO']
-                        score_df = match_info_dct['SCORE_INFO']
-                        matched_fa_df = match_info_dct['MATCHED_FA_INFO']
+    else:
+        lpp_sub_len = int(math.ceil(spec_key_num / usr_core_num))
+        lpp_sub_key_lst = map(None, *(iter(found_spec_key_lst),) * lpp_sub_len)
+        lpp_part_key_lst.append(lpp_sub_key_lst)
 
-                        print('==> --> Cosine similarity score: %f' % _cosine_score)
+    part_tot = len(lpp_part_key_lst)
+    part_counter = 1
 
-                        if match_factor > 0 and score_df.shape[0] > 0 and matched_fa_df.shape[0] > 0:
-                            # usr_ident_info_dct = check_peaks(score_df, fa_ident_df, lyso_ident_df, lyso_w_ident_df,
-                            #                                  score_filter=usr_score_filter)
+    for lpp_sub_key_lst in lpp_part_key_lst:
 
-                            # usr_ident_info_dct['MATCHED_FA_INFO'] = match_info_dct['MATCHED_FA_INFO']
-                            # usr_ident_info_dct['MATCHED_LYSO_INFO'] = match_info_dct['MATCHED_LYSO_INFO']
+        if part_tot == 1:
+            print('>>> Start multiprocessing ==> Max Number of Cores: %i' % usr_core_num)
+        else:
+            print('>>> Start multiprocessing ==> Part %i / %i --> Max Number of Cores: %i' %
+                  (part_counter, part_tot, usr_core_num))
+        part_counter += 1
+        # Start multiprocessing
+        if usr_core_num > 1:
+            parallel_pool = Pool(usr_core_num)
+            lpp_info_results_lst = []
+            core_worker_count = 1
+            for lpp_sub_lst in lpp_sub_key_lst:
+                if isinstance(lpp_sub_lst, tuple) or isinstance(lpp_sub_lst, list):
+                    if None in lpp_sub_lst:
+                        lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
+                    else:
+                        pass
+                    lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+                    print('>>> >>> Core #%i ==> ...... processing ......' % core_worker_count)
+                    lpp_info_result = parallel_pool.apply_async(get_lpp_info, args=(param_dct, checked_info_df,
+                                                                                    checked_info_groups, lpp_sub_lst,
+                                                                                    usr_fa_def_df, usr_weight_df,
+                                                                                    usr_key_frag_df,
+                                                                                    usr_scan_info_df, ms1_xic_mz_lst,
+                                                                                    lpp_sub_dct, xic_dct, target_ident_lst))
+                    # ('>>> >>> Get lpp_info_result of this worker-->', <class 'multiprocessing.pool.ApplyResult'>)
+                    lpp_info_results_lst.append(lpp_info_result)
+                    core_worker_count += 1
 
-                            usr_ident_info_dct = match_info_dct.copy()
+            parallel_pool.close()
+            parallel_pool.join()
 
-                            score_df = usr_ident_info_dct['SCORE_INFO']
-                            score_df = score_df.query('Hunter_score >= %.2f' % usr_score_filter)
-                            score_df = score_df.sort_values(by='Hunter_score', ascending=False)
-                            score_df = score_df.reset_index(drop=True)
-                            score_df.index += 1
-                            usr_ident_info_dct['SCORE_INFO'] = score_df
-                            if score_df.shape[0] > 0 and _ms1_pr_i > 0:
-                                print ('>>> >>> Check now for bulk identification as %s' % _usr_abbr_bulk)
+            for lpp_info_result in lpp_info_results_lst:
+                try:
+                    tmp_lpp_info_df = lpp_info_result.get()
+                except (KeyError, SystemError, ValueError):
+                    tmp_lpp_info_df = 'error'
+                    print('!!error!!--> This segment receive no LPP identified.')
+                if isinstance(tmp_lpp_info_df, str):
+                    pass
+                else:
+                    if isinstance(tmp_lpp_info_df, pd.DataFrame):
+                        if tmp_lpp_info_df.shape[0] > 0:
+                            output_df = output_df.append(tmp_lpp_info_df)
+        else:
+            print('Using single core mode...')
+            core_worker_count = 1
+            for lpp_sub_lst in lpp_sub_key_lst:
 
-                                specific_check_dct = score_calc.get_specific_peaks(_usr_mz_lib, _ms2_df,
-                                                                                   ms2_precision=usr_ms2_hg_precision,
-                                                                                   ms2_threshold=usr_ms2_hg_threshold,
-                                                                                   ms2_hginfo_threshold=
-                                                                                   usr_ms2_hginfo_th,
-                                                                                   vendor=usr_vendor
-                                                                                   )
-
-                                # format abbr. for file names
-                                _save_abbr_bulk = _usr_abbr_bulk
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r'(', r'[')
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r')', r']')
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r'<', r'[')
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r'>', r']')
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r':', r'-')
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r'@', r'-')
-                                _save_abbr_bulk = _save_abbr_bulk.replace('\\', r'_')
-                                _save_abbr_bulk = _save_abbr_bulk.replace(r'/', r'_')
-
-                                img_name_core = ('\%.4f_rt%.3f_DDAtop%.0f_scan%.0f_%s.png'
-                                                 % (_usr_ms2_pr_mz, _usr_ms2_rt, _usr_ms2_dda_rank,
-                                                    _usr_ms2_scan_id, _save_abbr_bulk)
-                                                 )
-
-                                img_name = (output_folder + r'\LPPtiger_Results_Figures_%s' % hunter_start_time_str
-                                            + img_name_core)
-
-                                snr_score, sn_ratio, noise_df = score_calc.get_snr_score(usr_ident_info_dct,
-                                                                                         specific_check_dct,
-                                                                                         _obs_msp_df,
-                                                                                         _obs_fp_df,
-                                                                                         amplify_factor=usr_amp_factor)
-
-                                if sn_ratio >= 1.0:
-
-                                    usr_ident_info_dct['SCORE_INFO'].loc[:, 'Cosine_score'] = _cosine_score
-                                    usr_ident_info_dct['SCORE_INFO'].loc[:, 'Fingerprint'] = _fp_score
-                                    usr_ident_info_dct['SCORE_INFO'].loc[:, 'Isotope_score'] = isotope_score
-                                    usr_ident_info_dct['SCORE_INFO'].loc[:, 'SNR_score'] = snr_score
-                                    hunter_score = usr_ident_info_dct['SCORE_INFO']['Hunter_score'].tolist()[0]
-                                    overall_score = sum(
-                                        [hunter_score, _cosine_score, _fp_score, snr_score, isotope_score]) / 5
-                                    overall_score = round(overall_score, 1)
-                                    usr_ident_info_dct['SCORE_INFO'].loc[:, 'Overall_score'] = overall_score
-
-                                    isotope_checker, isotope_score = plot_spectra(_row_se, xic_dct, usr_ident_info_dct,
-                                                                                  usr_spec_info_dct, specific_check_dct,
-                                                                                  isotope_score_info_dct,
-                                                                                  _usr_formula_charged, _usr_charge,
-                                                                                  save_img_as=img_name,
-                                                                                  ms1_precision=usr_ms1_precision,
-                                                                                  msp_info=_msp_df,
-                                                                                  obs_fp=obs_fp_lst,
-                                                                                  missed_fp=missed_fp_lst,
-                                                                                  noise_df=noise_df
-                                                                                  )
-
-                                    print('==> check for output -->')
-
-                                    if _ms1_pr_i > 0 and isotope_checker == 0 \
-                                            and isotope_score > usr_isotope_score_filter:
-                                        _tmp_output_df = score_df
-
-                                        if 'OTHER_FRAG' in specific_check_dct.keys():
-                                            other_frag_df = specific_check_dct['OTHER_FRAG']
-                                            other_frag_count = other_frag_df.shape[0]
-                                        else:
-                                            other_frag_count = 0
-                                        if 'OTHER_NL' in specific_check_dct.keys():
-                                            other_nl_df = specific_check_dct['OTHER_NL']
-                                            other_nl_count = other_nl_df.shape[0]
-                                        else:
-                                            other_nl_count = 0
-                                        if 'TARGET_FRAG' in specific_check_dct.keys():
-                                            target_frag_df = specific_check_dct['TARGET_FRAG']
-                                            target_frag_count = target_frag_df.shape[0]
-                                            target_frag_col_lst = target_frag_df.columns.tolist()
-                                            for _frag_abbr in target_frag_col_lst:
-                                                if _frag_abbr not in ['mz', 'i', 'LABEL', 'CLASS']:
-                                                    for _i, _f_se in target_frag_df.iterrows():
-                                                        if _f_se['LABEL'] == _frag_abbr:
-                                                            _tmp_output_df[_frag_abbr] = _f_se[_frag_abbr]
-                                                            if _frag_abbr not in target_ident_lst:
-                                                                target_ident_lst.append(_frag_abbr)
-                                        else:
-                                            target_frag_count = 0
-                                        if 'TARGET_NL' in specific_check_dct.keys():
-                                            target_nl_df = specific_check_dct['TARGET_NL']
-                                            target_nl_count = target_nl_df.shape[0]
-                                            target_nl_col_lst = target_nl_df.columns.tolist()
-                                            for _nl_abbr in target_nl_col_lst:
-                                                if _nl_abbr not in ['mz', 'i', 'LABEL', 'CLASS']:
-                                                    for _i, _n_se in target_nl_df.iterrows():
-                                                        if _n_se['LABEL'] == _nl_abbr:
-                                                            _tmp_output_df[_nl_abbr] = _n_se[_nl_abbr]
-                                                            if _nl_abbr not in target_ident_lst:
-                                                                target_ident_lst.append(_nl_abbr)
-                                        else:
-                                            target_nl_count = 0
-
-                                        _tmp_output_df['Bulk_identification'] = _usr_abbr_bulk
-                                        _tmp_output_df['Formula_neutral'] = _usr_formula
-                                        _tmp_output_df['Formula_ion'] = _usr_formula_charged
-                                        _tmp_output_df['Charge'] = _usr_charge
-                                        _tmp_output_df['MS1_obs_mz'] = _ms1_pr_mz
-                                        _tmp_output_df['MS1_obs_i'] = '%.2e' % float(_ms1_pr_i)
-                                        _tmp_output_df['Lib_mz'] = _usr_mz_lib
-                                        _tmp_output_df['MS2_scan_time'] = _usr_ms2_rt
-                                        _tmp_output_df['DDA#'] = _usr_ms2_dda_rank
-                                        _tmp_output_df['MS2_PR_mz'] = _usr_ms2_pr_mz
-                                        _tmp_output_df['Scan#'] = _usr_ms2_scan_id
-                                        _tmp_output_df['#Specific_peaks'] = target_frag_count + target_nl_count
-                                        _tmp_output_df['#Contaminated_peaks'] = other_frag_count + other_nl_count
-                                        _tmp_output_df['ppm'] = _exact_ppm
-                                        _tmp_output_df['SN_ratio'] = '%.1f' % sn_ratio
-
-                                        output_df = output_df.append(_tmp_output_df)
-
-                                        log_pager.add_info(img_name_core, ident_page_idx, _tmp_output_df)
-                                        ident_page_idx += 1
+                if isinstance(lpp_sub_lst, tuple) or isinstance(lpp_sub_lst, list):
+                    if None in lpp_sub_lst:
+                        lpp_sub_lst = filter(lambda x: x is not None, lpp_sub_lst)
+                    else:
+                        pass
+                    lpp_sub_dct = {k: lpp_spec_dct[k] for k in lpp_sub_lst}
+                    print('>>> >>> Part %i Subset #%i ==> ...... processing ......' % (part_counter, core_worker_count))
+                    tmp_lpp_info_df = get_lpp_info(param_dct, checked_info_df, checked_info_groups, lpp_sub_lst,
+                                                   usr_fa_def_df, usr_weight_df, usr_key_frag_df, usr_scan_info_df,
+                                                   ms1_xic_mz_lst, lpp_sub_dct, xic_dct, target_ident_lst)
+                    core_worker_count += 1
+                    if isinstance(tmp_lpp_info_df, str):
+                        pass
+                    else:
+                        if tmp_lpp_info_df.shape[0] > 0:
+                            output_df = output_df.append(tmp_lpp_info_df)
 
     print('=== ==> --> Generate the output table')
     if output_df.shape[0] > 0:
+        try:
+            output_df = output_df.sort_values(by=['Lib_mz', 'Proposed_structures', 'MS2_scan_time', 'Overall_score'])
+        except KeyError:
+            pass
+        output_df.reset_index(drop=True, inplace=True)
+        output_df.index += 1
+        # print('output_df')
+        # print(output_df.head(5))
+        # print(output_df.columns.tolist())
+        output_df.drop_duplicates(keep='first', inplace=True)
+        log_pager.add_all_info(output_df)
         output_header_lst = output_df.columns.tolist()
         for _i_check in ['i_sn1', 'i_sn2', 'i_[M-H]-sn1', 'i_[M-H]-sn2', 'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O']:
             if _i_check not in output_header_lst:
@@ -438,9 +430,9 @@ def huntlipids(param_dct):
 
         output_df.rename(columns={'#Contaminated_peaks': '#Unspecific_peaks'}, inplace=True)
 
-        output_header_lst = ['Bulk_identification', 'Proposed_structures', 'Formula_neutral', 'Formula_ion',
+        output_header_lst = ['Proposed_structures', 'Formula_neutral', 'Formula_ion',
                              'Charge', 'Lib_mz', 'ppm', 'SN_ratio', 'Overall_score',
-                             'Hunter_score', 'Cosine_score', 'Fingerprint', 'SNR_score', 'Isotope_score',
+                             'Rank_score', 'Cosine_score', 'Fingerprint', 'SNR_score', 'Isotope_score',
                              'MS1_obs_mz', 'MS1_obs_i', r'MS2_PR_mz', 'MS2_scan_time',
                              'DDA#', 'Scan#', 'i_sn1', 'i_sn2',
                              'i_[M-H]-sn1', 'i_[M-H]-sn2', 'i_[M-H]-sn1-H2O', 'i_[M-H]-sn2-H2O', '#Specific_peaks']
@@ -448,12 +440,16 @@ def huntlipids(param_dct):
         output_header_lst += ['#Unspecific_peaks']
 
         output_df = output_df[output_header_lst]
-        output_df = output_df.sort_values(by=['MS1_obs_mz', 'MS2_scan_time', 'Hunter_score'],
+        output_df = output_df.sort_values(by=['MS1_obs_mz', 'MS2_scan_time', 'Rank_score'],
                                           ascending=[True, True, False])
         output_df = output_df.reset_index(drop=True)
         output_df.index += 1
-        output_df.to_excel(output_sum_xlsx, index=False)
-        print(output_sum_xlsx)
+        try:
+            output_df.to_excel(output_sum_xlsx, index=False)
+            print(output_sum_xlsx)
+        except IOError:
+            output_df.to_excel('%s-%i%s' % (output_sum_xlsx[:-5], int(time.time()), '.xlsx'), index=False)
+            print(output_sum_xlsx)
         print('=== ==> --> saved >>> >>> >>>')
 
     log_pager.close_page()

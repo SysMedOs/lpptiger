@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPtiger.
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
 # For more info please contact:
-#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
 #
 
@@ -114,7 +121,7 @@ def theolpp(usr_params):
 
         _pl_abbr = str(_row['phospholipids'])
 
-        _pl_elem_lst = parser.get_composition(_pl_abbr)
+        _pl_elem_lst, pl_info_dct = parser.get_composition(_pl_abbr)
         print ('PL composition ==>', _pl_elem_lst)
         _pl_hg_abbr = _pl_elem_lst[0]
 
@@ -129,9 +136,40 @@ def theolpp(usr_params):
             print('Start oxidation of ==>', _pl_abbr)
             _pl_sn1_abbr = _pl_elem_lst[1]
             _pl_sn2_abbr = _pl_elem_lst[2]
-            _pl_sn1_smiles = fa_df.loc[_pl_sn1_abbr, 'SMILES']
-            _pl_sn2_smiles = fa_df.loc[_pl_sn2_abbr, 'SMILES']
-            print('sn1 =>', _pl_sn1_smiles, '|| sn2 =>', _pl_sn2_smiles)
+            if len(pl_info_dct.keys()) > 0:
+                sn1_link = pl_info_dct['sn1_link']
+                sn1_c_num = int(pl_info_dct['sn1_c_num'])
+                sn1_db_num = int(pl_info_dct['sn1_db_num'])
+                sn1_omega_type = int(pl_info_dct['sn1_omega_type'])
+                if sn1_omega_type == 0:
+                    sn1_query_code = 'C == % i and DB == %i' % (sn1_c_num, sn1_db_num)
+                    sn1_fa_df = fa_df.query(sn1_query_code)
+                    sn1_fa_df = sn1_fa_df.query(sn1_query_code).head(1)
+                else:
+                    sn1_query_code = 'C == % i and DB == %i' % (sn1_c_num, sn1_db_num)
+                    sn1_fa_df = fa_df.query(sn1_query_code)
+                    sn1_fa_df = sn1_fa_df.query('Link == "%s" and omega == %i' % (sn1_link, sn1_omega_type)).head(1)
+
+                sn2_link = pl_info_dct['sn2_link']
+                sn2_c_num = int(pl_info_dct['sn2_c_num'])
+                sn2_db_num = int(pl_info_dct['sn2_db_num'])
+                sn2_omega_type = int(pl_info_dct['sn2_omega_type'])
+                if sn2_omega_type == 0:
+                    sn2_query_code = 'C == % i and DB == %i' % (sn2_c_num, sn2_db_num)
+                    sn2_fa_df = fa_df.query(sn2_query_code)
+                    sn2_fa_df = sn2_fa_df.query(sn2_query_code).head(1)
+                else:
+                    sn2_query_code = 'C == % i and DB == %i' % (sn2_c_num, sn2_db_num)
+                    sn2_fa_df = fa_df.query(sn2_query_code)
+                    sn2_fa_df = sn2_fa_df.query('Link == "%s" and omega == %i' % (sn2_link, sn2_omega_type)).head(1)
+
+                _pl_sn1_smiles = sn1_fa_df.loc[_pl_sn1_abbr, 'SMILES']
+                _pl_sn2_smiles = sn2_fa_df.loc[_pl_sn2_abbr, 'SMILES']
+                print('sn1 =>', _pl_sn1_smiles, '|| sn2 =>', _pl_sn2_smiles)
+
+            else:
+                _pl_sn1_smiles = ''
+                _pl_sn2_smiles = ''
 
             # check if FA already oxidized to speed up
             if _pl_sn1_abbr in fa_lpp_df_dct.keys():
@@ -298,6 +336,10 @@ def theolpp(usr_params):
 
             _lpp_dct['PRECURSOR_JSON'] = _lpp_neg_precursor_info
             _lpp_mol.SetProp('PRECURSOR_JSON', _lpp_neg_precursor_info)
+            _lpp_dct['EXACT_MASS'] = _lpp_exactmass
+            fp_mz_lst = fingerprint_gen.get_fingerprint(_lpp_dct)
+            _lpp_dct['FINGERPRINT'] = fp_mz_lst
+            _lpp_mol.SetProp('FINGERPRINT', json.dumps(fp_mz_lst))
 
             for _k in _lpp_dct.keys():
                 _lpp_mol.SetProp(_k, str(_lpp_dct[_k]))
@@ -309,8 +351,8 @@ def theolpp(usr_params):
         msp_obj.close()
 
     SDFsummary.sdf2xlsx(save_sdf, str(save_sdf)[:-4] + '.xlsx')
-    if save_spectra == 1:
-        SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
+    # if save_spectra == 1:
+    SDFsummary.sdf2sum_fa(save_sdf, str(save_sdf)[:-4] + '_FA_SUM.xlsx')
 
     t_spent = time.clock() - t_start
     info_updater_1 = '=>%i of LPP generated ==> ' % len(sdf_dct.keys())

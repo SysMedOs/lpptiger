@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright 2016-2017 SysMedOs team, AG Bioanalytik, BBZ, University of Leipzig.
-# The software is currently  under development and is not ready to be released.
-# A suitable license will be chosen before the official release of LPPsmi.
+#
+# Copyright (C) 2016-2017  SysMedOs_team @ AG Bioanalytik, University of Leipzig:
+# SysMedOs_team: Zhixu Ni, Georgia Angelidou, Maria Fedorova
+# LPPtiger is Dual-licensed
+#     For academic and non-commercial use: `GPLv2 License` Please read more information by the following link:
+#         [The GNU General Public License version 2] (https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+#     For commercial use:
+#         please contact the SysMedOs_team by email.
+# Please cite our publication in an appropriate form.
+#
 # For more info please contact:
-#     SysMedOs team oxlpp@bbz.uni-leipzig.de
+#     SysMedOs_team: oxlpp@bbz.uni-leipzig.de
+#     LPPtiger repository: https://bitbucket.org/SysMedOs/lpptiger
 #     Developer Zhixu Ni zhixu.ni@uni-leipzig.de
+#
 
 from __future__ import division
 from __future__ import print_function
@@ -193,7 +202,7 @@ class IsotopeHunter(object):
 
         return isotope_calc_dct
 
-    def get_deconvolution(self, elem_dct, spec_df, mz_delta, base_i, only_c=False):
+    def  get_deconvolution(self, elem_dct, spec_df, mz_delta, base_i, only_c=False):
 
         base_m1_i = 0
         base_m2_i = 0
@@ -254,6 +263,8 @@ class IsotopeHunter(object):
             deconv_lst = [m0_base_abs, m1_base_abs, m2_base_abs, m3_base_abs]
 
         i_df = spec_df.query('%f <= mz <= %f' % (ms1_pr_mz - delta_13c - mz_delta, ms1_pr_mz - delta_13c + mz_delta))
+
+        isotope_score = 0
 
         if i_df.shape[0] > 0:
             max_pre_m_i = i_df['i'].max()
@@ -320,10 +331,64 @@ class IsotopeHunter(object):
                 m2_checker_dct = {}
                 m2_score = 0
         else:
-            isotope_score = 0
-            isotope_checker_dct = {}
-            m2_checker_dct = {}
-            m2_score = 0
+            # isotope_score = 0
+            # isotope_checker_dct = {}
+            # m2_checker_dct = {}
+            # m2_score = 0
+            elem_dct = self.get_elements(formula)
+            mono_mz = self.get_mono_mz(elem_dct)
+            if abs((ms1_pr_mz - mono_mz)) <= ms1_precision * ms1_pr_mz:
+                isotope_pattern_df = self.get_isotope_mz(elem_dct, only_c=only_c)
+
+                ms1_pr_i -= m0_base_abs
+                m0_deconv_lst = [m0_base_abs, m1_base_abs, m2_base_abs]
+                isotope_calc_dct = self.calc_isotope_score(isotope_pattern_df, spec_df,
+                                                           ms1_precision, ms1_pr_i, deconv=m0_deconv_lst)
+
+                isotope_checker_dct = isotope_calc_dct['isotope_checker_dct']
+                isotope_score = isotope_calc_dct['isotope_score']
+                isotope_m1_score = isotope_calc_dct['isotope_m1_score']
+                m2_i = isotope_calc_dct['m2_i']
+
+                m2_checker_dct = {}
+                m2_score = 0
+
+                if isotope_score < score_filter:
+                    # check if M+2 is potential M+0 of M+H2
+                    # M+H2 elements
+
+                    m2_elem_dct = self.get_elements(formula + 'H2')
+                    m2_isotope_pattern_df = self.get_isotope_mz(m2_elem_dct, only_c=only_c)
+                    m2_i -= m2_base_abs
+                    m2_deconv_lst = [m2_base_abs, m3_base_abs, 0]
+                    m2_calc_dct = self.calc_isotope_score(m2_isotope_pattern_df, spec_df,
+                                                          ms1_precision, m2_i, deconv=m2_deconv_lst)
+
+                    m2_checker_dct = m2_calc_dct['isotope_checker_dct']
+                    # use M+1 only
+                    m2_score = m2_calc_dct['isotope_m1_score']
+                    m2_m2i = m2_calc_dct['m2_i']
+
+                    if m2_score > 0:
+                        pass
+                    else:
+                        m2_score = 0
+
+                    if 2 in m2_checker_dct.keys():
+                        del m2_checker_dct[2]
+
+                    print('M+2-> M+4 has isotope score for [M+H2]: %.1f' % m2_score)
+                    if m2_score >= 60 and isotope_m1_score >= score_filter:
+                        isotope_score = isotope_m1_score
+                        del isotope_checker_dct[2]
+                    else:
+                        pass
+
+            else:
+                isotope_score = 0
+                isotope_checker_dct = {}
+                m2_checker_dct = {}
+                m2_score = 0
 
         isotope_score = round(isotope_score, 1)
 
