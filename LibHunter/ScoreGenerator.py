@@ -67,6 +67,7 @@ class ScoreGenerator:
             pr_charged_mz_fa_lst = set(pc_fa_df['[M+HCOO]-_MZ'].tolist())
             pr_charged_mz_fa_mode_lst = ['[M+HCOO]-'] * len(pr_charged_mz_fa_lst)
             self.pr_info_lst = zip(pr_charged_mz_fa_lst, pr_charged_mz_fa_mode_lst)
+
             if pc_h_df.shape[0] > 0:
                 pr_charged_mz_h_lst = set(pc_h_df['[M-H]-_MZ'].tolist())
                 pr_charged_mz_h_mode_lst = ['[M-H]-'] * len(pr_charged_mz_h_lst)
@@ -258,9 +259,25 @@ class ScoreGenerator:
         print('sn1_mz', sn1_mz)
         print('sn2_mz', sn2_mz)
 
+        # if PC OCP with COOH on sn2, the charge will be [M-H]-
+        pc_chg_lst = ['[M+HCOO]-', '[M+CH3COO]-', '[M+FA]-', '[M+OAc]-']
+        got_lpp_pr = False
         if (mz_lib, charge_type) in self.pr_info_lst:
-            pr_query_dct = self.pr_query_dct[mz_lib]
+            got_lpp_pr = True
+        else:
+            if charge_type in pc_chg_lst:
+                if (mz_lib, '[M-H]-') in self.pr_info_lst:
+                    got_lpp_pr = True
+                    charge_type = '[M-H]-'
+                else:
+                    pass
+            else:
+                pass
+        # End PC charge check
 
+        if got_lpp_pr:
+            print('got PR in list', mz_lib, charge_type)
+            pr_query_dct = self.pr_query_dct[mz_lib]
             if sn1_mz in pr_query_dct.keys():
                 pass
             else:

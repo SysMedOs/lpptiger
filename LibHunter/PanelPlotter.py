@@ -521,14 +521,17 @@ def plot_spectra(abbr, mz_se, xic_dct, ident_info_dct, spec_info_dct, specific_c
         min_msp_i = fp_max_i
         min_msp_i_fp = min_msp_i * 1.55
         min_msp_i_fp_h = abs(min_msp_i * 0.5)
-        for obs_fp_mz in obs_fp:
-            obs_fp_box = patches.Rectangle((obs_fp_mz - 1.75, min_msp_i_fp), 3.5, min_msp_i_fp_h,
-                                           facecolor='#88ff88', edgecolor='none')
-            msms_pic.add_patch(obs_fp_box)
+
+        # plot missed ones, so they can be overlaid by the identified ones
         for missed_fp_mz in missed_fp:
             missed_fp_box = patches.Rectangle((missed_fp_mz - 1.75, min_msp_i_fp), 3.5, min_msp_i_fp_h,
                                               facecolor='#999999', edgecolor='none')
             msms_pic.add_patch(missed_fp_box)
+
+        for obs_fp_mz in obs_fp:
+            obs_fp_box = patches.Rectangle((obs_fp_mz - 1.75, min_msp_i_fp), 3.5, min_msp_i_fp_h,
+                                           facecolor='#88ff88', edgecolor='none')
+            msms_pic.add_patch(obs_fp_box)
 
         if plot_msp == 1:
 
