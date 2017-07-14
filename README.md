@@ -15,7 +15,7 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 + [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
 + [https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
 
-**We also provide a set of sample spectra and output files as a tutorial packages for you to get start with LPPtiger. **
+**We also provide a set of sample spectra and output files as a tutorial package for you to get start with LPPtiger. **
 
 + [Download LPPtiger tutorial file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
 + [https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
@@ -37,7 +37,7 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 + Download the LPPtiger as zip file for your system
 
-    - [Download LPPtiger source Code]
+    - [Download LPPtiger source code]
 
         + Visit https://bitbucket.org/SysMedOs/lpptiger/downloads and click on `Download repository` to download LPPtiger source code as a zip package.
         + Please notice the date and version of LPPtiger source code.
@@ -45,7 +45,7 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
     - Rename the downloaded file to `LPPtiger.zip`
     - Unzip `LPPtiger.zip` file to any folder.
 
-+ Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch.
++ Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch (usually named as `master`).
 
 ** Related files **
 
