@@ -69,6 +69,7 @@ def lpp_merge(theolpp_cls):
 def pl_lpp(usr_hg, sn1=None, sn2=None):
     pl_hg_dct = {'PA': r'OP(O)(OCC(',
                  'PC': r'[O-]P(OCC[N+](C)(C)C)(OCC(',
+                 'PC-CH3': r'[O]P(OCC[N](C)C)(OCC(',
                  'PE': r'OP(OCCN)(OCC(',
                  'PG': r'OP(OCC(O)CO)(OCC(',
                  'PS': r'OP(OCC(C(O)=O)N)(OCC(',

@@ -40,9 +40,10 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget_2.setCurrentIndex(0)
         self.ui.tabWidget.removeTab(4)
 
-        self.ui.version_lb.setText('LPPtiger Beta Version: 30, May, 2017')
+        self.ui.version_lb.setText('LPPtiger Beta Version: 09, November, 2017')
 
         # current folder:
         if cwd is not None:
@@ -541,7 +542,8 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         elif self.ui.tab_b_vendor_cmb.currentText() == 'Thermo':
             usr_vendor = 'thermo'
         else:
-            usr_vendor = ''
+            usr_vendor = 'thermo'
+
         if self.ui.mode_lcms_rb.isChecked():
             usr_exp_mode = 'LC-MS'
         elif self.ui.mode_static_rb.isChecked():
