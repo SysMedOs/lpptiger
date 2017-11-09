@@ -52,6 +52,12 @@ class FingerprintGen(object):
                                    'Fe': [26, [53.9396148, 55.9349421, 56.9353987, 57.9332805],
                                           [0.05845, 0.91754, 0.02119, 0.00282]],
                                    'Cu': [29, [62.9296011, 64.9277937], [0.6917, 0.3083]]}
+        # PA H3O4P, PC C5H14NO4P
+        self.pl_hg_mz_dct = {'PA': 3 * 1.0078250321 + 4 * 15.9949146221 + 30.97376151,
+                             'PC': 5 * 12 + 14 * 1.0078250321 + 14.0030740052 + 4 * 15.9949146221 + 30.97376151,
+                             'PE': 2 * 12 + 8 * 1.0078250321 + 14.0030740052 + 4 * 15.9949146221 + 30.97376151,
+                             'PG': 3 * 12 + 9 * 1.0078250321 + 6 * 15.9949146221 + 30.97376151,
+                             'PS': 3 * 12 + 8 * 1.0078250321 + 14.0030740052 + 6 * 15.9949146221 + 30.97376151}
 
     @staticmethod
     def parse_formula(formula=None):
@@ -113,38 +119,15 @@ class FingerprintGen(object):
     def get_fingerprint(self, lpp_info_dct):
 
         pl_class = lpp_info_dct['LPP_CLASS']
-
-        if pl_class == 'PC':
-            pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
-            pr_s_mz = lpp_info_dct['EXACT_MASS'] - 3 * 1.0078250321 - 12.0
-            fp_mz_lst = [pr_mz, pr_s_mz]
-        elif pl_class == 'PS':
-            pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
-            pr_s_mz = lpp_info_dct['EXACT_MASS'] - 87.032029
-            fp_mz_lst = [pr_mz, pr_s_mz]
+        if pl_class in self.pl_hg_mz_dct.keys():
+            if pl_class == 'PS':
+                pl_hg_mz = self.pl_hg_mz_dct['PA']
+            elif pl_class == 'PC':
+                pl_hg_mz = self.pl_hg_mz_dct['PC'] - 12.0 - 2 * 1.0078250321
+            else:
+                pl_hg_mz = self.pl_hg_mz_dct[pl_class]
         else:
-            pr_mz = lpp_info_dct['EXACT_MASS'] - 1.0078250321
-            pr_s_mz = pr_mz
-            fp_mz_lst = [pr_mz]
-
-        try:
-
-            pl_hg_df = self.pl_hg_cfg_df[self.pl_hg_cfg_df['CLASS'] == pl_class]
-            pl_frag_df = pl_hg_df[pl_hg_df['TYPE'] == 'FRAG']
-            pl_frag_mz_lst = pl_frag_df['EXACTMASS'].tolist()
-            pl_nl_df = pl_hg_df[pl_hg_df['TYPE'] == 'NL']
-            pl_nl_mz_lst = pl_nl_df['EXACTMASS'].tolist()
-
-            if pl_class == 'PC':
-                for _nl in pl_nl_mz_lst:
-                    if 60 < _nl < 61:
-                        pl_nl_mz_lst.remove(_nl)
-                    if 74 < _nl < 75:
-                        pl_nl_mz_lst.remove(_nl)
-
-        except KeyError:
-            pl_frag_mz_lst = []
-            pl_nl_mz_lst = []
+            pl_hg_mz = self.pl_hg_mz_dct['PA']
 
         sn1_dct = json.loads(lpp_info_dct['SN1_JSON'])
         sn2_dct = json.loads(lpp_info_dct['SN2_JSON'])
@@ -161,83 +144,56 @@ class FingerprintGen(object):
         nl_water_mz = 2 * 1.0078250321 + 15.9949146221
         nl_co2_mz = 12.0 + 2 * 15.9949146221
 
-        fa_frag_mz_lst = [sn1_c_mz, sn2_c_mz]
-        fa_nl_mz_lst = [sn1_n_mz, sn2_n_mz, sn1_n_mz - nl_water_mz, sn2_n_mz - nl_water_mz]
+        pl_hg_df = self.pl_hg_cfg_df[self.pl_hg_cfg_df['CLASS'] == pl_class]
+        pl_frag_df = pl_hg_df[pl_hg_df['TYPE'] == 'FRAG']
+        pl_frag_mz_lst = pl_frag_df['EXACTMASS'].tolist()
+
+        sn1_frag_mz_lst = [sn1_c_mz]
+        sn2_frag_mz_lst = [sn2_c_mz]
+        sn3_frag_mz_lst = pl_frag_mz_lst
+
+        glycerol_mz = 3 * 12.0 + 2 * 1.0078250321
+        sn1_nl_mz_lst = [0, nl_water_mz, sn1_n_mz]
+        sn2_nl_mz_lst = [0, nl_water_mz, sn2_n_mz]
+        sn3_nl_mz_lst = [pl_hg_mz]
 
         if 'OH' in sn1_dct.keys():
+            if sn1_dct['OH'] == 1:
+                sn1_frag_mz_lst.append(sn1_c_mz - nl_water_mz)
+                sn1_nl_mz_lst.append(sn1_n_mz - nl_water_mz)
             if sn1_dct['OH'] > 1:
-                mod_count_lst = range(1, sn1_dct['OH'] + 1)
-            elif sn1_dct['OH'] == 1:
-                mod_count_lst = [1]
-            else:
-                mod_count_lst = [0]
-            for mod_c in mod_count_lst:
-                fa_frag_mz_lst.append(sn1_c_mz - mod_c * nl_water_mz)
-                fa_nl_mz_lst.append(sn1_n_mz - mod_c * nl_water_mz)
-                fa_nl_mz_lst.append(sn1_n_mz - (mod_c + 1) * nl_water_mz)
+                sn1_mod_count_lst = range(1, sn1_dct['OH'] + 1)
+                for mod_c in sn1_mod_count_lst:
+                    sn1_frag_mz_lst.append(sn1_c_mz - mod_c * nl_water_mz)
+                    sn1_nl_mz_lst.append(sn1_n_mz - mod_c * nl_water_mz)
 
         if 'OH' in sn2_dct.keys():
+            if sn2_dct['OH'] == 1:
+                sn2_frag_mz_lst.append(sn2_c_mz - nl_water_mz)
+                sn2_nl_mz_lst.append(sn2_n_mz - nl_water_mz)
             if sn2_dct['OH'] > 1:
-                mod_count_lst = range(1, sn2_dct['OH'] + 1)
-            elif sn2_dct['OH'] == 1:
-                mod_count_lst = [1]
-            else:
-                mod_count_lst = [0]
-            for mod_c in mod_count_lst:
-                fa_frag_mz_lst.append(sn2_c_mz - mod_c * nl_water_mz)
-                fa_nl_mz_lst.append(sn2_n_mz - mod_c * nl_water_mz)
-                fa_nl_mz_lst.append(sn2_n_mz - (mod_c + 1) * nl_water_mz)
+                sn2_mod_count_lst = range(1, sn2_dct['OH'] + 1)
+                for mod_c in sn2_mod_count_lst:
+                    sn2_frag_mz_lst.append(sn2_c_mz - mod_c * nl_water_mz)
+                    sn2_nl_mz_lst.append(sn2_n_mz - mod_c * nl_water_mz)
 
         if 'COOH' in sn1_dct.keys():
             if sn1_dct['COOH'] == 1:
-                fa_frag_mz_lst.append(sn1_c_mz - nl_co2_mz)
-                fa_nl_mz_lst.append(sn1_n_mz - nl_co2_mz)
-                fa_nl_mz_lst.append(sn1_n_mz - nl_co2_mz - nl_water_mz)
+                sn1_frag_mz_lst.append(sn1_c_mz - nl_co2_mz)
+                sn1_nl_mz_lst.append(sn1_n_mz - nl_co2_mz)
+
         if 'COOH' in sn2_dct.keys():
             if sn2_dct['COOH'] == 1:
-                fa_frag_mz_lst.append(sn2_c_mz - nl_co2_mz)
-                fa_nl_mz_lst.append(sn2_n_mz - nl_co2_mz)
-                fa_nl_mz_lst.append(sn2_n_mz - nl_co2_mz - nl_water_mz)
+                sn2_frag_mz_lst.append(sn2_c_mz - nl_co2_mz)
+                sn2_nl_mz_lst.append(sn2_n_mz - nl_co2_mz)
 
-        fp_mz_lst.extend(pl_frag_mz_lst)
-        fp_mz_lst.extend(fa_frag_mz_lst)
+        nl_ion_mz_lst = []
+        for sn3_mz in sn3_nl_mz_lst:
+            for sn2_mz in sn2_nl_mz_lst:
+                for sn1_mz in sn1_nl_mz_lst:
+                    nl_ion_mz_lst.append(glycerol_mz + sn3_mz + sn2_mz + sn1_mz - 1.0078250321)
 
-        fa_nl_mz_lst = list(set(fa_nl_mz_lst))
-        if pl_class == 'PC':
-            fp_mz_lst.extend([pr_s_mz - x for x in fa_nl_mz_lst])
-        elif pl_class == 'PS':
-            fp_mz_lst.extend([pr_s_mz - x for x in fa_nl_mz_lst])
-        fa_nl_mz_lst.extend(pl_nl_mz_lst)
-        fp_mz_lst.extend([pr_mz - x for x in fa_nl_mz_lst])
-
-        # nl_comb_lst = []
-        # for _hg_nl in pl_nl_mz_lst:
-        #     for _fa_nl in fa_nl_mz_lst:
-        #         nl_comb_lst.append((_hg_nl, _fa_nl))
-        #
-        # fp_mz_lst.extend([pr_mz - sum(x) for x in nl_comb_lst])
-
-        # print(pr_mz)
-        # print(pl_nl_mz_lst)
-        # print(fa_nl_mz_lst)
-        # print(nl_comb_lst)
-
-        water_loss = 0
-        if 'OH' in sn1_dct.keys():
-            if sn1_dct['OH'] > 0:
-                water_loss += sn1_dct['OH']
-        if 'OH' in sn2_dct.keys():
-            if sn2_dct['OH'] > 0:
-                water_loss += sn2_dct['OH']
-
-        if water_loss == 1:
-            fp_mz_lst.append(pr_mz - nl_water_mz)
-        if water_loss > 1:
-            water_loss_lst = range(1, water_loss + 1)
-            for _w in water_loss_lst:
-                fp_mz_lst.append(pr_mz - _w * nl_water_mz)
-        else:
-            pass
+        fp_mz_lst = sn1_frag_mz_lst + sn2_frag_mz_lst + sn3_frag_mz_lst + nl_ion_mz_lst
 
         if 'MSP_JSON' in lpp_info_dct:
             msp_info_df = pd.read_json(lpp_info_dct['MSP_JSON'], orient='index')
@@ -250,7 +206,12 @@ class FingerprintGen(object):
         else:
             pass
 
-        fp_mz_lst = set(round(mz, 3) for mz in fp_mz_lst if mz >= 95)
-        fp_mz_lst = sorted(fp_mz_lst)
+        fp_mz_lst = sorted(list(set(round(mz, 3) for mz in fp_mz_lst if mz >= 90)))
+
+        # print('sn1_frag_mz_lst', sn1_frag_mz_lst)
+        # print('sn2_frag_mz_lst', sn2_frag_mz_lst)
+        # print('sn3_frag_mz_lst', sn3_frag_mz_lst)
+        # print('nl_ion_mz_lst', sorted(nl_ion_mz_lst))
+        # print('fp_mz_lst', fp_mz_lst)
 
         return fp_mz_lst

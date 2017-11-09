@@ -166,8 +166,6 @@ class TheoFrag(object):
                     if _ion_typ in ['[M-H]-', '[M+HCOO]-', '[sn1-H]-', '[sn2-H]-']:
                         pass
                     else:
-                        # print(_score_se.loc[_ion_typ])
-
                         if int(_score_se.loc[_ion_typ]) > 0:
                             _frag_dct[_ion_typ] = self.calc_mz(elem_info=None, mod=_ion_typ,
                                                                score=int(_score_se.loc[_ion_typ]),
@@ -385,7 +383,8 @@ class TheoFrag(object):
                    '-C3H9N': {'C': -3, 'H': -9, 'N': -1},
                    '-C3H5NO2': {'C': -3, 'O': -2, 'H': -5, 'N': -1},
                    '-CH3COOH': {'C': -2, 'O': -2, 'H': -4},
-                   '-CH2': {'C': -1, 'H': -2}, '-CH3': {'C': -1, 'H': -3}, '-H': {'H': -1}}
+                   '-CH2': {'C': -1, 'H': -2}, '-H': {'H': -1},
+                   '-CH3': {'C': -1, 'H': -3}, '+CH3': {'C': +1, 'H': +3}}
 
         _sn1_elem = {}
         _sn2_elem = {}
@@ -409,6 +408,12 @@ class TheoFrag(object):
                     _frag_smi = pl_lpp(_lpp_type, sn1=_lyso_smi, sn2=_sn2_smi)
                 elif re.match(r'\[M-[sS][nN][2].*', mod):
                     _frag_smi = pl_lpp(_lpp_type, sn1=_sn1_smi, sn2=_lyso_smi)
+                # PC M == M-CH3
+                elif re.match(r'\[M-CH3-[sS][nN][1].*', mod):
+                    _frag_smi = pl_lpp(_lpp_type, sn1=_lyso_smi, sn2=_sn2_smi)
+                elif re.match(r'\[M-CH3-[sS][nN][2].*', mod):
+                    _frag_smi = pl_lpp(_lpp_type, sn1=_sn1_smi, sn2=_lyso_smi)
+
                 elif re.match(r'\[[sS][nN][1].*', mod):
                     _frag_smi = _sn1_smi
                 elif re.match(r'\[[sS][nN][2].*', mod):
@@ -425,8 +430,7 @@ class TheoFrag(object):
         else:
             _elem_dct = elem_dct.copy()
 
-        # print('mod', mod)
-        _mod_sum_elem_dct = {'C': 0, 'H': 0, 'N': 0, 'O': 0}
+        _mod_sum_elem_dct = {'C': 0, 'H': 0, 'N': 0, 'O': 0, 'P': 0}
         if mod is None or mod == '':
             _mod_sum_elem_dct = {}
         else:
@@ -440,21 +444,21 @@ class TheoFrag(object):
             chk7 = re.compile(r'.*[-]C3H5NO2.*')
 
             chk9 = re.compile(r'.*[+]HCOO.*')
-            # chk10 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
-            chk10 = re.compile(r'.*[-]H[\]][-]')
+            chk10 = re.compile(r'.*[+]CH3.*')
+            chk11 = re.compile(r'(P[ACEGSI]4?P?_)(.*)([+-])')
 
-            if chk0.match(mod):
-                if re.match(r'.*-[sS][nN]1.*', mod):
-                    _mod_sum_elem_dct['H'] += 2
-                    _mod_sum_elem_dct['O'] += 1
-                    for _key in _sn1_elem.keys():
-                        _mod_sum_elem_dct[_key] -= _sn1_elem[_key]
-
-                if re.match(r'.*-[sS][nN]2.*', mod):
-                    _mod_sum_elem_dct['H'] += 2
-                    _mod_sum_elem_dct['O'] += 1
-                    for _key in _sn2_elem.keys():
-                        _mod_sum_elem_dct[_key] -= _sn2_elem[_key]
+            # if chk0.match(mod):
+            #     if re.match(r'.*-[sS][nN]1.*', mod):
+            #         _mod_sum_elem_dct['H'] += 2
+            #         _mod_sum_elem_dct['O'] += 1
+            #         for _key in _sn1_elem.keys():
+            #             _mod_sum_elem_dct[_key] -= _sn1_elem[_key]
+            #
+            #     if re.match(r'.*-[sS][nN]2.*', mod):
+            #         _mod_sum_elem_dct['H'] += 2
+            #         _mod_sum_elem_dct['O'] += 1
+            #         for _key in _sn2_elem.keys():
+            #             _mod_sum_elem_dct[_key] -= _sn2_elem[_key]
 
             if chk1.match(mod):
                 _mod_elem_dct = mod_dct['-H2O']
@@ -483,7 +487,7 @@ class TheoFrag(object):
                 _mod_elem_dct = mod_dct['-CH3']
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
-                _mod_sum_elem_dct['H'] += 1  # For PC only, will be removed in chk 10
+                _mod_sum_elem_dct['H'] += 1  # For PC only
             if chk7.match(mod):
                 _mod_elem_dct = mod_dct['-C3H5NO2']
                 for _key in _mod_elem_dct.keys():
@@ -494,7 +498,17 @@ class TheoFrag(object):
                 for _key in _mod_elem_dct.keys():
                     _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             if chk10.match(mod):
-                _mod_sum_elem_dct['H'] += -1
+                _mod_elem_dct = mod_dct['+CH3'] # For PC only
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
+            if chk11.match(mod):
+                chk11_match = chk11.match(mod)
+                chk11_lst = chk11_match.groups()
+                mod_elem_str = chk11_lst[1]
+                _mod_elem_dct = self.parse_formula(formula=mod_elem_str)
+                _mod_elem_dct['H'] += 1
+                for _key in _mod_elem_dct.keys():
+                    _mod_sum_elem_dct[_key] += _mod_elem_dct[_key]
             else:
                 pass
 
