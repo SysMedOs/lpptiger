@@ -73,6 +73,11 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 + Please cite our publication in an appropriate form. 
 
+     + [Ni, Zhixu, Georgia Angelidou, Ralf Hoffmann, and Maria Fedorova. "LPPtiger software for lipidome-specific prediction and identification of oxidized phospholipids from LC-MS datasets." Scientific Reports 7, Article number: 15138 (2017).](https://www.nature.com/articles/s41598-017-15363-z)
+    
+        * DOI: [`10.1038/s41598-017-15363-z`](https://www.nature.com/articles/s41598-017-15363-z)
+
+
 ### Further questions? ###
 
 * Read our [wiki](https://bitbucket.org/SysMedOs/lpptiger/wiki/Home)
