@@ -124,4 +124,3 @@ class PLParser(object):
             pl_info_dct = {}
 
         return pl_elem_lst, pl_info_dct
-

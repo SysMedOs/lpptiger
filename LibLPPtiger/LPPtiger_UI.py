@@ -1712,7 +1712,7 @@ class Ui_MainWindow(object):
         self.label_61.setText(QtGui.QApplication.translate("MainWindow", "Developed by: SysMedOs team", None, QtGui.QApplication.UnicodeUTF8))
         self.label_67.setText(QtGui.QApplication.translate("MainWindow", "<html><head/><body><p>Project page: <a href=\"https://bitbucket.org/SysMedOs/lpptiger\"><span style=\" text-decoration: none;  color:#ff8c00;\">https://bitbucket.org/SysMedOs/lpptiger</span></a></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
         self.label_68.setText(QtGui.QApplication.translate("MainWindow", "<html><head/><body><p>Online tutorial: <a href=\"https://bitbucket.org/SysMedOs/lpptiger/wiki/\"><span style=\" text-decoration: none; color:#ff8c00;\">https://bitbucket.org/SysMedOs/lpptiger/wiki/</span></a></p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_69.setText(QtGui.QApplication.translate("MainWindow", "Please cite our publication:", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_69.setText(QtGui.QApplication.translate("MainWindow", "Please cite our publication: Zhixu Ni, Georgia Angelidou, Ralf Hoffmann & Maria Fedorova. Scientific Reports 7, Article number: 15138 (2017)", None, QtGui.QApplication.UnicodeUTF8))
         self.label_70.setText(QtGui.QApplication.translate("MainWindow", "We acknowlege all projects that supports the development of LPPtiger:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_71.setText(QtGui.QApplication.translate("MainWindow", "BMBF - Federal Ministry of Education and Research Germany:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_72.setText(QtGui.QApplication.translate("MainWindow", "e:Med Systems Medicine Network:", None, QtGui.QApplication.UnicodeUTF8))
