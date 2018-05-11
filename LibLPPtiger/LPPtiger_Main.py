@@ -43,7 +43,7 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         self.ui.tabWidget_2.setCurrentIndex(0)
         self.ui.tabWidget.removeTab(4)
 
-        self.ui.version_lb.setText('LPPtiger Beta Version: 09, November, 2017')
+        self.ui.version_lb.setText('LPPtiger Beta Version: 04, December, 2017')
 
         # current folder:
         if cwd is not None:
@@ -448,14 +448,19 @@ class LPPtigerMain(QtGui.QMainWindow, Ui_MainWindow):
         # self.ui.run_status_te.append(info_2)
         # self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
 
-        try:
-            info_1, info_2 = theolpp(param_dct)
-            self.ui.run_status_te.append(info_1)
-            self.ui.run_status_te.append(info_2)
-            self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+        info_1, info_2 = theolpp(param_dct)
+        self.ui.run_status_te.append(info_1)
+        self.ui.run_status_te.append(info_2)
+        self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
 
-        except:
-            self.ui.run_status_te.append('!! An error has occurred, please check your settings !!')
+        # try:
+        #     info_1, info_2 = theolpp(param_dct)
+        #     self.ui.run_status_te.append(info_1)
+        #     self.ui.run_status_te.append(info_2)
+        #     self.ui.run_status_te.append('Finished!\n !Please exit LPPtiger before open the .sdf output file!')
+        #
+        # except:
+        #     self.ui.run_status_te.append('!! An error has occurred, please check your settings !!')
 
     def b_load_sum_sdf(self):
         b_load_lipidstable_dialog = QtGui.QFileDialog(self)

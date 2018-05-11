@@ -142,11 +142,11 @@ def theolpp(usr_params):
                 sn1_db_num = int(pl_info_dct['sn1_db_num'])
                 sn1_omega_type = int(pl_info_dct['sn1_omega_type'])
                 if sn1_omega_type == 0:
-                    sn1_query_code = 'C == % i and DB == %i' % (sn1_c_num, sn1_db_num)
+                    sn1_query_code = 'Link == "%s" and C == % i and DB == %i' % (sn1_link, sn1_c_num, sn1_db_num)
                     sn1_fa_df = fa_df.query(sn1_query_code)
                     sn1_fa_df = sn1_fa_df.query(sn1_query_code).head(1)
                 else:
-                    sn1_query_code = 'C == % i and DB == %i' % (sn1_c_num, sn1_db_num)
+                    sn1_query_code = 'Link == "%s" C == % i and DB == %i' % (sn1_link, sn1_c_num, sn1_db_num)
                     sn1_fa_df = fa_df.query(sn1_query_code)
                     sn1_fa_df = sn1_fa_df.query('Link == "%s" and omega == %i' % (sn1_link, sn1_omega_type)).head(1)
 
@@ -155,11 +155,11 @@ def theolpp(usr_params):
                 sn2_db_num = int(pl_info_dct['sn2_db_num'])
                 sn2_omega_type = int(pl_info_dct['sn2_omega_type'])
                 if sn2_omega_type == 0:
-                    sn2_query_code = 'C == % i and DB == %i' % (sn2_c_num, sn2_db_num)
+                    sn2_query_code = 'Link == "%s" and C == % i and DB == %i' % (sn2_link, sn2_c_num, sn2_db_num)
                     sn2_fa_df = fa_df.query(sn2_query_code)
                     sn2_fa_df = sn2_fa_df.query(sn2_query_code).head(1)
                 else:
-                    sn2_query_code = 'C == % i and DB == %i' % (sn2_c_num, sn2_db_num)
+                    sn2_query_code = 'Link == "%s" and C == % i and DB == %i' % (sn2_link, sn2_c_num, sn2_db_num)
                     sn2_fa_df = fa_df.query(sn2_query_code)
                     sn2_fa_df = sn2_fa_df.query('Link == "%s" and omega == %i' % (sn2_link, sn2_omega_type)).head(1)
 
