@@ -2,20 +2,25 @@
 
 ![LPPtiger_CrossPlatform_Banner.png](https://bitbucket.org/repo/b8ygkn/images/462710922-LPPtiger_CrossPlatform_Banner.png)
 
-** This repository contains the source code of LPPtiger. **
 
-** LPPtiger Windows .exe executable version can be found here: **
+**This repository contains the source code of LPPtiger.**
+
+**LPPtiger Windows .exe executable version can be found here:**
 
 https://bitbucket.org/SysMedOs/lpptiger_exe
 
 
+🆕 **Recored tutorial on LIPID MAPS spring school 2021:**
 
-**Please download and read LPPtiger user guide before you start to run LPPtiger. **
+ ⏯️ https://www.youtube.com/watch?v=0eRkO9RzT3c
 
-+ [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
-+ [https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
 
-**We also provide a set of sample spectra and output files as a tutorial package for you to get start with LPPtiger. **
+**Please download and read LPPtiger user guide before you start to run LPPtiger.**
+
++ [Download LPPtiger user guide PDF](https://github.com/SysMedOs/lpptiger/blob/master/docs/LPPtiger_User_Guide.pdf)
++ [https://github.com/SysMedOs/lpptiger/blob/master/docs/LPPtiger_User_Guide.pdf](https://github.com/SysMedOs/lpptiger/blob/master/docs/LPPtiger_User_Guide.pdf)
+
+**We also provide a set of sample spectra and output files as a tutorial package for you to get start with LPPtiger.**
 
 + [Download LPPtiger tutorial file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
 + [https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
@@ -33,7 +38,7 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 
 ### How to install LPPtiger from source code ###
-** Preparation **
+**Preparation**
 
 + Download the LPPtiger as zip file for your system
 
@@ -47,12 +52,12 @@ https://bitbucket.org/SysMedOs/lpptiger_exe
 
 + Professional users can use `git` to clone the whole repository, please make sure that you switched to the correct branch (usually named as `master`).
 
-** Related files **
+**Related files**
 
 + LPPtiger user guide: [Download LPPtiger user guide PDF](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtiger_User_Guide.pdf)
 + LPPtiger tutorial file package: [Download test file package as .zip](https://bitbucket.org/SysMedOs/lpptiger_exe/downloads/LPPtigerTutorial.zip)
 
-** Step  by step guide to run LPPtiger from source code **
+**Step  by step guide to run LPPtiger from source code**
 
 + Install required python packages. See detailed instructions here: [Install LPPtiger from source code](https://bitbucket.org/SysMedOs/lpptiger/wiki/Install%20LPPtiger%20from%20source%20code)
 
