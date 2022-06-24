@@ -1,3 +1,31 @@
+#### * This repository is a for the legacy LPPtiger version originally publishesd in 2017.
+#### * This project is now moved to LPPtiger 2 repository at [https://github.com/LMAI-TUD/lpptiger2](https://github.com/LMAI-TUD/lpptiger2)
+
+# LPPtiger 2
+
+![LPPtiger2_new_features](https://github.com/LMAI-TUD/lpptiger2/blob/main/doc/img/LPPtiger2_new_features.jpg)
+
+## About LPPtiger 2
+
+LPPtiger 2 provides you a set of powerful functions to explor epilipidome.
+
+Main functions:
+
++ Prediction of epilipidome
+
++ in silico fragmentation of epilipids
+
++ Generation of inclusion list
+
++ Identify epilipids at discrete level with modification type information
+
+[Check the latest release of LPPtiger2 ⬇](https://github.com/LMAI-TUD/lpptiger2/releases)
+
+LPPtiger 2 provides user friendly intuitive graphic interface for multiple platforms including macOS (Apple silicon), Linux, and Windows (Win10, Win 11).
+
+
+# For original LPPtiger
+
 # LPPtiger instructions (source code version) #
 
 ![LPPtiger_CrossPlatform_Banner.png](https://bitbucket.org/repo/b8ygkn/images/462710922-LPPtiger_CrossPlatform_Banner.png)
